@@ -1,0 +1,12 @@
+127.0.0.1 - - [27/Jun/2026 17:04:04] "GET /api/server-status HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 17:04:19] "GET /api/server-status HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 17:04:19] "GET /api/markets HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 17:04:19] "GET /api/server-status HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 17:04:19] "GET /api/markets HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 17:04:33] "POST /api/upload-template HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 17:05:22] "POST /api/run-pipeline HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 17:06:44] "POST /api/generate-image HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 17:11:05] "GET /outputs/W3372P314940/detail_20260627-170644.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 17:11:41] "GET /outputs/W3372P314940/detail_20260627-170644.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [27/Jun/2026 19:56:22] "GET / HTTP/1.1" 404 -
+127.0.0.1 - - [27/Jun/2026 19:58:32] "GET /api/server-status HTTP/1.1" 200 -

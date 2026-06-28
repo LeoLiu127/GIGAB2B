@@ -11,6 +11,7 @@ import os
 import sys
 import re
 import time
+import json
 import base64
 import hmac
 import hashlib
@@ -26,7 +27,7 @@ try:
 except ImportError:
     pass
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import openpyxl
@@ -36,9 +37,183 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
 CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/outputs/*": {"origins": "*"}})
 
-IMAGE_STUDIO_BASE = "http://localhost:5181"
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "outputs")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+
+@app.route("/outputs/<path:filename>", methods=["GET"])
+def serve_output_image(filename):
+    """提供 outputs/ 下的生成图访问。"""
+    from flask import send_from_directory
+    return send_from_directory(OUTPUT_DIR, filename)
+
 PORT = 5182
+
+# ─────────────────────────────────────────────────────────────────
+# AI 生图 Provider — 直接调 laozhang（不再依赖 image-studio server）
+# ─────────────────────────────────────────────────────────────────
+
+LAOZHANG_CONFIG = {
+    "api_key": os.getenv("LAOZHANG_API_KEY", "").strip(),
+    "api_url": os.getenv("LAOZHANG_API_URL", "https://api.laozhang.ai/v1").strip(),
+    "model":   os.getenv("LAOZHANG_IMAGE_MODEL", "gemini-3.1-flash-image-preview").strip(),
+}
+
+
+def _check_laozhang_provider() -> dict:
+    """检查 laozhang provider 是否就绪（仅读 env，不发起网络请求）。"""
+    return {
+        "configured": bool(LAOZHANG_CONFIG["api_key"]),
+        "model": LAOZHANG_CONFIG["model"],
+    }
+
+
+def _proxy_image(url: str) -> str | None:
+    """下载远程图片并转 data URL（避免 base64 损失），带回 Referer UA。"""
+    try:
+        parsed = requests.utils.urlparse(url)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            "Referer": f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else "",
+        }
+        r = requests.get(url, headers=headers, timeout=30, stream=True)
+        if r.status_code != 200:
+            return None
+        buf = b""
+        for chunk in r.iter_content(chunk_size=64 * 1024):
+            if chunk:
+                buf += chunk
+            if len(buf) > 50 * 1024 * 1024:
+                return None  # 50MB 上限
+        content_type = r.headers.get("content-type", "image/jpeg").split(";")[0].strip() or "image/jpeg"
+        b64 = base64.b64encode(buf).decode("ascii")
+        return f"data:{content_type};base64,{b64}"
+    except Exception:
+        return None
+
+
+def _generate_image_local(prompt: str, reference_b64: list[str], size: str, image_size: str) -> dict:
+    """本地调用 laozhang API 生成图片（移植自 image-studio/server.cjs）。
+
+    返回 { ok: bool, data?: dict, error?: str }
+    """
+    if not LAOZHANG_CONFIG["api_key"]:
+        return {"ok": False, "error": "laozhang API key 未配置（在 GIGAB2B/.env 中设置 LAOZHANG_API_KEY）"}
+
+    try:
+        content = []
+        for img in reference_b64:
+            if isinstance(img, str) and len(img) > 100:
+                content.append({"type": "image_url", "image_url": {"url": img}})
+        content.append({"type": "text", "text": prompt})
+
+        body = {
+            "model": LAOZHANG_CONFIG["model"],
+            "messages": [{"role": "user", "content": content}],
+            "max_tokens": 4096,
+        }
+
+        # aspectRatio + imageSize → imageConfig（与 image-studio server.cjs 一致）
+        aspect_ratio_map = {
+            "1600x1600": "1:1",
+            "1464x600":  "1464:600",   # 非常用比例，下游可能不支持，回落到 21:9 或 closest
+            "1200x900":  "4:3",
+            "2000x1000": "2:1",
+        }
+        ar = aspect_ratio_map.get(size, "1:1")
+        body["imageConfig"] = {"aspectRatio": ar, "imageSize": image_size}
+
+        url = f"{LAOZHANG_CONFIG['api_url']}/chat/completions"
+        resp = requests.post(
+            url,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {LAOZHANG_CONFIG['api_key']}",
+            },
+            json=body,
+            timeout=180,
+        )
+
+        if resp.status_code != 200:
+            err_text = (resp.text or "")[:500]
+            return {"ok": False, "error": f"laozhang API 错误: HTTP {resp.status_code}", "detail": err_text}
+
+        return {"ok": True, "data": resp.json()}
+    except requests.exceptions.Timeout:
+        return {"ok": False, "error": "laozhang API 超时（180s）"}
+    except Exception as e:
+        return {"ok": False, "error": f"laozhang 调用异常: {e}"}
+
+
+def _parse_laozhang_response(raw: dict) -> str:
+    """从 laozhang 响应里提取第一张图片的 base64 / data URL。
+
+    兼容多种返回结构：
+    1) data.images = [{base64|data_url}, ...]
+    2) data.choices[0].message.content = 字符串（纯 base64 或 markdown 含 ![](data:...)）
+    3) data.choices[0].message.content = 列表（OpenAI multimodal 多 content 项）
+    """
+    try:
+        d = raw.get("data", raw) or {}
+
+        # 形态 1：data.images
+        images = d.get("images")
+        if images and isinstance(images, list):
+            first = images[0]
+            if isinstance(first, dict):
+                out = first.get("base64", "") or first.get("data_url", "") or first.get("b64_json", "") or ""
+                if out:
+                    return out if out.startswith("data:") else f"data:image/jpeg;base64,{out}"
+
+        # 形态 2/3：data.choices[0].message.content
+        choices = d.get("choices") or []
+        if choices:
+            msg = choices[0].get("message", {}) or {}
+            content = msg.get("content")
+
+            # content 是字符串：可能是纯 base64、或 markdown 含 data URL
+            if isinstance(content, str):
+                m = re.search(r"(data:image/[a-zA-Z0-9+]+;base64,[A-Za-z0-9+/=]+)", content)
+                if m:
+                    return m.group(1)
+                # 纯 base64 大字符串
+                if len(content) > 200 and re.fullmatch(r"[A-Za-z0-9+/=\s]+", content):
+                    return f"data:image/jpeg;base64,{content.strip()}"
+                return ""
+
+            # content 是列表（多模态 content items）
+            if isinstance(content, list):
+                for item in content:
+                    if not isinstance(item, dict):
+                        continue
+                    # OpenAI image_url 形态
+                    if "image_url" in item:
+                        url = item["image_url"]
+                        if isinstance(url, dict):
+                            url = url.get("url", "")
+                        if isinstance(url, str) and url.startswith("data:"):
+                            return url
+                        if isinstance(url, str) and url:
+                            return f"data:image/jpeg;base64,{url}"
+                    # inline_data 形态（Gemini 风格）
+                    if "inline_data" in item:
+                        inline = item["inline_data"] or {}
+                        b64 = inline.get("data", "")
+                        mime = inline.get("mime_type", "image/jpeg")
+                        if b64:
+                            return f"data:{mime};base64,{b64}"
+                    # b64_json 形态
+                    if item.get("type") == "image" or "b64_json" in item:
+                        b64 = item.get("b64_json") or item.get("base64") or ""
+                        if b64:
+                            return b64 if b64.startswith("data:") else f"data:image/jpeg;base64,{b64}"
+                return ""
+    except (KeyError, IndexError, TypeError):
+        pass
+    return ""
 
 # ─────────────────────────────────────────────────────────────────
 # GIGA API
@@ -56,8 +231,8 @@ def _load_env():
                 continue
             key, _, val = line.partition("=")
             key, val = key.strip(), val.strip()
-    if key and val and key not in os.environ:
-            os.environ[key] = val
+            if key and val and key not in os.environ:
+                os.environ[key] = val
 
 
 _load_env()
@@ -143,28 +318,6 @@ def giga_fetch_product(sku: str, market: str) -> dict:
 # ─────────────────────────────────────────────────────────────────
 # AI 文案生成（通过 image-studio server）
 # ─────────────────────────────────────────────────────────────────
-
-def _check_image_studio_server() -> dict:
-    """返回 server 状态和 providers。"""
-    try:
-        r = requests.get(f"{IMAGE_STUDIO_BASE}/api/health", timeout=5)
-        if r.status_code == 200:
-            return {"ok": True, "providers": r.json().get("aiProviders", {})}
-    except Exception:
-        pass
-    return {"ok": False, "providers": {}}
-
-
-def _proxy_image(url: str) -> str | None:
-    try:
-        r = requests.get(f"{IMAGE_STUDIO_BASE}/api/proxy-image", params={"url": url}, timeout=30)
-        if r.status_code == 200:
-            d = r.json()
-            if d.get("ok"):
-                return d.get("dataUrl")
-    except Exception:
-        pass
-    return None
 
 
 def _build_copy_prompt(product: dict, market: str) -> str:
@@ -274,7 +427,93 @@ Format: word1, word2, word3 ..."""
     return prompt
 
 
+def _strip_think_blocks(text: str) -> str:
+    """去除 reasoning 模型（如 MiniMax M3）的 思考过程 块。
+    常见格式：  ...  （可能多段）。
+    """
+    # 1. 匹配  块
+    text = re.sub(r"<\s*think\s*>.*?<\s*/\s*think\s*>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    # 2. 兼容  等变体
+    text = re.sub(r"<\s*(?:reasoning|thought|reflection)\s*>.*?<\s*/\s*(?:reasoning|thought|reflection)\s*>",
+                  "", text, flags=re.DOTALL | re.IGNORECASE)
+    # 3. 兼容  仅开标签没有闭标签的情况（保守处理：只在明显是元描述时剥掉）
+    #    例如： Let me analyze...  ...
+    #    这一步放在最后，按 "##" 切分时自然会把这种思考段当作 intro 丢弃
+    return text
+
+
+def _strip_md(text: str) -> str:
+    """去除行首 markdown 标记 (#, **, * 等)。"""
+    text = re.sub(r"^#{1,6}\s*", "", text)
+    text = re.sub(r"^\*\*\s*|\s*\*\*$", "", text)
+    text = re.sub(r"^[\*\-\•]\s+", "", text)
+    return text.strip()
+
+
+def _strip_wrapping_quotes(text: str) -> str:
+    """去除首尾成对的中英引号（包括嵌套引号）。"""
+    t = text
+    # 最多剥 3 层嵌套引号
+    for _ in range(3):
+        if len(t) >= 2 and t[0] == t[-1] and t[0] in '"\'""''':
+            t = t[1:-1].strip()
+        else:
+            break
+    return t
+
+
+def _section_blocks(text: str) -> dict:
+    """按 ### / ## 标题切分原文，返回 {标题小写: 正文} 字典。
+    忽略空标题、纯符号标题、长度 < 2 的标题。
+    """
+    blocks: dict[str, str] = {}
+    # 用 ### 或 ## 作为切分标记
+    parts = re.split(r"(?m)^#{1,3}\s+(.+?)\s*$", text)
+    # parts 形如 [前言, 标题1, 正文1, 标题2, 正文2, ...]
+    i = 1
+    while i < len(parts) - 1:
+        heading = parts[i].strip()
+        body = parts[i + 1] if i + 1 < len(parts) else ""
+        body = re.split(r"(?m)^---+\s*$", body)[0]
+        key = heading.lower()
+        if len(key) >= 2 and not re.match(r"^[\W_]+$", key):
+            # 同名标题：保留较长的那个（AI 有时会重复）
+            if key not in blocks or len(body.strip()) > len(blocks[key]):
+                blocks[key] = body
+        i += 2
+    return blocks
+
+
+def _first_meaningful_line(body: str, min_len: int = 5, strip_think: bool = True) -> str:
+    """取 body 的第一个非空、非纯符号的行，去掉 markdown 标记和首尾引号。
+    如果 strip_think=True，会跳过任何含  等思考残留的行。
+    """
+    for line in body.splitlines():
+        s = _strip_md(line)
+        if not s:
+            continue
+        if len(s) < min_len:
+            continue
+        if re.match(r"^[\[\]（）()\s]+$", s):
+            continue
+        # 跳过包含未剥干净的思考标记的行
+        if strip_think and re.search(r"</?\s*(think|reasoning|thought)\s*>", s, re.IGNORECASE):
+            continue
+        return s
+    return ""
+
+
 def _parse_copy_response(raw: dict) -> dict:
+    """稳健版：从 AI 返回中解析 title / bullets / description / search_terms。
+
+    策略：
+    0. 剥掉 reasoning 模型（如 MiniMax M3）的  思考过程 块
+    1. 拿到 choices[0].message.content
+    2. 按 ### / ## 标题切分到 blocks dict（同名取最长）
+    3. 在 blocks 中按"标题同义词"匹配到正文
+    4. title / search_terms 取首个有效行（剥引号）；bullets 按空行切分；description 拼所有有效行
+    5. 全部失败时回退到正则全文兜底
+    """
     result = {"title": "", "bullets": [], "description": "", "search_terms": ""}
     try:
         content = raw.get("data", {}).get("choices", [{}])[0].get("message", {}).get("content", "")
@@ -283,90 +522,230 @@ def _parse_copy_response(raw: dict) -> dict:
     if not content:
         return result
 
-    def section_after(text, *patterns):
-        for pat in patterns:
-            m = re.search(pat, text, re.IGNORECASE)
-            if not m:
-                continue
-            start = m.end()
-            rest = text[start:]
-            stop = re.search(r"\n(?=#{1,3}\s|\n---)", rest)
-            return rest[:stop.start()] if stop else rest
+    # 0. 剥掉  思考块（MiniMax M3 等 reasoning 模型会输出）
+    content = _strip_think_blocks(content)
+
+    blocks = _section_blocks(content)
+
+    # ── 标题同义词表（支持中英德法） ──
+    TITLE_KEYS = [
+        "product title", "title", "produkttitel", "titre du produit",
+        "产品标题", "商品标题", "titre",
+    ]
+    BULLET_KEYS = [
+        "five bullet points", "five bullets", "bullet points", "bullets",
+        "fünf kernpunkte", "kernpunkte", "bullet points",
+        "cinq points clés", "points clés", "cinq puces",
+        "五点描述", "五点要点", "五点", "产品要点",
+    ]
+    DESC_KEYS = [
+        "product description", "description", "produktbeschreibung",
+        "description du produit",
+        "产品描述", "商品描述", "产品介绍",
+    ]
+    ST_KEYS = [
+        "search terms", "suchbegriffe", "mots-clés", "mots cles",
+        "搜索词", "搜索关键词", "关键词",
+    ]
+
+    def find_block(keys: list[str]) -> str:
+        # 先精确匹配（小写）
+        for k in keys:
+            if k in blocks:
+                return blocks[k]
+        # 再 contains 匹配
+        for bk, bv in blocks.items():
+            for k in keys:
+                if k in bk or bk in k:
+                    return bv
         return ""
 
-    # Title
-    ts = (section_after(content, r"###\s*Product\s*Title[^\n]*\n+", r"###\s*产品标题[^\n]*\n+", r"###\s*Titre[^\n]*\n+")
-          or section_after(content, r"##\s*Product\s*Title[^\n]*\n+", r"##\s*产品标题[^\n]*\n+"))
-    if ts:
-        for line in ts.strip().splitlines():
-            line = line.strip()
-            if line and len(line) > 5 and not re.match(r"^[\[\]（）()\s]+$", line):
-                result["title"] = line
-                break
+    # ── Title ──
+    tb = find_block(TITLE_KEYS)
+    if tb:
+        result["title"] = _strip_wrapping_quotes(_first_meaningful_line(tb, min_len=5))
     if not result["title"]:
-        m = re.search(r"(?:^|\n)(?:Title|Titre)[：:]\s*(.+?)(?:\n|$)", content, re.IGNORECASE)
+        # 兜底：在全文找 "Title:" 之类的前缀
+        m = re.search(r"(?:^|\n)(?:Product\s*Title|Titre|Titel|Title)[：:]\s*(.+?)(?:\n|$)", content, re.IGNORECASE)
         if m:
-            result["title"] = m.group(1).strip()
+            result["title"] = _strip_wrapping_quotes(_strip_md(m.group(1)))
 
-    # Bullets
-    bs = (section_after(content, r"###\s*Five\s*Bullet[^\n]*\n+", r"###\s*Bullets?[^\n]*\n+", r"###\s*Points[^\n]*\n+")
-          or section_after(content, r"##\s*Five\s*Bullet[^\n]*\n+"))
-    if bs:
-        parts = re.split(r"\n\s*\n", bs)
+    # ── Bullets ──
+    bb = find_block(BULLET_KEYS)
+    if bb:
+        # 按空行切；每段开头可能有 "1." "2." 或 "-" "*" 标记，去掉
+        parts = re.split(r"\n\s*\n", bb)
         bullets = []
         for p in parts:
-            cleaned = re.sub(r"^[\s\d.．)）\-\–•]+", "", p.strip()).strip()
-            if cleaned and len(cleaned) > 10:
-                bullets.append(cleaned)
+            # 段内多行合并
+            lines = [_strip_md(l) for l in p.splitlines() if _strip_md(l)]
+            if not lines:
+                continue
+            # 去掉首行的 "1." "1）" "- " "* "
+            head = lines[0]
+            head = re.sub(r"^\d{1,2}\s*[.．)）]\s*", "", head)
+            head = re.sub(r"^[\-\•\*]\s+", "", head)
+            lines[0] = head.strip()
+            text = " ".join(l for l in lines if l).strip()
+            text = _strip_wrapping_quotes(text)
+            # 过滤：太短的、明显是"标题提示"而不是 bullet 的
+            # 例如 "Product Title (max 200 characters, German)"
+            if len(text) < 30:
+                continue
+            if re.match(r"^[A-Z][\w\s\(\)]{0,40}$", text) and "(" in text and "character" in text.lower():
+                continue
+            # 过滤明显的小标题/章节名（不是 bullet，是用户问句/章节描述）
+            if re.match(r"^[A-Z][^.]*$", text) and len(text.split()) <= 6 and not re.search(r"[a-zäöüß]{4,}", text):
+                continue
+            bullets.append(text)
             if len(bullets) >= 5:
                 break
         if bullets:
             result["bullets"] = bullets
     if not result["bullets"]:
-        matches = re.findall(r"(?:^|\n)(?:\d+[.．)]\s*|[-•–]\s*)([^\n]{20,300})", content, re.MULTILINE)
+        # 兜底：抓全文中所有 "1. xxx" "2. xxx" 形式（行内）
+        matches = re.findall(r"(?:^|\n)\s*(?:\d{1,2}\s*[.．)）]\s*|[\-\•\*]\s+)([^\n]{30,400})", content)
         if matches:
-            result["bullets"] = [m.strip() for m in matches[:5] if len(m.strip()) > 10]
+            result["bullets"] = [_strip_wrapping_quotes(_strip_md(m)) for m in matches[:5] if _strip_md(m)]
 
-    # Description
-    ds = (section_after(content, r"###\s*Product\s*Description[^\n]*\n+", r"###\s*产品描述[^\n]*\n+", r"###\s*Description[^\n]*\n+")
-          or section_after(content, r"##\s*Product\s*Description[^\n]*\n+"))
-    if ds:
-        lines = [l.strip() for l in ds.splitlines() if l.strip() and not re.match(r"^[\[\]（）()\s]+$", l.strip())]
+    # ── Description ──
+    db = find_block(DESC_KEYS)
+    if db:
+        lines = []
+        for raw_line in db.splitlines():
+            s = _strip_md(raw_line)
+            if not s:
+                continue
+            if re.match(r"^[\[\]（）()\s]+$", s):
+                continue
+            # 跳过包含未剥干净的思考标记
+            if re.search(r"</?\s*(think|reasoning|thought)\s*>", s, re.IGNORECASE):
+                continue
+            lines.append(s)
         result["description"] = "\n".join(lines).strip()
 
-    # Search Terms
-    ss = (section_after(content, r"###\s*Search\s*Terms?[^\n]*\n+", r"###\s*Suchbegriffe[^\n]*\n+", r"###\s*Mots[^\n]*\n+")
-          or section_after(content, r"##\s*Search\s*Terms?[^\n]*\n+", r"##\s*Suchbegriffe[^\n]*\n+"))
-    if ss:
-        for line in ss.splitlines():
-            line = line.strip()
-            if line and not re.match(r"^[\[\]（）()\s]+$", line):
-                result["search_terms"] = line
-                break
+    # Fallback: 如果 description 为空，从 bullets 拼一段占位（HTML 格式，符合 Amazon）
+    if not result["description"] and result["bullets"]:
+        result["description"] = "<b>Produktmerkmale:</b><br>\n" + \
+            "<br>\n".join(f"<li>{b}</li>" for b in result["bullets"])
+
+    # Fallback: 如果 search_terms 为空但 title 有，按产品名生成基础搜索词
+    if not result["search_terms"] and result["title"]:
+        # 提取 title 中的关键词（按空格切，去短词）
+        words = [w.strip(".,;:()") for w in result["title"].split() if len(w) > 3]
+        result["search_terms"] = ", ".join(words[:15])
+
+    # ── Search Terms ──
+    sb = find_block(ST_KEYS)
+    if sb:
+        st = _strip_wrapping_quotes(_first_meaningful_line(sb, min_len=3))
+        # 如果第一行像"Search Terms - xxx"这种描述而不是真正的关键词列表，跳过找下一行
+        if re.match(r"^[A-Za-z\s\-–]+$", st) and "," not in st and len(st.split()) <= 8:
+            for line in sb.splitlines()[1:]:
+                s2 = _strip_wrapping_quotes(_strip_md(line))
+                if s2 and "," in s2:
+                    st = s2
+                    break
+        result["search_terms"] = st[:300]
     if not result["search_terms"]:
-        m = re.search(r"(?:Search\s*Terms|Suchbegriffe)[：:]\s*(.+?)(?:\n|$)", content, re.IGNORECASE | re.DOTALL)
+        m = re.search(r"(?:Search\s*Terms|Suchbegriffe|Mots[-\s]?[Cc]lés?)[：:]\s*(.+?)(?:\n|$)", content, re.IGNORECASE)
         if m:
-            result["search_terms"] = m.group(1).strip()[:250]
+            result["search_terms"] = _strip_wrapping_quotes(_strip_md(m.group(1)))[:300]
 
     return result
 
 
+def _dump_ai_response(sku: str, market: str, raw: dict, parsed: dict) -> None:
+    """把 AI 原始响应 + 解析结果写入 .logs/ai_response_<sku>_<market>.txt。
+    排错时直接看这个文件就知道 AI 返回了什么、解析器抽到了什么。
+    """
+    try:
+        log_dir = os.path.join(os.path.dirname(__file__), ".logs")
+        os.makedirs(log_dir, exist_ok=True)
+        ts = time.strftime("%Y%m%d-%H%M%S")
+        path = os.path.join(log_dir, f"ai_response_{sku}_{market}_{ts}.txt")
+        content = ""
+        try:
+            content = raw.get("data", {}).get("choices", [{}])[0].get("message", {}).get("content", "")
+        except (KeyError, IndexError, TypeError):
+            pass
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(f"=== SKU: {sku} | Market: {market} | Time: {ts} ===\n\n")
+            f.write("--- RAW AI RESPONSE ---\n")
+            f.write(content or "(empty)")
+            f.write("\n\n--- PARSED ---\n")
+            f.write(f"title:        {parsed.get('title','')!r}\n")
+            f.write(f"bullets:      {len(parsed.get('bullets',[]))} items\n")
+            for i, b in enumerate(parsed.get("bullets", []), 1):
+                f.write(f"  [{i}] {b}\n")
+            f.write(f"description:  {len(parsed.get('description','') or '')} chars\n")
+            f.write(f"search_terms: {parsed.get('search_terms','')!r}\n")
+    except Exception as e:
+        print(f"[dump_ai_response] 写入日志失败: {e}")
+
+
+MINIMAX_CONFIG = {
+    "api_key": os.getenv("MINIMAX_API_KEY", "").strip(),
+    "api_url": os.getenv("MINIMAX_API_URL", "https://api.minimaxi.com/v1").strip(),
+    "model":   os.getenv("MINIMAX_MODEL", "MiniMax-M3").strip(),
+}
+
+
+def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 4096) -> dict:
+    """本地调 AI 文案模型（移植自 image-studio/server.cjs）。
+
+    返回 { ok: bool, content?: str, error?: str }
+    """
+    cfg = MINIMAX_CONFIG if model == "minimax" else None
+    if cfg is None:
+        return {"ok": False, "error": f"不支持的 model: {model}"}
+    if not cfg["api_key"]:
+        return {"ok": False, "error": f"{model} API key 未配置（在 GIGAB2B/.env 中设置 MINIMAX_API_KEY）"}
+
+    try:
+        url = f"{cfg['api_url']}/chat/completions"
+        resp = requests.post(
+            url,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {cfg['api_key']}",
+            },
+            json={
+                "model": cfg["model"],
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+            },
+            timeout=120,
+        )
+        if resp.status_code != 200:
+            err_text = (resp.text or "")[:500]
+            return {"ok": False, "error": f"{model} API 错误: HTTP {resp.status_code}", "detail": err_text}
+        data = resp.json()
+        content = (((data.get("choices") or [{}])[0]).get("message") or {}).get("content", "")
+        return {"ok": True, "content": content, "raw": data}
+    except requests.exceptions.Timeout:
+        return {"ok": False, "error": f"{model} API 超时（120s）"}
+    except Exception as e:
+        return {"ok": False, "error": f"{model} 调用异常: {e}"}
+
+
 def ai_generate_copy(product: dict, market: str) -> dict:
-    """通过 image-studio server 调用 MiniMax M3 生成文案。"""
-    status = _check_image_studio_server()
-    if not status["ok"]:
-        raise RuntimeError("image-studio server 未运行，请先启动 server（start_studio.bat）")
-    if status["providers"].get("minimax") != "configured":
-        raise RuntimeError(f"MiniMax API Key 未配置。image-studio server 状态: {status['providers']}")
+    """直接本地调 MiniMax M3 生成 Listing 文案（不再依赖 image-studio server）。"""
+    if not MINIMAX_CONFIG["api_key"]:
+        raise RuntimeError(
+            "MiniMax API Key 未配置（在 GIGAB2B/.env 中设置 MINIMAX_API_KEY）"
+        )
 
     prompt = _build_copy_prompt(product, market)
-    resp = requests.post(
-        f"{IMAGE_STUDIO_BASE}/api/generate-text",
-        json={"model": "minimax", "messages": [{"role": "user", "content": prompt}]},
-        timeout=120,
-    )
-    resp.raise_for_status()
-    return _parse_copy_response(resp.json())
+    gen = _generate_text_local(prompt, model="minimax")
+    if not gen["ok"]:
+        raise RuntimeError(f"MiniMax 生成失败: {gen.get('error', 'unknown')}")
+
+    # 兼容旧 image-studio 响应形态：包一层 { success, data } 再交给解析器
+    wrapped = {"success": True, "data": gen["raw"]}
+    parsed = _parse_copy_response(wrapped)
+    _dump_ai_response(product.get("sku", "unknown"), market, gen["raw"], parsed)
+    return parsed
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -436,8 +815,12 @@ def _detect_market_from_template(filepath: str) -> str | None:
     return None
 
 
-def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, row: int = 7, image_strategy: str = "use_giga") -> str:
-    """将产品数据 + AI 优化写入 Excel，返回输出文件路径。"""
+def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, row: int = 7, image_strategy: str = "use_giga", image_overrides: dict | None = None) -> str:
+    """将产品数据 + AI 优化写入 Excel，返回输出文件路径。
+
+    image_overrides: { "main": "/outputs/xxx.jpg", "pt1": "/outputs/yyy.jpg", ... }
+                    缺失的槽位用 GIGA 原图。
+    """
     template_path = os.path.join(TEMPLATE_DIR, template_name)
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"模板文件不存在: {template_path}")
@@ -452,6 +835,18 @@ def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, 
     color = attrs.get("Main Color") or product.get("mainColor") or product.get("colorMap") or ""
     imgs  = product.get("imageUrls") or []
 
+    # 槽位顺序：main, pt1..pt8
+    slot_names = ["main", "pt1", "pt2", "pt3", "pt4", "pt5", "pt6", "pt7", "pt8"]
+    overrides = image_overrides or {}
+    slot_urls: list[str] = []
+    for i, name in enumerate(slot_names):
+        if name in overrides and overrides[name]:
+            slot_urls.append(overrides[name])
+        elif i < len(imgs):
+            slot_urls.append(imgs[i])
+        else:
+            slot_urls.append("")
+
     w(COL_MAP["sku"],             product.get("sku", ""))
     w(COL_MAP["product_type"],   "PLANTER")
     w(COL_MAP["sku2"],           "full_update")
@@ -459,10 +854,11 @@ def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, 
     w(COL_MAP["mpn"],            product.get("mpn", ""))
     w(COL_MAP["manufacturer"],   "YUDA HOME FURNITURE")
 
-    if imgs:
-        w(COL_MAP["main_image"], imgs[0])
-    for i, url in enumerate(imgs[1:9], start=25):
-        w(i, url)
+    if slot_urls and slot_urls[0]:
+        w(COL_MAP["main_image"], slot_urls[0])
+    for i, url in enumerate(slot_urls[1:9], start=25):
+        if url:
+            w(i, url)
 
     bullets = ai_result.get("bullets") or product.get("characteristics", [])[:5]
     w(COL_MAP["bullet1"], bullets[0] if len(bullets) > 0 else "")
@@ -569,11 +965,11 @@ def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, 
 
 @app.route("/api/health", methods=["GET"])
 def health():
-    studio = _check_image_studio_server()
+    laozhang = _check_laozhang_provider()
     has_giga = bool(os.environ.get("GIGA_DE_TAX_CLIENT_ID"))
     return jsonify({
         "status": "ok",
-        "studio": studio,
+        "laozhang": laozhang,
         "has_giga_creds": has_giga,
         "port": PORT,
     })
@@ -581,14 +977,25 @@ def health():
 
 @app.route("/api/server-status", methods=["GET"])
 def server_status():
-    """检查 image-studio server 和 GIGA 凭证状态。"""
-    studio = _check_image_studio_server()
+    """检查 AI providers（laozhang 生图 + minimax 文案）和 GIGA 凭证状态。"""
+    laozhang = _check_laozhang_provider()
+    minimax_ok = bool(MINIMAX_CONFIG["api_key"])
+    # 保持前端兼容：image_studio 字段返回 ok / providers（minimax + laozhang）
+    image_studio = {
+        "ok": True,
+        "providers": {
+            "laozhang": "configured" if laozhang["configured"] else "missing",
+            "minimax":  "configured" if minimax_ok else "missing",
+        },
+        "model": laozhang["model"],
+        "text_model": MINIMAX_CONFIG["model"],
+    }
     giga_status = {}
     for market, keys in MARKET_KEYS.items():
         cid = os.environ.get(keys[0], "").strip()
         giga_status[market] = bool(cid)
     return jsonify({
-        "image_studio": studio,
+        "image_studio": image_studio,
         "giga_markets": giga_status,
         "detected_market": None,
     })
@@ -653,12 +1060,20 @@ def detect_market():
 
 @app.route("/api/run-pipeline", methods=["POST"])
 def run_pipeline():
-    """主流程：GIGA 取数 → AI 优化 → 填入 Excel"""
+    """主流程：GIGA 取数 → AI 优化 → 填入 Excel
+
+    流式响应（SSE）：每完成一步 emit 一条 ``data: <json>\\n\\n``，
+    最后一条 status=done / error。客户端可在任意时刻拿到完整 steps 并停止 spinner。
+    """
     data = request.json or {}
     sku  = (data.get("sku") or "").strip()
     market = data.get("market", "DE_TAX")
     template_name = data.get("template_filename", "")
     image_strategy = data.get("image_strategy", "use_giga")
+
+    def _emit(payload: dict):
+        # 把每一步推到响应体，格式与之前一次返回的 steps[] 保持一致（status=running 表示进行中）
+        return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
     if not sku:
         return jsonify({"error": "SKU 不能为空"}), 400
@@ -666,61 +1081,318 @@ def run_pipeline():
     if not template_name:
         template_name = MARKET_TEMPLATES.get(market, "PLANTER-de.xlsm")
 
-    steps = []
+    # 必须延迟 stream 初始化到确定有数据要发之后 — 一些 wsgi 服务器会丢弃空响应
+    def _gen():
+        try:
+            steps = []
 
-    # Step 1: GIGA 取数
-    try:
-        product = giga_fetch_product(sku, market)
-        steps.append({"step": "fetch", "status": "ok", "sku": sku, "product_name": product.get("productName", "")[:80]})
-    except Exception as e:
-        steps.append({"step": "fetch", "status": "error", "message": str(e)})
-        return jsonify({"error": f"GIGA 取数失败: {e}", "steps": steps}), 400
+            # Step 1: GIGA 取数
+            yield _emit({"type": "step", "status": "running", "step": "fetch", "label": "GIGA 取数"})
+            try:
+                product = giga_fetch_product(sku, market)
+                step_info = {"step": "fetch", "status": "ok", "sku": sku, "product_name": (product.get("productName") or "")[:80]}
+                steps.append(step_info)
+                yield _emit({"type": "step", **step_info})
+            except Exception as e:
+                err = {"step": "fetch", "status": "error", "message": str(e)}
+                steps.append(err)
+                yield _emit({"type": "step", **err})
+                yield _emit({"type": "error", "status": "error", "error": f"GIGA 取数失败: {e}", "steps": steps})
+                return
 
-    # Step 2: AI 文案优化
-    try:
-        ai_result = ai_generate_copy(product, market)
-        steps.append({
-            "step": "ai_copy",
-            "status": "ok",
-            "title": ai_result.get("title", "")[:80],
-            "bullets_count": len(ai_result.get("bullets", [])),
-            "description_len": len(ai_result.get("description") or ""),
-        })
-    except Exception as e:
-        steps.append({"step": "ai_copy", "status": "error", "message": str(e)})
-        return jsonify({"error": f"AI 文案生成失败: {e}", "steps": steps}), 400
+            # Step 2: AI 文案优化
+            yield _emit({"type": "step", "status": "running", "step": "ai_copy", "label": "AI 文案生成"})
+            try:
+                ai_result = ai_generate_copy(product, market)
+                step_info = {
+                    "step": "ai_copy",
+                    "status": "ok",
+                    "title": (ai_result.get("title") or "")[:80],
+                    "bullets_count": len(ai_result.get("bullets") or []),
+                    "description_len": len(ai_result.get("description") or ""),
+                }
+                steps.append(step_info)
+                yield _emit({"type": "step", **step_info})
+            except Exception as e:
+                err = {"step": "ai_copy", "status": "error", "message": str(e)}
+                steps.append(err)
+                yield _emit({"type": "step", **err})
+                yield _emit({"type": "error", "status": "error", "error": f"AI 文案生成失败: {e}", "steps": steps})
+                return
 
-    # Step 3: 填入 Excel
-    try:
-        out_path = fill_excel(product, ai_result, market, template_name, image_strategy=image_strategy)
-        steps.append({"step": "fill", "status": "ok", "output": os.path.basename(out_path)})
-    except Exception as e:
-        steps.append({"step": "fill", "status": "error", "message": str(e)})
-        return jsonify({"error": f"Excel 填入失败: {e}", "steps": steps}), 400
+            # Step 3: 填入 Excel
+            yield _emit({"type": "step", "status": "running", "step": "fill", "label": "填入 Excel"})
+            try:
+                out_path = fill_excel(product, ai_result, market, template_name, image_strategy=image_strategy)
+                step_info = {"step": "fill", "status": "ok", "output": os.path.basename(out_path)}
+                steps.append(step_info)
+                yield _emit({"type": "step", **step_info})
+            except Exception as e:
+                err = {"step": "fill", "status": "error", "message": str(e)}
+                steps.append(err)
+                yield _emit({"type": "step", **err})
+                yield _emit({"type": "error", "status": "error", "error": f"Excel 填入失败: {e}", "steps": steps})
+                return
 
-    return jsonify({
-        "success": True,
-        "steps": steps,
-        "result": {
-            "sku": sku,
-            "market": market,
-            "market_name": MARKET_NAMES.get(market, (market, ""))[0],
-            "ai_title": ai_result.get("title", ""),
-            "ai_bullets": ai_result.get("bullets", []),
-            "ai_description": ai_result.get("description", ""),
-            "ai_search_terms": ai_result.get("search_terms", ""),
-            "product_name": product.get("productName", ""),
-            "image_count": len(product.get("imageUrls") or []),
-            "output_file": os.path.basename(out_path),
-        },
+            # 终态：把所有 AI 生成的文案 + 产品图片 URL 一起随 done 事件返回
+            yield _emit({
+                "type": "done",
+                "status": "ok",
+                "steps": steps,
+                "result": {
+                    "sku": sku,
+                    "market": market,
+                    "market_name": MARKET_NAMES.get(market, (market, ""))[0],
+                    "ai_title": ai_result.get("title", ""),
+                    "ai_bullets": ai_result.get("bullets", []),
+                    "ai_description": ai_result.get("description", ""),
+                    "ai_search_terms": ai_result.get("search_terms", ""),
+                    "product_name": product.get("productName", ""),
+                    "imageUrls": product.get("imageUrls") or [],
+                    "image_count": len(product.get("imageUrls") or []),
+                    "output_file": os.path.basename(out_path),
+                    "mainColor": product.get("attributes", {}).get("Main Color") or product.get("mainColor") or "",
+                    "mainMaterial": product.get("mainMaterial", ""),
+                    "texture": product.get("texture", ""),
+                    "size": f"{product.get('assembledLength','?')} x {product.get('assembledWidth','?')} x {product.get('assembledHeight','?')} cm",
+                    "attributes": product.get("attributes", {}),
+                },
+            })
+        except Exception as e:
+            # 兜底：流中任何未捕获异常都给客户端一个 error 事件
+            yield _emit({"type": "error", "status": "error", "error": f"流水线异常: {e}"})
+
+    return Response(_gen(), mimetype="text/event-stream", headers={
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",  # nginx: 不要 buffer
+        "Connection": "keep-alive",
     })
 
 
-@app.route("/api/fetch-only", methods=["POST"])
-def fetch_only():
-    """仅取数，不 AI 优化（用于预览）"""
+# 场景提示词模板（按 scene_type 切换基础场景描述，按 background/lighting/angle 进一步定制）
+_SCENE_TYPE_BASE = {
+    "white-bg":  "Product on pure white background, centered, professional photography, no shadows, no reflections, high detail, commercial quality",
+    "lifestyle": "Product in lifestyle setting, non-white background, soft natural lighting, warm atmosphere, professional e-commerce photography",
+    "outdoor":   "Product in outdoor setting, natural sunlight, contextual environment, professional e-commerce photography, vivid atmosphere",
+    "aplus":     "Lifestyle product shot, clean and modern setting, soft natural lighting, professional e-commerce photography, detailed composition",
+}
+_BACKGROUND_PHRASE = {
+    "pure-white": "background is pure clean white (#FFFFFF)",
+    "gradient":   "background is soft gradient (light gray to white)",
+    "indoor":     "background is a cozy indoor environment (living room or kitchen)",
+    "outdoor":    "background is outdoor (garden, terrace, or balcony)",
+}
+_LIGHTING_PHRASE = {
+    "soft": "lighting is soft and even, natural daylight",
+    "warm": "lighting is warm, golden hour tone",
+    "cool": "lighting is cool, blue-tinted",
+}
+_ANGLE_PHRASE = {
+    "front":  "camera angle is front-facing, eye-level",
+    "45deg":  "camera angle is 45-degree elevated perspective, three-quarter view",
+    "top":    "camera angle is top-down, bird's eye view",
+}
+
+
+# 尺寸 → image-studio 的 size / imageSize 参数映射
+_SIZE_MAP = {
+    "1600x1600": ("1600x1600", "1024x1024"),
+    "1464x600":  ("1464x600",  "1024x512"),
+    "1200x900":  ("1200x900",  "1024x768"),
+    "2000x1000": ("2000x1000", "1024x512"),
+}
+
+
+def _build_generation_prompt(image_type: str, size: str, copy: dict, product: dict, prompt_extra: str) -> tuple[str, str, str]:
+    """根据 image_type + size 切换场景模板，吸收中间栏全文案 + 产品尺寸/颜色/材质/纹理。
+
+    返回 (完整 prompt, size_param, image_size_param)。
+    """
+    title       = (copy.get("title") or product.get("productName") or "")[:200]
+    bullets     = copy.get("bullets") or []
+    description = (copy.get("description") or "")[:500]
+    search      = copy.get("search_terms") or ""
+
+    color    = product.get("mainColor") or ""
+    material = product.get("mainMaterial") or ""
+    texture  = product.get("texture") or ""
+    size_str = product.get("size") or ""
+
+    size_param, image_size_param = _SIZE_MAP.get(size, _SIZE_MAP["1600x1600"])
+
+    # 场景模板：主图 vs 详情图
+    if image_type == "main":
+        scene_block = (
+            "A single hero shot suitable as the Amazon MAIN image. "
+            "Product on a clean white background, centered, occupies 80%+ of the frame. "
+            "Professional studio lighting, eye-catching composition. "
+            "No text, no logos, no watermarks, no people. "
+            "Focus on showcasing the product's silhouette, primary color, and key visual identity."
+        )
+    else:  # detail
+        scene_block = (
+            "An A+ DETAIL / CONTEXT image showing the product in use or close-up. "
+            "Lifestyle context (home, garden, or relevant scenario). "
+            "Show material texture, craftsmanship details, scale, and feature highlights. "
+            "Marketing-style composition that complements the main image. "
+            "No text overlays, no logos."
+        )
+
+    extra_block = f"\n\n## USER ADDITIONAL REQUIREMENTS\n{prompt_extra.strip()}" if (prompt_extra and prompt_extra.strip()) else ""
+
+    bullets_block = "\n".join(f"- {b}" for b in bullets if (b or "").strip()) if bullets else "(none)"
+
+    prompt = f"""You are a professional e-commerce product photographer creating a high-conversion Amazon listing image.
+
+## ABSOLUTE PRODUCT IDENTITY (NEVER VIOLATE)
+The following product attributes are LOCKED and must match the reference images EXACTLY:
+- DIMENSIONS / SIZE: {size_str or "(see reference image)"}
+- COLOR: {color or "(see reference image)"}
+- MATERIAL: {material or "(see reference image)"}
+- SURFACE TEXTURE: {texture or "(see reference image)"}
+- SHAPE, PROPORTIONS, KEY DESIGN FEATURES — exactly as shown in reference images
+
+Do NOT alter, stylize, reinterpret, or invent any of the above. The user's scene/style preferences only affect BACKGROUND, LIGHTING, COMPOSITION — never the product itself.
+
+## PRODUCT INFO
+- Title: {title}
+- Color: {color}
+- Material: {material}
+- Surface Texture: {texture}
+- Dimensions: {size_str}
+
+## MARKETING COPY (use to inform visual emphasis)
+- Description: {description or "(none)"}
+- Key Selling Points (from bullets):
+{bullets_block}
+- Search Keywords: {search or "(none)"}
+
+## SCENE DIRECTIVE
+{scene_block}
+
+## OUTPUT SPECIFICATION
+- Aspect ratio: {size}
+- Lighting: soft, even, natural
+- Quality: high detail, sharp focus, realistic materials, accurate colors
+- Forbidden: watermarks, text, logos, UI elements, celebrities, brand names{extra_block}"""
+
+    return prompt, size_param, image_size_param
+
+
+def _save_base64_to_outputs(sku: str, slot: str, b64_or_data_url: str) -> dict:
+    """保存 base64（或 data:image/...;base64,xxx）到 outputs/{sku}/，返回 { url, filename }。"""
+    raw = b64_or_data_url
+    if raw.startswith("data:"):
+        raw = raw.split(",", 1)[1]
+    sku_safe = re.sub(r"[^\w\-]", "_", sku) or "unknown"
+    slot_safe = re.sub(r"[^\w\-]", "_", slot) or "img"
+    sku_dir = os.path.join(OUTPUT_DIR, sku_safe)
+    os.makedirs(sku_dir, exist_ok=True)
+    ts = time.strftime("%Y%m%d-%H%M%S")
+    fname = f"{slot_safe}_{ts}.jpg"
+    fpath = os.path.join(sku_dir, fname)
+    img_bytes = base64.b64decode(raw)
+    with open(fpath, "wb") as f:
+        f.write(img_bytes)
+    return {
+        "url": f"/outputs/{sku_safe}/{fname}",
+        "filename": fname,
+    }
+
+
+@app.route("/api/generate-image", methods=["POST"])
+def generate_image():
+    """本地调用 laozhang API 生成 AI 图片，支持自定义 prompt + 多参考图 + 槽位。
+
+    请求体（v3）：
+    {
+      "slot": "main" | "detail",
+      "size": "1600x1600" | "1464x600" | "1200x900" | "2000x1000",
+      "prompt_extra": "附加要求文本",
+      "reference_images": [
+         {"source": "giga",   "index": 0, "url": "https://..."},
+         {"source": "upload", "data_url": "data:image/..."}
+      ],
+      "sku": "W3372P314940",
+      "product": { "productName", "mainColor", "mainMaterial", "texture", "size" },
+      "copy":    { "title", "bullets": [...], "description", "search_terms" }
+    }
+    """
     data = request.json or {}
-    sku   = (data.get("sku") or "").strip()
+
+    provider = _check_laozhang_provider()
+    if not provider["configured"]:
+        return jsonify({"error": "laozhang API Key 未配置（在 GIGAB2B/.env 中设置 LAOZHANG_API_KEY）"}), 503
+
+    slot = (data.get("slot") or "main").strip()
+    size = (data.get("size") or "1600x1600").strip()
+    prompt_extra = data.get("prompt_extra") or ""
+    reference_images = data.get("reference_images") or []
+    sku = (data.get("sku") or "").strip()
+    product_data = data.get("product") or {}
+    copy_data = data.get("copy") or {}
+
+    # 向后兼容：旧版 product/template/imageUrls（如有）
+    if not reference_images and data.get("imageUrls"):
+        reference_images = [{"source": "giga", "index": i, "url": u} for i, u in enumerate(data["imageUrls"])]
+
+    # 收集参考图 base64（本地代理下载，不再走 image-studio）
+    ref_b64: list[str] = []
+    for ref in reference_images[:8]:
+        src = ref.get("source")
+        if src == "giga":
+            url = ref.get("url")
+            if url:
+                b64 = _proxy_image(url)
+                if b64:
+                    ref_b64.append(b64)
+        elif src == "upload":
+            du = ref.get("data_url") or ""
+            if du.startswith("data:image"):
+                ref_b64.append(du)
+
+    prompt, size_param, image_size_param = _build_generation_prompt(
+        image_type=slot,
+        size=size,
+        copy=copy_data,
+        product=product_data,
+        prompt_extra=prompt_extra,
+    )
+
+    # 本地调 laozhang 生成（不再依赖 image-studio server）
+    gen = _generate_image_local(prompt, ref_b64, size_param, image_size_param)
+    if not gen["ok"]:
+        return jsonify({"error": f"图片生成失败: {gen.get('error', 'unknown')}", "detail": gen.get("detail", "")}), 500
+
+    b64_or_data_url = _parse_laozhang_response(gen["data"])
+    if not b64_or_data_url:
+        return jsonify({"error": "无法解析图片响应"}), 500
+
+    # 保存到 outputs/{sku}/ 或 outputs/
+    if sku:
+        saved = _save_base64_to_outputs(sku, slot, b64_or_data_url)
+        image_url = saved["url"]
+        filename = saved["filename"]
+    else:
+        image_url = b64_or_data_url if b64_or_data_url.startswith("data:") else f"data:image/jpeg;base64,{b64_or_data_url}"
+        filename = ""
+
+    return jsonify({
+        "success": True,
+        "slot": slot,
+        "image_url": image_url,
+        "thumbnail_url": image_url,
+        "filename": filename,
+        "size": size_param,
+        "prompt_used": prompt[:2000],
+    })
+
+
+@app.route("/api/fetch-images", methods=["POST"])
+def fetch_images():
+    """获取 GIGA 产品图片（proxy 代理，返回 data URL）"""
+    data = request.json or {}
+    sku = (data.get("sku") or "").strip()
     market = data.get("market", "DE_TAX")
 
     if not sku:
@@ -728,103 +1400,26 @@ def fetch_only():
 
     try:
         product = giga_fetch_product(sku, market)
-        imgs = product.get("imageUrls") or []
-        return jsonify({
-            "success": True,
-            "product": {
-                "sku": product.get("sku", ""),
-                "productName": product.get("productName", ""),
-                "material": product.get("mainMaterial", ""),
-                "color": product.get("attributes", {}).get("Main Color") or product.get("mainColor") or "",
-                "dimensions": f"{product.get('assembledLength','?')} x {product.get('assembledWidth','?')} x {product.get('assembledHeight','?')} cm",
-                "imageUrls": imgs,
-                "imageCount": len(imgs),
-                "category": product.get("category", ""),
-            },
-        })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+    raw_urls = product.get("imageUrls") or []
+    result = []
+    for i, url in enumerate(raw_urls[:9]):
+        proxied = _proxy_image(url)
+        result.append({
+            "index": i,
+            "originalUrl": url,
+            "dataUrl": proxied or url,
+            "label": f"图片 {i + 1}" if i > 0 else "主图",
+        })
 
-@app.route("/api/generate-image", methods=["POST"])
-def generate_image():
-    """通过 image-studio server 生成 AI 图片。"""
-    data = request.json or {}
-    product_data = data.get("product", {})
-    template    = data.get("template", "main-white")   # main-white | main-other | aplus
-    image_urls  = data.get("imageUrls", [])[:4]
-
-    status = _check_image_studio_server()
-    if not status["ok"]:
-        return jsonify({"error": "image-studio server 未运行"}), 503
-    if status["providers"].get("laozhang") != "configured":
-        return jsonify({"error": "laozhang API Key 未配置"}), 503
-
-    # proxy images
-    ref_b64 = []
-    for url in image_urls:
-        b64 = _proxy_image(url)
-        if b64:
-            ref_b64.append(b64)
-
-    prompts = {
-        "main-white": "Product on pure white background, centered, professional photography, no shadows, no reflections, high detail, commercial quality",
-        "main-other": "Product in lifestyle setting, non-white background, soft natural lighting, warm atmosphere, professional e-commerce photography",
-        "aplus": "Lifestyle product shot, clean and modern setting, soft natural lighting, professional e-commerce photography, detailed composition",
-    }
-    base = prompts.get(template, prompts["main-other"])
-    title = (product_data.get("productName") or "")[:200]
-    attrs = product_data.get("attributes", {})
-    color = attrs.get("Main Color") or product_data.get("mainColor") or ""
-    mat   = product_data.get("mainMaterial", "")
-
-    prompt = f"""You are a professional e-commerce product photographer creating a high-conversion listing image for Amazon/Walmart.
-
-## PRODUCT IDENTITY (ABSOLUTE — NEVER VIOLATE)
-- Product color, shape, surface texture, and key design features MUST remain EXACTLY as shown in the reference images.
-- Do NOT alter any product attributes — color, material, structure, proportions, or details.
-- The user's scene/style preferences only apply to the BACKGROUND, LIGHTING, and COMPOSITION — never to the product itself.
-
-## PRODUCT INFO
-- Product: {title}
-- Color: {color}
-- Material: {mat}
-
-## SCENE DIRECTIVE
-{base}
-
-## OUTPUT SPECIFICATION
-- Aspect ratio: 1:1 (1600x1600px)
-- Lighting: soft, even, natural
-- Background: clean white or minimal solid
-- Quality: high detail, sharp focus, realistic materials, accurate colors
-- Forbidden: watermarks, text, logos, UI elements, celebrities, brand names"""
-
-    try:
-        resp = requests.post(
-            f"{IMAGE_STUDIO_BASE}/api/generate-image",
-            json={"prompt": prompt, "referenceImages": ref_b64, "size": "1600x1600", "imageSize": "1024x1024"},
-            timeout=120,
-        )
-        resp.raise_for_status()
-        raw = resp.json()
-    except Exception as e:
-        return jsonify({"error": f"图片生成失败: {e}"}), 500
-
-    try:
-        images = raw.get("data", {}).get("images", [])
-        if not images:
-            images = (raw.get("data", {}).get("choices", [{}])[0].get("message", {}).get("content") or "")
-            if isinstance(images, str):
-                images = [{"base64": images}]
-        if images and isinstance(images[0], dict):
-            b64 = images[0].get("base64", "")
-            data_url = f"data:image/jpeg;base64,{b64}"
-            return jsonify({"success": True, "imageUrl": data_url, "template": template})
-    except (KeyError, IndexError, TypeError):
-        pass
-
-    return jsonify({"error": "无法解析图片响应"}), 500
+    return jsonify({
+        "success": True,
+        "sku": sku,
+        "market": market,
+        "images": result,
+    })
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -838,12 +1433,24 @@ if __name__ == "__main__":
     print(f"  Frontend: http://localhost:5173")
     print(f"  ={'='*50}")
 
-    studio = _check_image_studio_server()
-    print(f"  image-studio: {'OK' if studio['ok'] else '未运行'}")
-    print(f"  MiniMax:      {studio.get('providers',{}).get('minimax','unknown')}")
-    print(f"  laozhang:     {studio.get('providers',{}).get('laozhang','unknown')}")
+    laozhang = _check_laozhang_provider()
+    print(f"  laozhang:     {'OK' if laozhang['configured'] else '未配置（检查 .env 中 LAOZHANG_API_KEY）'} ({laozhang['model']})")
 
     has_giga = bool(os.environ.get("GIGA_DE_TAX_CLIENT_ID"))
     print(f"  GIGA 凭证:    {'OK' if has_giga else '未配置（检查.env）'}")
     print()
-    app.run(host="0.0.0.0", port=PORT, debug=True)
+
+    # debug 模式由环境变量 FLASK_DEBUG 控制，默认关闭。
+    # 关闭 debug 可以避免 Flask reloader 子进程退出后 socket 残留导致端口被占。
+    debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
+    if not debug_mode:
+        # 显式开启 SO_REUSEADDR，配合 Windows 端口立即回收
+        from werkzeug.serving import make_server
+        import socket as _socket
+        server = make_server("0.0.0.0", PORT, app)
+        server.socket.setsockopt(_socket.SOL_SOCKET, _socket.SO_REUSEADDR, 1)
+        print(f"  Server:       http://localhost:{PORT}")
+        server.serve_forever()
+    else:
+        print(f"  Server:       http://localhost:{PORT}  (FLASK_DEBUG=1)")
+        app.run(host="0.0.0.0", port=PORT, debug=True)

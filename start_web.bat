@@ -1,57 +1,60 @@
 @echo off
 chcp 65001 > nul
+setlocal
+
 echo ============================================================
-echo   GIGAB2B Web 应用启动
+echo   GIGAB2B Web Application Launcher
 echo ============================================================
 echo.
 echo   Backend:  http://localhost:5182
 echo   Frontend: http://localhost:5173
 echo.
-echo   前提条件：
-echo   1. image-studio 项目 server.cjs 已在运行
-echo      启动方式：cd ..\image-studio ^&^& start.bat
-echo.
-echo   2. GIGA 凭证已配置在 .env 中
+echo   Prerequisites:
+echo   1. Python 3.11+ and Node 18+ installed
+echo   2. GIGA credentials set in .env
 echo.
 echo ============================================================
 echo.
 
-:: 检查 Flask
+REM --- Check Python deps ---
 python -c "import flask" 2>nul
 if errorlevel 1 (
-    echo [ERROR] Flask 未安装，正在安装...
+    echo [WARN] flask not installed, installing...
     pip install flask flask-cors
-    echo.
 )
-
-:: 检查 requests
 python -c "import requests" 2>nul
 if errorlevel 1 (
-    echo [ERROR] requests 未安装，正在安装...
+    echo [WARN] requests not installed, installing...
     pip install requests
-    echo.
 )
-
-:: 检查 python-dotenv
 python -c "import dotenv" 2>nul
 if errorlevel 1 (
-    echo [INFO] python-dotenv 未安装，正在安装...
+    echo [WARN] python-dotenv not installed, installing...
     pip install python-dotenv
-    echo.
 )
 
-echo [1/2] 启动 Flask 后端 (http://localhost:5182)...
-start "GIGAB2B Backend" cmd /c "cd /d %~dp0 ^&^& python app.py"
+REM --- Check web deps ---
+if not exist "web\node_modules" (
+    echo [WARN] web\node_modules missing, running npm install...
+    cd /d "%~dp0web"
+    call npm install
+    cd /d "%~dp0"
+)
+
+echo [1/2] Starting Flask backend on port 5182...
+start "GIGAB2B Backend" cmd /c "cd /d %~dp0 && python app.py"
 
 timeout /t 3 /nobreak > nul
 
-echo [2/2] 启动前端 (http://localhost:5173)...
-start "GIGAB2B Frontend" cmd /c "cd /d %~dp0web ^&^& npm run dev"
+echo [2/2] Starting frontend on port 5173...
+start "GIGAB2B Frontend" cmd /c "cd /d %~dp0web && npm run dev"
 
 echo.
 echo ============================================================
-echo   启动完成！
-echo   后端: http://localhost:5182
-echo   前端: http://localhost:5173
+echo   Launch complete!
+echo   Backend:  http://localhost:5182
+echo   Frontend: http://localhost:5173
 echo ============================================================
+echo.
+echo [TIP] To stop services, close the GIGAB2B Backend/Frontend windows.
 pause
