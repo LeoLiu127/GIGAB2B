@@ -429,16 +429,24 @@ Format: word1, word2, word3 ..."""
 
 def _strip_think_blocks(text: str) -> str:
     """去除 reasoning 模型（如 MiniMax M3）的 思考过程 块。
-    常见格式：  ...  （可能多段）。
+    常见格式：<think>...</think> （可能多段）。
+
+    关键：处理 "有开标签但无闭标签" 的截断情况——
+    这种情况下, 正文被 max_tokens 截断, 但思考过程已被"挤掉",
+    应该保留 think 块后面的所有正文, 而不是把整段都当 think 剥掉。
     """
-    # 1. 匹配  块
+    # 1. 匹配完整闭合的 <think>...</think> 块（最常见）
     text = re.sub(r"<\s*think\s*>.*?<\s*/\s*think\s*>", "", text, flags=re.DOTALL | re.IGNORECASE)
-    # 2. 兼容  等变体
+    # 2. 兼容 <think>reasoning 变体
     text = re.sub(r"<\s*(?:reasoning|thought|reflection)\s*>.*?<\s*/\s*(?:reasoning|thought|reflection)\s*>",
                   "", text, flags=re.DOTALL | re.IGNORECASE)
-    # 3. 兼容  仅开标签没有闭标签的情况（保守处理：只在明显是元描述时剥掉）
-    #    例如： Let me analyze...  ...
-    #    这一步放在最后，按 "##" 切分时自然会把这种思考段当作 intro 丢弃
+    # 3. 关键：处理被 max_tokens 截断的情况
+    #    如果有 <think> 但没有 </think> 出现,把 <think> 这一行单独剥掉
+    #    （思考块通常在开头第一段，用换行符切）
+    text = re.sub(
+        r"<\s*think\s*>.*?(?=\n###|\n\*\*|\n[A-ZÄÖÜ][a-zäöüß]+\s*\n|\Z)",
+        "", text, flags=re.DOTALL | re.IGNORECASE
+    )
     return text
 
 
@@ -658,21 +666,42 @@ def _parse_copy_response(raw: dict) -> dict:
 def _dump_ai_response(sku: str, market: str, raw: dict, parsed: dict) -> None:
     """把 AI 原始响应 + 解析结果写入 .logs/ai_response_<sku>_<market>.txt。
     排错时直接看这个文件就知道 AI 返回了什么、解析器抽到了什么。
+
+    兼容两种 raw 格式:
+      - 旧 image-studio: {"success": ..., "data": {"choices": [...]}}
+      - 新 _generate_text_local: {"choices": [...], "usage": ...}
     """
+    import json as _json
     try:
         log_dir = os.path.join(os.path.dirname(__file__), ".logs")
         os.makedirs(log_dir, exist_ok=True)
         ts = time.strftime("%Y%m%d-%H%M%S")
         path = os.path.join(log_dir, f"ai_response_{sku}_{market}_{ts}.txt")
+        # 解包可能存在的 {success, data} 外层(旧 image-studio 格式)
+        actual = raw.get("data", raw) if isinstance(raw.get("data"), dict) else raw
+        # 提取 content + reasoning_content(reasoning 模型诊断用)
         content = ""
+        reasoning = ""
         try:
-            content = raw.get("data", {}).get("choices", [{}])[0].get("message", {}).get("content", "")
+            choices = actual.get("choices") or [{}]
+            msg = choices[0].get("message") or {}
+            content = msg.get("content") or ""
+            reasoning = msg.get("reasoning_content") or ""
+            if not content:
+                content = choices[0].get("text") or ""
         except (KeyError, IndexError, TypeError):
             pass
         with open(path, "w", encoding="utf-8") as f:
             f.write(f"=== SKU: {sku} | Market: {market} | Time: {ts} ===\n\n")
-            f.write("--- RAW AI RESPONSE ---\n")
-            f.write(content or "(empty)")
+            f.write("--- RAW AI content (text) ---\n")
+            f.write(content if content else "(empty)\n")
+            f.write("\n--- RAW AI reasoning_content ---\n")
+            f.write(reasoning if reasoning else "(none)\n")
+            f.write("\n--- RAW AI FULL JSON ---\n")
+            try:
+                f.write(_json.dumps(actual, ensure_ascii=False, indent=2)[:8000])
+            except Exception:
+                f.write(str(actual)[:8000])
             f.write("\n\n--- PARSED ---\n")
             f.write(f"title:        {parsed.get('title','')!r}\n")
             f.write(f"bullets:      {len(parsed.get('bullets',[]))} items\n")
@@ -680,6 +709,9 @@ def _dump_ai_response(sku: str, market: str, raw: dict, parsed: dict) -> None:
                 f.write(f"  [{i}] {b}\n")
             f.write(f"description:  {len(parsed.get('description','') or '')} chars\n")
             f.write(f"search_terms: {parsed.get('search_terms','')!r}\n")
+            ai_st = parsed.get("_ai_status", "")
+            if ai_st:
+                f.write(f"ai_status:    {ai_st}\n")
     except Exception as e:
         print(f"[dump_ai_response] 写入日志失败: {e}")
 
@@ -691,10 +723,36 @@ MINIMAX_CONFIG = {
 }
 
 
-def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 4096) -> dict:
+def _extract_ai_text(data: dict) -> str:
+    """从 AI 响应中提取正文,兼容 reasoning 模型。
+
+    兼容顺序:
+      1. choices[0].message.content       — OpenAI 标准
+      2. choices[0].message.reasoning_content — reasoning 模型(部分 provider)
+      3. choices[0].text                  — 旧式 completions 端点
+    """
+    try:
+        choices = data.get("choices") or [{}]
+        msg = (choices[0].get("message") or {})
+        # 1. 标准 content
+        content = msg.get("content")
+        if content and content.strip():
+            return content
+        # 2. reasoning_content 兜底(reasoning 模型常把正文放这里)
+        rc = msg.get("reasoning_content")
+        if rc and rc.strip():
+            return rc
+        # 3. 旧式 text 字段
+        return choices[0].get("text", "") or ""
+    except (AttributeError, IndexError, TypeError):
+        return ""
+
+
+def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 8192,
+                          max_retries: int = 2) -> dict:
     """本地调 AI 文案模型（移植自 image-studio/server.cjs）。
 
-    返回 { ok: bool, content?: str, error?: str }
+    返回 { ok: bool, content?: str, error?: str, attempts?: int }
     """
     cfg = MINIMAX_CONFIG if model == "minimax" else None
     if cfg is None:
@@ -702,35 +760,61 @@ def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 
     if not cfg["api_key"]:
         return {"ok": False, "error": f"{model} API key 未配置（在 GIGAB2B/.env 中设置 MINIMAX_API_KEY）"}
 
-    try:
-        url = f"{cfg['api_url']}/chat/completions"
-        resp = requests.post(
-            url,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {cfg['api_key']}",
-            },
-            json={
-                "model": cfg["model"],
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": max_tokens,
-            },
-            timeout=120,
-        )
-        if resp.status_code != 200:
-            err_text = (resp.text or "")[:500]
-            return {"ok": False, "error": f"{model} API 错误: HTTP {resp.status_code}", "detail": err_text}
-        data = resp.json()
-        content = (((data.get("choices") or [{}])[0]).get("message") or {}).get("content", "")
-        return {"ok": True, "content": content, "raw": data}
-    except requests.exceptions.Timeout:
-        return {"ok": False, "error": f"{model} API 超时（120s）"}
-    except Exception as e:
-        return {"ok": False, "error": f"{model} 调用异常: {e}"}
+    url = f"{cfg['api_url']}/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {cfg['api_key']}",
+    }
+    payload = {
+        "model": cfg["model"],
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": max_tokens,
+    }
+
+    last_error = ""
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=120)
+            if resp.status_code != 200:
+                err_text = (resp.text or "")[:500]
+                last_error = f"{model} API 错误: HTTP {resp.status_code}: {err_text}"
+                if resp.status_code in (429, 500, 502, 503, 504):
+                    # 可重试的状态码:等 1.5s 后重试
+                    import time
+                    time.sleep(1.5 * attempt)
+                    continue
+                # 不可重试:4xx 业务错误
+                return {"ok": False, "error": last_error, "attempts": attempt}
+
+            data = resp.json()
+            content = _extract_ai_text(data)
+            if content and content.strip():
+                return {"ok": True, "content": content, "raw": data, "attempts": attempt}
+            # 空响应:可能是 reasoning 模型冷启动 / quota 抖动,等一下重试
+            last_error = "AI 返回空内容(reasoning 模型可能延迟返回,稍后重试)"
+            if attempt < max_retries:
+                import time
+                time.sleep(2.0 * attempt)
+                continue
+        except requests.exceptions.Timeout:
+            last_error = f"{model} API 超时（120s）"
+            if attempt < max_retries:
+                continue
+        except Exception as e:
+            last_error = f"{model} 调用异常: {e}"
+            break
+
+    return {"ok": False, "error": last_error, "attempts": max_retries}
 
 
 def ai_generate_copy(product: dict, market: str) -> dict:
-    """直接本地调 MiniMax M3 生成 Listing 文案（不再依赖 image-studio server）。"""
+    """直接本地调 MiniMax M3 生成 Listing 文案（不再依赖 image-studio server）。
+
+    返回的 dict 额外带 _ai_status 字段:
+      - "ok":      内容齐全
+      - "partial": 解析后部分字段为空(例如 bullets 缺失但 title 在)
+      - "empty":   AI 返回了内容但解析后全部为空(基本等于失败)
+    """
     if not MINIMAX_CONFIG["api_key"]:
         raise RuntimeError(
             "MiniMax API Key 未配置（在 GIGAB2B/.env 中设置 MINIMAX_API_KEY）"
@@ -739,11 +823,29 @@ def ai_generate_copy(product: dict, market: str) -> dict:
     prompt = _build_copy_prompt(product, market)
     gen = _generate_text_local(prompt, model="minimax")
     if not gen["ok"]:
-        raise RuntimeError(f"MiniMax 生成失败: {gen.get('error', 'unknown')}")
+        attempts = gen.get("attempts", 1)
+        raise RuntimeError(
+            f"MiniMax 生成失败(已重试 {attempts} 次): {gen.get('error', 'unknown')}"
+        )
 
     # 兼容旧 image-studio 响应形态：包一层 { success, data } 再交给解析器
     wrapped = {"success": True, "data": gen["raw"]}
     parsed = _parse_copy_response(wrapped)
+
+    # 评估解析结果质量
+    title_ok = bool((parsed.get("title") or "").strip())
+    bullets_count = len(parsed.get("bullets") or [])
+    desc_ok = bool((parsed.get("description") or "").strip())
+    st_ok = bool((parsed.get("search_terms") or "").strip())
+    filled = sum([title_ok, bullets_count > 0, desc_ok, st_ok])
+    if filled == 4:
+        parsed["_ai_status"] = "ok"
+    elif filled == 0:
+        parsed["_ai_status"] = "empty"
+    else:
+        parsed["_ai_status"] = "partial"
+
+    parsed["_ai_attempts"] = gen.get("attempts", 1)
     _dump_ai_response(product.get("sku", "unknown"), market, gen["raw"], parsed)
     return parsed
 
@@ -1135,9 +1237,13 @@ def run_pipeline():
                 return
 
             # 终态：把所有 AI 生成的文案 + 产品图片 URL 一起随 done 事件返回
+            ai_status = ai_result.get("_ai_status", "ok")
+            ai_attempts = ai_result.get("_ai_attempts", 1)
             yield _emit({
                 "type": "done",
-                "status": "ok",
+                "status": "ok" if ai_status != "empty" else "warning",
+                "ai_status": ai_status,
+                "ai_attempts": ai_attempts,
                 "steps": steps,
                 "result": {
                     "sku": sku,
@@ -1147,6 +1253,8 @@ def run_pipeline():
                     "ai_bullets": ai_result.get("bullets", []),
                     "ai_description": ai_result.get("description", ""),
                     "ai_search_terms": ai_result.get("search_terms", ""),
+                    "ai_status": ai_status,
+                    "ai_attempts": ai_attempts,
                     "product_name": product.get("productName", ""),
                     "imageUrls": product.get("imageUrls") or [],
                     "image_count": len(product.get("imageUrls") or []),
@@ -1445,11 +1553,12 @@ if __name__ == "__main__":
     debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
     if not debug_mode:
         # 显式开启 SO_REUSEADDR，配合 Windows 端口立即回收
+        # threaded=True 让 SSE 长连接不再阻塞其他 API 请求（致命 F-1 修复）
         from werkzeug.serving import make_server
         import socket as _socket
-        server = make_server("0.0.0.0", PORT, app)
+        server = make_server("0.0.0.0", PORT, app, threaded=True)
         server.socket.setsockopt(_socket.SOL_SOCKET, _socket.SO_REUSEADDR, 1)
-        print(f"  Server:       http://localhost:{PORT}")
+        print(f"  Server:       http://localhost:{PORT}  (threaded)")
         server.serve_forever()
     else:
         print(f"  Server:       http://localhost:{PORT}  (FLASK_DEBUG=1)")

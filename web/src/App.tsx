@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "./api";
 import type { PipelineResult, ServerStatus, MarketInfo } from "./types";
 import { Header } from "./components/Header";
@@ -50,9 +50,22 @@ export default function App() {
   const [copyDescription, setCopyDescription] = useState("");
   const [copySearchTerms, setCopySearchTerms] = useState("");
 
+  // 流水线 AbortController：用于切换市场/重跑时取消正在进行的 SSE（致命 F-6 修复）
+  const pipelineAbortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+
   useEffect(() => {
-    api.getStatus().then(setServerStatus).catch(() => {});
-    api.listMarkets().then(setMarkets).catch(() => {});
+    mountedRef.current = true;
+    // 启动时拉取状态
+    const ctrl = new AbortController();
+    api.getStatus({ signal: ctrl.signal }).then(setServerStatus).catch(() => {});
+    api.listMarkets({ signal: ctrl.signal }).then(setMarkets).catch(() => {});
+    // 组件卸载时:取消所有进行中的请求 + 标记未挂载
+    return () => {
+      mountedRef.current = false;
+      pipelineAbortRef.current?.abort();
+      ctrl.abort();
+    };
   }, []);
 
   const handleMarketChange = (m: string) => {
@@ -77,6 +90,11 @@ export default function App() {
 
   const handleRun = async () => {
     if (!sku.trim()) return;
+    // 取消上一次还在跑的流水线（致命 F-6 修复）
+    pipelineAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    pipelineAbortRef.current = ctrl;
+
     setIsRunning(true);
     setError(null);
     setResult(null);
@@ -91,6 +109,8 @@ export default function App() {
         templateFile || undefined,
         "use_giga",
         (evt) => {
+          // 已被取消就不更新 UI,避免 ghost update
+          if (!mountedRef.current || ctrl.signal.aborted) return;
           // 实时把已完成步骤累加到 steps（running 表示进行中 — 替换前一条 running 为 ok）
           if (evt.type === "step") {
             const incoming = evt as { step: string; status: string };
@@ -103,10 +123,11 @@ export default function App() {
             });
           }
         },
+        ctrl.signal,
       );
       // res 是 done 事件
+      // 收尾：把最后一条 running 标 ok（放到 finally 里也行,但此处更直观）
       setSteps((prev) => {
-        // 收尾：把最后一条 running 标 ok（兜底）
         const next = [...prev];
         for (let i = next.length - 1; i >= 0; i--) {
           if (next[i].status === "running") { next[i] = { ...next[i], status: "ok" }; break; }
@@ -121,9 +142,26 @@ export default function App() {
       setCopyDescription(result.ai_description || "");
       setCopySearchTerms(result.ai_search_terms || "");
     } catch (e) {
-      setError(String(e));
+      // 主动取消(切换市场/重跑/卸载)时,不要当成错误
+      if (ctrl.signal.aborted) {
+        // 静默,不写 error 框
+      } else if (mountedRef.current) {
+        // 收尾:把最后一条 running 标 error(严重 S-6 修复)
+        setSteps((prev) => {
+          const next = [...prev];
+          for (let i = next.length - 1; i >= 0; i--) {
+            if (next[i].status === "running") {
+              next[i] = { ...next[i], status: "error", message: String(e) };
+              break;
+            }
+          }
+          return next;
+        });
+        setError(String(e));
+      }
     } finally {
-      setIsRunning(false);
+      if (mountedRef.current) setIsRunning(false);
+      if (pipelineAbortRef.current === ctrl) pipelineAbortRef.current = null;
     }
   };
 

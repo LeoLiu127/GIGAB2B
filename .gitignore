@@ -12,3 +12,4 @@ build/
 .vscode/
 .idea/
 *.swp
+flask.err*

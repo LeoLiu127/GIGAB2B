@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { PipelineResult } from "../types";
 
 interface CenterPanelProps {
@@ -89,13 +89,54 @@ function CopyEditor({
   onSearchTermsChange,
 }: CopyEditorProps) {
   const [copied, setCopied] = useState<string | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 组件卸载时清理未触发的 setTimeout(严重 S-5 修复)
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const copy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1500);
-    });
+    // 失败兜底:clipboard API 在 HTTP / 隐私模式下会 reject
+    const fallback = () => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        setCopied(key);
+      } catch {
+        setCopied(`failed-${key}`);
+      }
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(null), 1500);
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => {
+          setCopied(key);
+          if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+          copyTimerRef.current = setTimeout(() => setCopied(null), 1500);
+        },
+        () => fallback(),
+      );
+    } else {
+      fallback();
+    }
   };
+
+  // AI 文案生成质量警告(B.7 修复)
+  const aiStatus = result.ai_status || "ok";
+  const aiAttempts = result.ai_attempts || 1;
+  const showPartialWarn = aiStatus === "partial";
+  const showEmptyWarn = aiStatus === "empty";
+  const showRetryHint = aiAttempts > 1;
 
   // 把 5 条 bullets 合并为带「1. xxx」行号的纯文本展示，编辑时按行拆回去
   const bulletsText = bullets
@@ -113,13 +154,42 @@ function CopyEditor({
       {/* Header */}
       <div style={{ marginBottom: "32px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-          <div className="badge badge-ok">成功</div>
+          {showEmptyWarn ? (
+            <div className="badge" style={{ background: "#ffebee", color: "#c62828", border: "1px solid #ffcdd2", padding: "2px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: 500 }}>AI 失败</div>
+          ) : showPartialWarn ? (
+            <div className="badge" style={{ background: "#fff8e1", color: "#e65100", border: "1px solid #ffe0b2", padding: "2px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: 500 }}>部分缺失</div>
+          ) : (
+            <div className="badge badge-ok">成功</div>
+          )}
           <div style={{ fontSize: "13px", color: "#666" }}>{result.market_name}</div>
+          {showRetryHint && (
+            <div style={{ fontSize: "11px", color: "#999" }}>
+              (AI 重试 {aiAttempts} 次后成功)
+            </div>
+          )}
         </div>
         <div style={{ fontSize: "12px", color: "#999" }}>
           {result.output_file} · {result.image_count} 张图片
         </div>
       </div>
+
+      {/* AI 文案质量警告(B.7) */}
+      {showEmptyWarn && (
+        <div style={{ marginBottom: "20px", padding: "12px 16px", background: "#ffebee", border: "1px solid #ef9a9a", borderRadius: "6px", fontSize: "13px", color: "#c62828" }}>
+          <div style={{ fontWeight: 600, marginBottom: "4px" }}>⚠ AI 返回内容为空</div>
+          <div style={{ color: "#b71c1c" }}>
+            流水线虽然"完成",但 AI 没生成任何文案。下方字段全是空的,Excel 模板中也已写入空值。建议重试或检查 MiniMax API 配额/余额。
+          </div>
+        </div>
+      )}
+      {showPartialWarn && (
+        <div style={{ marginBottom: "20px", padding: "12px 16px", background: "#fff8e1", border: "1px solid #ffe082", borderRadius: "6px", fontSize: "13px", color: "#e65100" }}>
+          <div style={{ fontWeight: 600, marginBottom: "4px" }}>⚠ AI 文案部分缺失</div>
+          <div style={{ color: "#bf360c" }}>
+            部分字段(标题/五点/描述/搜索词)可能为空。你可以直接在下方编辑框补全,或重试流水线。
+          </div>
+        </div>
+      )}
 
       {/* Title */}
       <div style={{ marginBottom: "28px" }}>
@@ -129,7 +199,7 @@ function CopyEditor({
             {title && (
               <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: "12px" }}
                 onClick={() => copy(title, "title")}>
-                {copied === "title" ? "已复制" : "复制"}
+                {copied === "title" ? "已复制" : copied === "failed-title" ? "复制失败,请手动复制" : "复制"}
               </button>
             )}
           </div>
@@ -152,7 +222,7 @@ function CopyEditor({
           {bullets.some(b => (b ?? "").trim()) && (
             <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: "12px" }}
               onClick={() => copy(bullets.filter(b => (b ?? "").trim()).join("\n"), "bullets")}>
-              {copied === "bullets" ? "已复制" : "复制全部"}
+              {copied === "bullets" ? "已复制" : copied === "failed-bullets" ? "复制失败" : "复制全部"}
             </button>
           )}
         </div>
@@ -172,7 +242,7 @@ function CopyEditor({
           {searchTerms && (
             <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: "12px" }}
               onClick={() => copy(searchTerms, "st")}>
-              {copied === "st" ? "已复制" : "复制"}
+              {copied === "st" ? "已复制" : copied === "failed-st" ? "复制失败" : "复制"}
             </button>
           )}
         </div>
@@ -192,7 +262,7 @@ function CopyEditor({
           {description && (
             <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: "12px" }}
               onClick={() => copy(description, "desc")}>
-              {copied === "desc" ? "已复制" : "复制"}
+              {copied === "desc" ? "已复制" : copied === "failed-desc" ? "复制失败" : "复制"}
             </button>
           )}
         </div>

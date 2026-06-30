@@ -34,16 +34,24 @@ async function request<T>(path: string, opts?: RequestInit & { timeout?: number;
     const decoder = new TextDecoder("utf-8");
     let buf = "";
     let lastEvent: Record<string, unknown> | null = null;
+    // SSE 标准事件分隔符是 \r\n\r\n，但 Flask/werkzeug 在 Windows 上可能发 \n\n
+    // 用正则匹配两种都覆盖（修复致命 F-4）
+    const SSE_SEP = /\r?\n\r?\n/;
     try {
       while (true) {
+        // 提前响应 abort（致命 F-5 修复）
+        if (ctrl.signal.aborted) {
+          await reader.cancel().catch(() => {});
+          throw new Error(ctrl.signal.reason instanceof Error ? ctrl.signal.reason.message : "请求已取消");
+        }
         const { done, value } = await reader.read();
         if (done) break;
         buf += decoder.decode(value, { stream: true });
-        // 一次可能拿到多条事件，按 \n\n 切片
-        let idx: number;
-        while ((idx = buf.indexOf("\n\n")) >= 0) {
-          const chunk = buf.slice(0, idx);
-          buf = buf.slice(idx + 2);
+        // 一次可能拿到多条事件，按 SSE_SEP 切片
+        let match: RegExpExecArray | null;
+        while ((match = SSE_SEP.exec(buf)) !== null) {
+          const chunk = buf.slice(0, match.index);
+          buf = buf.slice(match.index + match[0].length);
           // 取出所有 data: 行
           const lines = chunk.split(/\r?\n/);
           for (const line of lines) {
@@ -68,6 +76,15 @@ async function request<T>(path: string, opts?: RequestInit & { timeout?: number;
           }
         }
       }
+    } catch (err) {
+      // 抛错时主动 cancel reader，避免 fetch 仍在后台跑（致命 F-5 修复）
+      await reader.cancel().catch(() => {});
+      // 如果外部 signal 已经 abort,把超时/取消错误透传
+      if (ctrl.signal.aborted && !(err instanceof Error && err.message)) {
+        const reason = ctrl.signal.reason;
+        throw reason instanceof Error ? reason : new Error("请求已取消");
+      }
+      throw err;
     } finally {
       try { reader.releaseLock(); } catch { /* noop */ }
     }
@@ -82,12 +99,12 @@ async function request<T>(path: string, opts?: RequestInit & { timeout?: number;
 }
 
 export const api = {
-  getStatus() {
-    return request<{ image_studio: { ok: boolean; providers: Record<string, string> }; giga_markets: Record<string, boolean>; has_giga_creds: boolean; port: number }>("/server-status");
+  getStatus(opts?: { signal?: AbortSignal }) {
+    return request<{ image_studio: { ok: boolean; providers: Record<string, string> }; giga_markets: Record<string, boolean>; has_giga_creds: boolean; port: number }>("/server-status", { signal: opts?.signal });
   },
 
-  listMarkets() {
-    return request<Record<string, { name: string; lang: string; has_creds: boolean }>>("/markets");
+  listMarkets(opts?: { signal?: AbortSignal }) {
+    return request<Record<string, { name: string; lang: string; has_creds: boolean }>>("/markets", { signal: opts?.signal });
   },
 
   detectMarket(body: { template_filename?: string; sku?: string }) {
@@ -113,6 +130,7 @@ export const api = {
     template_filename?: string,
     imageStrategy: string = "use_giga",
     onEvent?: (e: Record<string, unknown>) => void,
+    externalSignal?: AbortSignal,
   ) {
     return request<{
       type: "done";
@@ -127,7 +145,8 @@ export const api = {
       timeout: 300_000,
       stream: true,
       onEvent,
-    } as RequestInit & { timeout: number; stream: boolean; onEvent: (e: Record<string, unknown>) => void });
+      signal: externalSignal,
+    } as RequestInit & { timeout: number; stream: boolean; onEvent: (e: Record<string, unknown>) => void; signal?: AbortSignal });
   },
 
   generateImage(opts: {
