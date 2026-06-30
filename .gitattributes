@@ -1,0 +1,34 @@
+# 文本文件统一换行符(避免 Windows/Mac/Linux 提交时产生冲突)
+* text=auto eol=lf
+
+# Python 源码强制 LF
+*.py    text eol=lf
+*.pyi   text eol=lf
+
+# 前端源码强制 LF
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.json  text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.md    text eol=lf
+
+# Shell 脚本
+*.ps1   text eol=crlf
+*.sh    text eol=lf
+*.bat   text eol=crlf
+
+# 二进制(明确标记,不被 git 试图做 diff)
+*.xlsm  binary
+*.xlsx  binary
+*.pdf   binary
+*.jpg   binary
+*.png   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+
+# .env.example 不强制换行
+.env.example text eol=lf

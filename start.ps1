@@ -61,18 +61,46 @@ function Start-Background($file, $argString, $cwd, $name) {
 }
 
 function Install-PythonDeps {
-    $pkgs = @('flask', 'flask-cors', 'requests', 'python-dotenv', 'openpyxl', 'xlrd')
-    $missing = @()
-    foreach ($p in $pkgs) {
-        $mod = ($p -replace '-', '_') -replace '^python_', ''
-        python -c "import $mod" 2>$null | Out-Null
-        if ($LASTEXITCODE -ne 0) { $missing += $p }
-    }
-    if ($missing.Count -gt 0) {
-        Write-Warn ('missing python packages: ' + ($missing -join ', ') + ', installing...')
-        pip install $missing | Out-Null
+    # 优先用 requirements.txt(锁定版本);老项目没这个文件就 fallback 到单包检测
+    $reqFile = Join-Path $ProjectRoot 'requirements.txt'
+    if (Test-Path $reqFile) {
+        # 抽 import 名快速检查,避免每次启动都装
+        $needsInstall = $false
+        Get-Content $reqFile | ForEach-Object {
+            $line = $_.Trim()
+            if ($line -and -not $line.StartsWith('#')) {
+                # 取包名(去掉版本约束):flask>=3.0,<4 → flask
+                $pkg = ($line -split '[<>=!~]')[0].Trim()
+                if ($pkg) {
+                    $mod = ($pkg -replace '-', '_') -replace '^python_', ''
+                    python -c "import $mod" 2>$null | Out-Null
+                    if ($LASTEXITCODE -ne 0) { $needsInstall = $true }
+                }
+            }
+        }
+        if ($needsInstall) {
+            Write-Warn 'missing python packages, installing from requirements.txt...'
+            pip install -r $reqFile | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'pip install failed' }
+            Write-Ok 'python dependencies installed'
+        } else {
+            Write-Ok 'python dependencies OK'
+        }
     } else {
-        Write-Ok 'python dependencies OK'
+        # 老 fallback:逐个检测
+        $pkgs = @('flask', 'flask-cors', 'requests', 'python-dotenv', 'openpyxl')
+        $missing = @()
+        foreach ($p in $pkgs) {
+            $mod = ($p -replace '-', '_') -replace '^python_', ''
+            python -c "import $mod" 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) { $missing += $p }
+        }
+        if ($missing.Count -gt 0) {
+            Write-Warn ('missing python packages: ' + ($missing -join ', ') + ', installing...')
+            pip install $missing | Out-Null
+        } else {
+            Write-Ok 'python dependencies OK'
+        }
     }
 }
 
@@ -102,6 +130,17 @@ foreach ($kv in $Ports.GetEnumerator()) {
 if ($busy.Count -gt 0) {
     Write-Warn ('these ports are already in use: ' + ($busy -join ', '))
     $ans = Read-Host 'Continue anyway? (y/N)'
+    if ($ans -ne 'y' -and $ans -ne 'Y') { exit 0 }
+}
+
+# .env 存在性检查(.env 已被 .gitignore 排除,clone 后不会自动生成)
+$envFile = Join-Path $ProjectRoot '.env'
+if (-not (Test-Path $envFile)) {
+    Write-Warn '.env 文件不存在 — 应用将启动但 AI/GIGA 调用会失败'
+    Write-Warn '请从 .env.example 复制并填入 7 个 API Key:'
+    Write-Host '    cp .env.example .env    (Git Bash)' -ForegroundColor Cyan
+    Write-Host '    copy .env.example .env  (cmd/PowerShell)' -ForegroundColor Cyan
+    $ans = Read-Host '继续启动吗? (y/N)'
     if ($ans -ne 'y' -and $ans -ne 'Y') { exit 0 }
 }
 

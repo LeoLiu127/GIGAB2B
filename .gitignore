@@ -1,15 +1,91 @@
-# 敏感凭证
+# ── 敏感凭证(绝不入库)─────────────────────
 .env
+secrets/.env
 
-# Python
+# ── Python ────────────────────────────────
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
 dist/
 build/
+*.so
 
-# IDE
+# ── Node / Vite ──────────────────────────
+web/node_modules/
+web/dist/
+web/vite.err.log
+web/vite.log
+
+# ── 运行时产物(自动生成,不入库)─────────────
+outputs/             # AI 生成的图片
+.logs/               # AI 调试快照
+# 注:项目自带的 PLANTER-{de,uk,us,fr}.xlsm 模板是项目资产,保留入库
+#     但运行时输出的 <SKU>-<MARKET>.xlsm 是产物,不入库
+#     (用 git rm --cached 把已入库的产物文件清掉)
+
+# ── 服务日志 ──────────────────────────────
+flask.err*
+flask.log
+vite.err*
+vite.log
+
+# ── OS / IDE ──────────────────────────────
 .vscode/
 .idea/
 *.swp
-flask.err*
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── 临时文件 ──────────────────────────────
+*.tmp
+*.bak
+*.orig
+~*
+
+# ── 文档二进制(可选,体积大)───────────────
+*.pdf
+*.docx
+!docs/**/*.pdf
+!docs/**/*.docx
+
+# ── Office 临时锁文件 ────────────────────
+~$*.xlsm
+~$*.xlsx
+~$*.xls
+~$*.docx
+~$*.pptx
+
+# ── Excel 模板运行时副本(产物)────────────
+# 注: 自带模板(如 PLANTER-de.xlsm / B0TEST123-DE_TAX.xlsm)保留
+#     运行时生成的 <SKU>-<MARKET>-TAX.xlsm 排除
+*-TAX.xlsm
+*-TAX - 副本.xlsm
+*-TAX-副本.xlsm
+
+# ── Python 虚拟环境 ──────────────────────
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ── 测试 / 类型缓存 ──────────────────────
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── 历史已包含但不希望后续跟踪(需filter-repo清理) ──
+# 单独样本/参考性 Excel 文件 (项目根目录)
+PLANTER-de.xlsm
+PLANTER-de.xlsx
+B0TEST123-DE_TAX.xlsm
+W3372P314940-DE_TAX.xlsm
+W3372P314940-DE_TAX - 副本.xlsm
+Open API 2.0开发者文档.pdf
+产品详情查询.pdf
+产品详情查询.docx
+库存查询.pdf
