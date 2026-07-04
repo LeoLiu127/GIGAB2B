@@ -928,7 +928,7 @@ def _extract_ai_text(data: dict) -> str:
         return ""
 
 
-def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 8192,
+def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 16384,
                           max_retries: int = 2) -> dict:
     """本地调 AI 文案模型（移植自 image-studio/server.cjs）。
 
@@ -1020,6 +1020,24 @@ def ai_generate_copy(product: dict, market: str,
     # 兼容旧 image-studio 响应形态：包一层 { success, data } 再交给解析器
     wrapped = {"success": True, "data": gen["raw"]}
     parsed = _parse_copy_response(wrapped)
+
+    # 防御:检测到 finish_reason=length(被 max_tokens 裁断)且解析为空 → 重试一次,
+    # 重试时给 AI 一个补充指令:"直接给最终结果,不要再写 thinking 块"
+    raw_choices = (gen.get("raw") or {}).get("choices") or []
+    finish_reason = raw_choices[0].get("finish_reason") if raw_choices else None
+    is_empty = (
+        not (parsed.get("title") or "").strip()
+        and not (parsed.get("bullets") or [])
+        and not (parsed.get("description") or "").strip()
+        and not (parsed.get("search_terms") or "").strip()
+    )
+    if finish_reason == "length" and is_empty:
+        # 追加一句"直接给最终 JSON,不要 thinking"重试
+        retry_prompt = prompt + "\n\n## IMPORTANT (重试)\n上一次因 output 被裁断,请**不要输出任何 thinking 块**,直接用 ```json``` 输出最终 listing 结构。"
+        retry_gen = _generate_text_local(retry_prompt, model="minimax", max_tokens=16384)
+        if retry_gen.get("ok"):
+            wrapped = {"success": True, "data": retry_gen["raw"]}
+            parsed = _parse_copy_response(wrapped)
 
     # 评估解析结果质量
     title_ok = bool((parsed.get("title") or "").strip())

@@ -1,0 +1,748 @@
+=== SKU: W2678P312247 | Market: UK | Time: 20260705-000205 ===
+
+--- RAW AI content (text) ---
+<think>The user wants me to generate an Amazon UK listing in English for a product. Let me analyze the raw data carefully:
+
+- SKU: W2678P312247
+- Original Title: COOLMORE Lazy Sofa Durable Comfort Lounger High Back Bean Bag Chair Couch With Three Pillows for Adults and Kids, Indoor & Outdoor, Single Gaming Sofa Chair For Bedroom,Office (Coffee Chenille)
+- Material: Chenille
+- Color: Coffee
+- Style: 
+- Dimensions: Not Applicable x Not Applicable x Not Applicable cm
+- Model: HFSN-N777CF
+- Manufacturer: YUDA HOME FURNITURE
+- Category: Bean Bag Chairs & Lazy Sofa Chair
+
+Wait, there's a major mismatch here. The SEO Keyword Reference talks about:
+- planter, raised bed, garden bed, plant container, flower pot
+- metal, steel, galvanized, rust-proof
+- garden, backyard, patio, balcony, outdoor, vegetable growing
+
+But the actual product is a "Bean Bag Chair" / "Lazy Sofa Chair" with Chenille material in Coffee color.
+
+This is clearly a mismatch in the reference data. The product itself is a bean bag/lazy sofa chair. The SEO reference keywords seem to be from a different product category.
+
+I should follow Amazon's actual product (Bean Bag Chair) and ignore the mismatched SEO reference since it doesn't apply to this product. The user's instruction says "如与上文 Amazon 规则冲突,以 Amazon 规则为准" - so I should follow the actual product data.
+
+Wait, let me re-read. The task says to use the SEO Keyword Reference. But the SEO reference is completely wrong for this product (raised beds vs bean bags). 
+
+Looking at the hard rules:
+- Title / Bullets / Search Terms cannot contain brand words (COOLMORE, YUDA HOME FURNITURE)
+- No HTML in title/bullets/search terms
+- No promotional words
+
+Let me focus on creating a proper listing for a bean bag chair/lazy sofa. I'll use the actual product characteristics and create relevant SEO keywords for a bean bag chair.
+
+For the product:
+- It's a Lazy Sofa / Bean Bag Chair
+- Material: Chenille
+- Color: Coffee
+- Includes three pillows
+- For adults and kids
+- Indoor and outdoor use
+- Single gaming sofa chair
+- High back
+- No installation required
+
+Let me craft the listing:
+
+**Product Title (max 200 characters)**
+Need to include:
+- Core keywords: lazy sofa, bean bag chair
+- Material: chenille
+- Color: coffee
+- Dimensions: not applicable (skip or note)
+- No brand words
+- No promotional words
+- Standard title case
+
+Since dimensions are "Not Applicable", I'll skip dimensions or use generic ones.
+
+Title draft:
+"Lazy Sofa Bean Bag Chair with High Back, Chenille Single Gaming Sofa with Three Pillows, Coffee Comfortable Lounger Couch for Adults Kids Indoor Outdoor Living Room Bedroom Office"
+
+Let me count characters... that's around 175 characters. Good.
+
+**Five Bullet Points**
+
+1. Premium Chenille Fabric - Soft and durable chenille material provides cozy comfort for lounging, gaming, or relaxing. Coffee color complements any room decor.
+
+2. High Back Design with Three Pillows - Ergonomic high-back support plus three included pillows offer full body comfort for adults and teens during long gaming or reading sessions.
+
+3. No Assembly Required - Simply unbox and allow 48-72 hours for the bean bag to fully expand and regain its elasticity. Ready to use immediately after unpacking.
+
+4. Versatile Indoor and Outdoor Use - Perfect for bedroom, living room, playroom, office, or covered outdoor spaces. Lightweight design allows easy relocation to any room.
+
+5. Durable Comfort Construction - Built to withstand daily use by adults and kids. The sturdy lounger maintains shape and provides lasting comfort for gaming, watching TV, or casual seating.
+
+**Product Description**
+
+I'll write a description with HTML tags covering overview, features, use cases, instructions, and brand info.
+
+**Search Terms**
+
+For bean bag chair related terms:
+- bean bag chair
+- lazy sofa
+- gaming chair
+- floor sofa
+- lounger
+- recliner chair
+- accent chair
+- comfy chair
+- bedroom chair
+- living room chair
+- chenille sofa
+- high back chair
+- single sofa
+- leisure chair
+- floor lounger
+- beanbag
+- soft chair
+- armchair
+- gaming sofa
+- cozy chair
+
+I need to avoid brand words and not repeat title words. Let me check title words to avoid duplicating in search terms:
+- "Lazy Sofa" - in title
+- "Bean Bag Chair" - in title
+- "High Back" - in title
+- "Chenille" - in title
+- "Single Gaming Sofa" - in title
+- "Three Pillows" - in title
+- "Coffee" - in title
+- "Comfortable Lounger Couch" - in title
+- "Adults Kids Indoor Outdoor" - in title
+- "Living Room Bedroom Office" - in title
+
+So search terms should use synonyms/related terms not in title:
+- bean bag
+- floor chair
+- gaming lounger
+- accent seat
+- cozy lounger
+- soft seat
+- recliner
+- armchair
+- floor lounger
+- leisure chair
+- comfy chair
+- reading chair
+- tv chair
+- playroom furniture
+- teen furniture
+- kids furniture
+- gaming seat
+- rest chair
+- casual chair
+- nap chair
+- relaxation chair
+- padded chair
+- cushion chair
+
+Let me make sure these stay under 250 bytes.
+
+Actually, wait. I need to re-read the task. The SEO Keyword Reference mentions planter, raised bed, garden bed... This is clearly wrong for a bean bag chair. I should follow the actual product and not the SEO reference, since the SEO reference is irrelevant to this product.
+
+Let me finalize my listing now.
+
+Actually, looking more carefully at the original title, the dimensions are listed as "Not Applicable". Since this is a soft furniture item, I'll note dimensions aren't typically specified for bean bags.
+
+Final Title:
+"Lazy Sofa Bean Bag Chair with High Back, Chenille Single Gaming Sofa with Three Pillows, Coffee Comfortable Lounger Couch for Adults Kids Indoor Outdoor Living Room Bedroom Office"
+
+Hmm, let me count: that's about 175 chars. Good.
+
+Actually let me think about whether I should mention "bean bag chair" twice. Looking at Amazon best practices, having the main keyword early is important. Let me refine:
+
+"Lazy Sofa Bean Bag Chair with High Back and 3 Pillows, Chenille Gaming Sofa Chair, Coffee Floor Lounger Couch for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom"
+
+That's about 195 chars. Let me recount: "Lazy Sofa Bean Bag Chair with High Back and 3 Pillows, Chenille Gaming Sofa Chair, Coffee Floor Lounger Couch for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom" - around 195 chars. 
+
+Hmm, I should be careful with character count. Let me use "Three" spelled out and check.
+
+"Lazy Sofa Bean Bag Chair High Back with 3 Pillows, Chenille Gaming Sofa Coffee Floor Lounger Couch for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom"
+
+Let me count more carefully. I'll just aim for under 200.
+
+Final Title:
+"Lazy Sofa Bean Bag Chair High Back with Three Pillows, Chenille Gaming Sofa Floor Lounger Couch in Coffee for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom"
+
+Counting: Lazy(4) (5) Sofa(4) (10) Bean(4) (15) Bag(3) (19) Chair(5) (25) High(4) (30) Back(4) (35) with(4) (40) Three(5) (46) Pillows(7) (54), (1) (56) Chenille(8) (65) Gaming(6) (72) Sofa(4) (77) Floor(5) (83) Lounger(7) (91) Couch(5) (97) in(2) (100) Coffee(6) (107) for(3) (111) Adults(7) (119) Teens(5) (125), (1) (127) Indoor(6) (134) Outdoor(7) (142) Comfy(5) (148) Seat(4) (153) for(3) (157) Bedroom(8) (166) Living(6) (173) Room(4) (178) Office(6) (185) Playroom(8) (194)
+
+OK, 194 characters. 
+
+Now for bullets:
+
+Bullet 1: Premium Chenille Comfort - Soft, durable chenille fabric in rich coffee color provides cozy seating for gaming, reading, or relaxing. Skin-friendly material suitable for all-day lounging by adults and teens.
+
+Bullet 2: High Back Design with Three Pillows - Ergonomic high-back support combined with three included pillows delivers full-body comfort. Perfect posture support for long gaming sessions or TV marathons.
+
+Bullet 3: No Assembly Required - Unbox and let the bean bag breathe for 48-72 hours to fully regain its shape and elasticity. Ready to use straight away, no tools or setup needed.
+
+Bullet 4: Versatile Indoor and Outdoor Use - Lightweight and portable design fits perfectly in bedroom, living room, playroom, office, or covered outdoor areas. Easy to move between rooms as needed.
+
+Bullet 5: Durable Single Lounger Construction - Built with sturdy materials and reinforced stitching to maintain shape over time. Provides lasting comfort for solo relaxation, gaming, or casual seating in any living space.
+
+Now for the product description with HTML:
+
+<b>Lazy Sofa Bean Bag Chair - Ultimate Comfort for Modern Living</b>
+
+<p>Transform any space into a cozy retreat with this premium Lazy Sofa Bean Bag Chair. Designed for both adults and teens, this high-back lounger combines the supportive structure of a traditional sofa with the soft, sink-in comfort of a bean bag. Wrapped in soft coffee chenille fabric, it adds warmth and style to any room while providing exceptional comfort.</p>
+
+<b>Key Features & Benefits:</b>
+<li>Soft Chenille Upholstery - Premium coffee-colored chenille fabric is gentle on skin and durable for daily use</li>
+<li>High Back Support - Ergonomic high-back design provides proper posture support during long gaming or reading sessions</li>
+<li>Three Included Pillows - Extra cushions enhance comfort for head, back, and arm support</li>
+<li>No Assembly Required - Simply unbox, allow 48-72 hours for full expansion, and enjoy</li>
+<li>Lightweight and Portable - Easy to relocate between bedroom, living room, office, or playroom</li>
+
+<b>Versatile Use Cases:</b>
+<li>Bedroom - Perfect spot for reading, gaming, or relaxing before bed</li>
+<li>Living Room - Casual seating for movie nights and TV marathons</li>
+<li>Playroom - Comfortable lounging space for kids and teens</li>
+<li>Office - Informal seating for breaks and creative thinking</li>
+<li>Covered Outdoor Spaces - Patio, balcony, or covered porch relaxation</li>
+
+<b>Usage Instructions:</b>
+<p>1. Remove the bean bag from packaging<br>2. Place in desired location<br>3. Allow 48-72 hours for the filling to fully expand and regain optimal shape<br>4. Fluff and arrange the three included pillows as preferred<br>5. Enjoy your new favorite seat</p>
+
+<b>Care and Maintenance:</b>
+<p>Spot clean with mild detergent and water. Air dry thoroughly before use. Keep away from sharp objects and direct heat sources. The bean bag is designed for indoor use or covered outdoor areas to maintain fabric quality.</p>
+
+<b>About the Product:</b>
+<p>This lazy sofa is designed to bring together comfort, style, and versatility for modern lifestyles. Whether you're a gamer seeking supportive seating, a student needing a study lounge, or a parent looking for kid-friendly furniture, this bean bag chair adapts to your needs. The classic coffee color coordinates with most interior design styles, while the durable construction ensures long-lasting enjoyment.</p>
+
+For search terms, I need to use synonyms and long-tail terms not in the title. Let me check what I have in title:
+- Lazy Sofa
+- Bean Bag Chair
+- High Back
+- Three Pillows
+- Chenille
+- Gaming Sofa
+- Floor Lounger
+- Couch
+- Coffee
+- Adults
+- Teens
+- Indoor
+- Outdoor
+- Comfy Seat
+- Bedroom
+- Living Room
+- Office
+- Playroom
+
+Search terms should not repeat these. So I should use:
+- bean bag
+- floor chair
+- gaming lounger
+- accent seat
+- cozy lounger
+- soft seat
+- recliner
+- armchair
+- floor lounger
+- leisure chair
+- reading chair
+- tv chair
+- rest chair
+- casual chair
+- nap chair
+- relaxation chair
+- padded chair
+- cushion chair
+- big chair
+- wide seat
+- deep seat
+- lounge furniture
+- single seater
+- gaming furniture
+- home furniture
+
+Let me count bytes. Each comma-separated value plus comma. 
+
+Actually I need to think about Amazon's search term rules - they should be space-separated within phrases and not repeat words from title. Let me write them as a comma-separated list:
+
+bean bag, floor chair, gaming lounger, accent seat, cozy lounger, soft seat, recliner armchair, leisure chair, reading chair, tv chair, rest chair, casual chair, nap chair, relaxation seat, padded chair, cushion chair, single seater, lounge furniture, gaming furniture, home furniture, oversized seat, wide seat, deep seat, floor cushion, lounger pillow, comfy furniture, soft furniture
+
+Let me check size - this should be under 250 bytes.
+
+byte count estimation:
+- bean bag = 8
+- floor chair = 11
+- gaming lounger = 14
+- accent seat = 11
+- cozy lounger = 12
+- soft seat = 9
+- recliner armchair = 18
+- leisure chair = 13
+- reading chair = 13
+- tv chair = 8
+- rest chair = 10
+- casual chair = 12
+- nap chair = 9
+- relaxation seat = 16
+- padded chair = 12
+- cushion chair = 13
+- single seater = 13
+- lounge furniture = 17
+- gaming furniture = 17
+- home furniture = 14
+- oversized seat = 14
+- wide seat = 9
+- deep seat = 9
+- floor cushion = 13
+- lounger pillow = 14
+- comfy furniture = 15
+- soft furniture = 14
+
+Total without commas: ~325 bytes. Too many.
+
+Let me trim:
+
+bean bag, floor chair, gaming lounger, accent seat, recliner armchair, leisure chair, reading chair, tv chair, casual chair, nap chair, relaxation seat, padded chair, cushion chair, single seater, lounge furniture, gaming furniture, home furniture, oversized seat, deep seat, floor cushion, soft seat, comfy furniture
+
+Let me count more carefully:
+"bean bag" = 8 + ", " = 11
+"floor chair" = 11 + ", " = 14 (25)
+"gaming lounger" = 14 + ", " = 17 (42)
+"accent seat" = 11 + ", " = 14 (56)
+"recliner armchair" = 18 + ", " = 21 (77)
+"leisure chair" = 13 + ", " = 16 (93)
+"reading chair" = 13 + ", " = 16 (109)
+"tv chair" = 8 + ", " = 11 (120)
+"casual chair" = 12 + ", " = 15 (135)
+"nap chair" = 9 + ", " = 12 (147)
+"relaxation seat" = 16 + ", " = 19 (166)
+"padded chair" = 12 + ", " = 15 (181)
+"cushion chair" = 13 + ", " = 16 (197)
+"single seater" = 13 + ", " = 16 (213)
+"lounge furniture" = 17 + ", " = 20 (233)
+"gaming furniture" = 17 + ", " = 20 (253)
+
+That's 253 bytes, slightly over. Let me trim:
+
+bean bag, floor chair, gaming lounger, accent seat, recliner armchair, leisure chair, reading chair, tv chair, casual chair, nap chair, padded chair, cushion chair, single seater, lounge furniture, home furniture, oversized seat, deep seat, soft seat
+
+Let me count:
+bean bag = 8
+floor chair = 11 (19)
+gaming lounger = 14 (33)
+accent seat = 11 (44)
+recliner armchair = 18 (62)
+leisure chair = 13 (75)
+reading chair = 13 (88)
+tv chair = 8 (96)
+casual chair = 12 (108)
+nap chair = 9 (117)
+padded chair = 12 (129)
+cushion chair = 13 (142)
+single seater = 13 (155)
+lounge furniture = 17 (172)
+home furniture = 14 (186)
+oversized seat = 14 (200)
+deep seat = 9 (209)
+soft seat = 9 (218)
+
+Plus commas and spaces: 17 separators × 2 = 34. Total: 218 + 34 = 252. Just slightly over.
+
+Let me trim a bit more:
+bean bag, floor chair, gaming lounger, recliner armchair, leisure chair, reading chair, tv chair, casual chair, nap chair, padded chair, cushion chair, single seater, lounge furniture, home furniture, oversized seat, deep seat
+
+Count:
+bean bag = 8
+floor chair = 11 (19)
+gaming lounger = 14 (33)
+recliner armchair = 18 (51)
+leisure chair = 13 (64)
+reading chair = 13 (77)
+tv chair = 8 (85)
+casual chair = 12 (97)
+nap chair = 9 (106)
+padded chair = 12 (118)
+cushion chair = 13 (131)
+single seater = 13 (144)
+lounge furniture = 17 (161)
+home furniture = 14 (175)
+oversized seat = 14 (189)
+deep seat = 9 (198)
+
+Plus 15 separators × 2 = 30. Total: 198 + 30 = 228. Good.
+
+Let me also remove any potential duplicates with title:
+- "Lazy Sofa" - not in search terms ✓
+- "Bean Bag Chair" - I'm using "bean bag" not "bean bag chair" - that's fine ✓
+- "High Back" - not in search terms ✓
+- "Three Pillows" - not in search terms ✓
+- "Chenille" - not in search terms ✓
+- "Gaming Sofa" - I'm using "gaming lounger" - not in search terms as "gaming sofa" ✓
+- "Floor Lounger" - I have "floor chair" - that's different ✓
+- "Couch" - not in search terms ✓
+- "Coffee" - not in search terms ✓
+- "Adults" - not in search terms ✓
+- "Teens" - not in search terms ✓
+- "Indoor" - not in search terms ✓
+- "Outdoor" - not in search terms ✓
+- "Comfy Seat" - I have "padded chair" - different. Wait, should I worry about "comfy"? The title has "Comfy Seat" - so I should not use "comfy" in search terms ✓
+- "Bedroom" - not in search terms ✓
+- "Living Room" - not in search terms ✓
+- "Office" - not in search terms ✓
+- "Playroom" - not in search terms ✓
+
+Good, no duplicates.
+
+Also let me check - "floor" appears in title as "Floor Lounger". So "floor chair" might trigger a duplicate on "floor"? Actually in Amazon, individual words can be in search terms even if they're in the title, since Amazon indexes combinations. The rule says don't repeat words but typically it means don't repeat the same phrases. Let me keep "floor chair" since it's a different concept.
+
+Actually wait - the rule says "Do NOT repeat words already in the title". So if "floor" is in title, I shouldn't have "floor" in search terms either? That's strict. Let me remove "floor chair" and "floor cushion".
+
+Updated search terms:
+bean bag, gaming lounger, recliner armchair, leisure chair, reading chair, tv chair, casual chair, nap chair, padded chair, cushion chair, single seater, lounge furniture, home furniture, oversized seat, deep seat, gaming seat
+
+Let me count:
+bean bag = 8
+gaming lounger = 14 (22)
+recliner armchair = 18 (40)
+leisure chair = 13 (53)
+reading chair = 13 (66)
+tv chair = 8 (74)
+casual chair = 12 (86)
+nap chair = 9 (95)
+padded chair = 12 (107)
+cushion chair = 13 (120)
+single seater = 13 (133)
+lounge furniture = 17 (150)
+home furniture = 14 (164)
+oversized seat = 14 (178)
+deep seat = 9 (187)
+gaming seat = 11 (198)
+
+Plus 15 separators × 2 = 30. Total: 198 + 30 = 228. 
+
+Wait, but I have "gaming lounger" and "gaming seat". And title has "Gaming Sofa" - so "gaming" is in title. Hmm. Let me think about this rule again.
+
+The rule is "Do NOT repeat words already in the title". This is a strict rule for Amazon search terms. So any word that's in the title shouldn't be in search terms.
+
+Let me check what words are in my title:
+Lazy, Sofa, Bean, Bag, Chair, High, Back, with, Three, Pillows, Chenille, Gaming, Sofa, Floor, Lounger, Couch, in, Coffee, for, Adults, Teens, Indoor, Outdoor, Comfy, Seat, Bedroom, Living, Room, Office, Playroom
+
+So I should avoid all these words in search terms. That's quite restrictive. But common words like "for", "with", "in", "the" don't really matter. The key is to avoid the keywords.
+
+Actually, the Amazon rule for backend search terms is that you shouldn't repeat words from the title because Amazon already indexes those. So it's wasted bytes. Let me avoid them strictly.
+
+Words I should avoid in search terms:
+- Lazy, Sofa
+- Bean, Bag
+- Chair
+- High, Back
+- Three, Pillows
+- Chenille
+- Gaming
+- Floor, Lounger
+- Couch
+- Coffee
+- Adults, Teens
+- Indoor, Outdoor
+- Comfy, Seat
+- Bedroom, Living, Room
+- Office
+- Playroom
+
+Wait, this is super restrictive. Almost every keyword for a bean bag chair would have some overlap. Let me think about this practically.
+
+In practice, Amazon's rules say not to repeat words to maximize search term effectiveness. But they don't strictly forbid it. The listing optimization rule here is "Do NOT repeat words already in the title". Let me follow this strictly.
+
+Search terms without using any of those words:
+- "seat" is in title, so avoid "seat"
+- "chair" is in title, so avoid "chair"
+- "lounger" is in title, so avoid "lounger"
+- "sofa" is in title, so avoid "sofa"
+
+Hmm, this is challenging. Almost every search term would use these words.
+
+Let me think differently. The user said "如与上文 Amazon 规则冲突,以 Amazon 规则为准". And the SEO keyword reference mentions raised beds and planters - which is clearly wrong. But the user's instruction says to follow Amazon rules over user preferences. Since the SEO reference is contradictory to the product, I should use my own judgment for bean bag chair keywords.
+
+Actually re-reading more carefully: The rule says "Do NOT repeat words already in the title". This is about Amazon backend search terms. Common practice on Amazon is to use words NOT in the title to maximize the use of search term field. So I should follow this strictly.
+
+Words from title to avoid:
+Lazy, Sofa, Bean, Bag, Chair, High, Back, with, Three, Pillows, Chenille, Gaming, Sofa, Floor, Lounger, Couch, in, Coffee, for, Adults, Teens, Indoor, Outdoor, Comfy, Seat, Bedroom, Living, Room, Office, Playroom
+
+Skip common stopwords: with, in, for
+
+So I need to avoid: Lazy, Sofa, Bean, Bag, Chair, High, Back, Three, Pillows, Chenille, Gaming, Floor, Lounger, Couch, Coffee, Adults, Teens, Indoor, Outdoor, Comfy, Seat, Bedroom, Living, Room, Office, Playroom
+
+This is very restrictive. Let me think of keywords that don't use any of these words:
+
+- furniture (not in title)
+- recliner (not in title)
+- armchair (not in title)
+- padded (not in title)
+- cushion (not in title)
+- cushiony (not in title)
+- nap (not in title)
+- relax (not in title)
+- relaxation (not in title)
+- oversized (not in title)
+- single (not in title)
+- seater (not in title)
+- homely (not in title)
+- domestic (not in title)
+- decor (not in title)
+- modern (not in title)
+- contemporary (not in title)
+- reading (not in title)
+- tv (not in title)
+- television (not in title)
+- movie (not in title)
+- media (not in title)
+- study (not in title)
+- desk (not in title)
+- work (not in title)
+- comfort (not in title)
+- comfy - wait, comfy is in title as "Comfy"
+- snuggle (not in title)
+- hug (not in title)
+- wrap (not in title)
+- leisure (not in title)
+- rest (not in title)
+- relaxation (not in title)
+- casual (not in title)
+- home (not in title)
+- portable (not in title)
+- lightweight (not in title)
+- big (not in title)
+- large (not in title)
+- wide (not in title)
+- deep (not in title)
+- sturdy (not in title)
+- soft (not in title)
+- plush (not in title)
+- squishy (not in title)
+- bouncy (not in title)
+- airy (not in title)
+- pillow-like (not in title)
+- textile (not in title)
+- fabric (not in title)
+- material (not in title)
+- upholstery (not in title)
+- color (not in title)
+- accent (not in title)
+- piece (not in title)
+- item (not in title)
+- decor item (not in title)
+
+OK, this is more doable. Let me write search terms:
+
+furniture, recliner armchair, padded cushion, nap, relaxation, oversized, single seater, modern decor, reading nook, tv spot, movie media, leisure rest, casual home, portable lightweight, large wide, deep sturdy, soft plush, squishy bouncy, textile fabric, upholstery accent, comfort furniture
+
+Let me count:
+furniture = 9
+recliner armchair = 18 (27)
+padded cushion = 15 (42)
+nap = 3 (45)
+relaxation = 11 (56)
+oversized = 9 (65)
+single seater = 13 (78)
+modern decor = 12 (90)
+reading nook = 12 (102)
+tv spot = 7 (109)
+movie media = 11 (120)
+leisure rest = 12 (132)
+casual home = 11 (143)
+portable lightweight = 19 (162)
+large wide = 10 (172)
+deep sturdy = 11 (183)
+soft plush = 10 (193)
+squishy bouncy = 15 (208)
+textile fabric = 15 (223)
+upholstery accent = 17 (240)
+
+Plus 19 separators × 2 = 38. Total: 240 + 38 = 278. Too many.
+
+Let me trim:
+furniture, recliner armchair, padded cushion, relaxation, oversized, single seater, modern decor, reading nook, tv spot, leisure rest, casual home, portable, lightweight, large wide, soft plush, textile fabric, upholstery accent
+
+Count:
+furniture = 9
+recliner armchair = 18 (27)
+padded cushion = 15 (42)
+relaxation = 11 (53)
+oversized = 9 (62)
+single seater = 13 (75)
+modern decor = 12 (87)
+reading nook = 12 (99)
+tv spot = 7 (106)
+leisure rest = 12 (118)
+casual home = 11 (129)
+portable = 8 (137)
+lightweight = 11 (148)
+large wide = 10 (158)
+soft plush = 10 (168)
+textile fabric = 15 (183)
+upholstery accent = 17 (200)
+
+Plus 16 separators × 2 = 32. Total: 200 + 32 = 232. Good.
+
+Actually, I realize I should think about this from a more practical SEO standpoint. The rule about not repeating words is for efficiency, but it's not absolutely strict. Many Amazon listings have minor word overlaps. However, I'll try to follow it as closely as possible.
+
+Let me also add some long-tail terms:
+furniture, recliner armchair, padded cushion, relaxation, oversized, single seater, modern decor, reading nook, tv spot, leisure rest, casual home, portable, lightweight, large wide, soft plush, textile fabric, upholstery accent
+
+Actually, I realize I should also reconsider - the title has "Lazy Sofa", "Bean Bag Chair", etc. I should still include "bean bag" without "chair" to capture people searching for bean bag in different ways. Wait, "bean" and "bag" are both in the title. So I shouldn't use "bean bag".
+
+Let me check - "Bean Bag Chair" is in title. So I can't use "bean" or "bag" individually? Hmm, that's the strict interpretation. But practically, people search "bean bag" without "chair" so it's a common search term. But the rule says don't repeat words, so I'll exclude.
+
+OK let me finalize:
+
+Search terms:
+furniture, recliner armchair, padded cushion, relaxation, oversized, single seater, modern decor, reading nook, tv spot, leisure rest, casual home, portable, lightweight, large wide, soft plush, textile fabric, upholstery accent
+
+Hmm, this might be too restrictive. Let me reconsider - the rule says "Do NOT repeat words already in the title". This is to avoid wasting search term space. But if the search terms field is limited to 250 bytes, we need to be efficient. So I should focus on keywords that aren't in the title.
+
+Let me add a few more long-tail terms but avoid duplicates:
+furniture, recliner armchair, padded cushion, relaxation nap, oversized single, modern decor accent, reading nook spot, tv media room, leisure rest area, casual home style, portable lightweight, large wide seat, soft plush textile, upholstery accent piece
+
+Wait "seat" is in title. Let me check... yes "Comfy Seat". So avoid "seat".
+
+Actually, you know what, the rule is "Do NOT repeat words already in the title". The title has "Seat" with capital S but search terms are typically lowercase. In backend, Amazon normalizes anyway. Let me avoid it strictly.
+
+Final search terms:
+furniture, recliner armchair, padded cushion, relaxation nap, oversized single, modern decor accent, reading nook spot, tv media room, leisure rest area, casual home style, portable lightweight, large wide, soft plush textile, upholstery accent piece
+
+Count:
+furniture = 9
+recliner armchair = 18 (27)
+padded cushion = 15 (42)
+relaxation nap = 14 (56)
+oversized single = 16 (72)
+modern decor accent = 19 (91)
+reading nook spot = 17 (108)
+tv media room = 13 (121)
+leisure rest area = 17 (138)
+casual home style = 17 (155)
+portable lightweight = 19 (174)
+large wide = 10 (184)
+soft plush textile = 18 (202)
+upholstery accent piece = 22 (224)
+
+Plus 13 separators × 2 = 26. Total: 224 + 26 = 250. Exactly at limit. Let me leave some buffer.
+
+Let me trim a bit:
+furniture, recliner armchair, padded cushion, relaxation nap, oversized single, modern decor accent, reading nook spot, tv media, leisure rest, casual home style, portable lightweight, large wide, soft plush textile, upholstery accent piece
+
+Count:
+furniture = 9
+recliner armchair = 18 (27)
+padded cushion = 15 (42)
+relaxation nap = 14 (56)
+oversized single = 16 (72)
+modern decor accent = 19 (91)
+reading nook spot = 17 (108)
+tv media = 8 (116)
+leisure rest = 12 (128)
+casual home style = 17 (145)
+portable lightweight = 19 (164)
+large wide = 10 (174)
+soft plush textile = 18 (192)
+upholstery accent piece = 22 (214)
+
+Plus 13 separators × 2 = 26. Total: 214 + 26 = 240. Good, 10 bytes buffer.
+
+Actually, I want to also include some practical terms. Let me also add "nap" alone, "rest" alone, etc. as individual words to maximize coverage.
+
+Hmm, let me reconsider. The whole point of Amazon search terms is to cover search combinations. Let me think about what users might search:
+- "furniture" - generic
+- "padded cushion" - specific
+- "armchair" - alternative term
+- "recliner" - alternative
+- "oversized" - common modifier
+- "single seater" - common for one-person furniture
+- "modern decor" - style
+- "reading nook" - use case
+- "tv" - use case
+- "leisure" - use case
+- "casual" - style
+- "portable" - feature
+- "lightweight" - feature
+- "soft" - texture
+- "plush" - texture
+- "upholstery" - material
+- "accent" - style
+
+These look reasonable. Let me finalize.
+
+Wait, I want to double check my bullet points don't have any forbidden things.
+
+Forbidden:
+- Brand names (COOLMORE, YUDA HOME FURNITURE) - I don't have these ✓
+- HTML tags - bullets should be plain text ✓
+- Promotional words - I should check
+
+Bullet 1: "Premium Chenille Comfort - Soft, durable chenille fabric in rich coffee color provides cozy seating for gaming, reading, or relaxing. Skin-friendly material suitable for all-day lounging by adults and teens."
+- No brand ✓
+- No HTML ✓
+- No promotional (premium is okay, not in forbidden list)
+- Has "coffee" - that's the color, not the drink, should be okay
+- Mentions dimensions? Let me check - no dimensions specified, so I omit. Specs are about material (chenille), color (coffee).
+
+Bullet 2: "High Back Design with Three Pillows - Ergonomic high-back support combined with three included pillows delivers full-body comfort. Perfect posture support for long gaming sessions or TV marathons."
+- High back, three pillows mentioned
+
+Bullet 3: "No Assembly Required - Unbox and let the bean bag breathe for 48-72 hours to fully regain its shape and elasticity. Ready to use straight away, no tools or setup needed."
+- 48-72 hours expansion mentioned
+
+Bullet 4: "Versatile Indoor and Outdoor Use - Lightweight and portable design fits perfectly in bedroom, living room, playroom, office, or covered outdoor areas. Easy to move between rooms as needed."
+
+Bullet 5: "Durable Single Lounger Construction - Built with sturdy materials and reinforced stitching to maintain shape over time. Provides lasting comfort for solo relaxation, gaming, or casual seating in any living space."
+
+OK bullets look good.
+
+Let me check the description for forbidden things:
+- No brand ✓
+- Can use HTML tags ✓
+- No promotional words
+
+Description looks good.
+
+Now, let me check the title:
+"Lazy Sofa Bean Bag Chair High Back with Three Pillows, Chenille Gaming Sofa Floor Lounger Couch in Coffee for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom"
+
+Wait, I used both "Sofa" in "Lazy Sofa" and "Gaming Sofa" - is that redundant? It's still within character limit. Let me clean it up.
+
+Actually, let me re-think the title. The format Amazon typically uses is:
+[Brand] [Product Type] [Key Feature 1] [Key Feature 2] [Material] [Color] [Use Case]
+
+But I can't use brand. So:
+Lazy Sofa Bean Bag Chair, High Back with Three Pillows, Chenille Gaming Floor Lounger in Coffee for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom
+
+Let me count:
+Lazy Sofa Bean Bag Chair = 25
+, High Back with Three Pillows = 27 (52)
+, Chenille Gaming Floor Lounger = 32 (84)
+in Coffee for Adults Teens = 27 (111)
+, Indoor Outdoor Comfy Seat = 26 (137)
+for Bedroom Living Room Office Playroom = 41 (178)
+
+Hmm, "Floor" is a bit unusual. Let me use different terminology:
+Lazy Sofa Bean Bag Chair High Back with Three Pillows, Chenille Gaming Couch in Coffee for Adults Teens, Indoor Outdoor Comfy Seat for</think>
+
+
+--- RAW AI reasoning_content ---
+(none)
+
+--- RAW AI FULL JSON ---
+{
+  "id": "0698611dd4610a599f75d6cc84a5e3aa",
+  "choices": [
+    {
+      "finish_reason": "length",
+      "index": 0,
+      "message": {
+        "content": "<think>The user wants me to generate an Amazon UK listing in English for a product. Let me analyze the raw data carefully:\n\n- SKU: W2678P312247\n- Original Title: COOLMORE Lazy Sofa Durable Comfort Lounger High Back Bean Bag Chair Couch With Three Pillows for Adults and Kids, Indoor & Outdoor, Single Gaming Sofa Chair For Bedroom,Office (Coffee Chenille)\n- Material: Chenille\n- Color: Coffee\n- Style: \n- Dimensions: Not Applicable x Not Applicable x Not Applicable cm\n- Model: HFSN-N777CF\n- Manufacturer: YUDA HOME FURNITURE\n- Category: Bean Bag Chairs & Lazy Sofa Chair\n\nWait, there's a major mismatch here. The SEO Keyword Reference talks about:\n- planter, raised bed, garden bed, plant container, flower pot\n- metal, steel, galvanized, rust-proof\n- garden, backyard, patio, balcony, outdoor, vegetable growing\n\nBut the actual product is a \"Bean Bag Chair\" / \"Lazy Sofa Chair\" with Chenille material in Coffee color.\n\nThis is clearly a mismatch in the reference data. The product itself is a bean bag/lazy sofa chair. The SEO reference keywords seem to be from a different product category.\n\nI should follow Amazon's actual product (Bean Bag Chair) and ignore the mismatched SEO reference since it doesn't apply to this product. The user's instruction says \"如与上文 Amazon 规则冲突,以 Amazon 规则为准\" - so I should follow the actual product data.\n\nWait, let me re-read. The task says to use the SEO Keyword Reference. But the SEO reference is completely wrong for this product (raised beds vs bean bags). \n\nLooking at the hard rules:\n- Title / Bullets / Search Terms cannot contain brand words (COOLMORE, YUDA HOME FURNITURE)\n- No HTML in title/bullets/search terms\n- No promotional words\n\nLet me focus on creating a proper listing for a bean bag chair/lazy sofa. I'll use the actual product characteristics and create relevant SEO keywords for a bean bag chair.\n\nFor the product:\n- It's a Lazy Sofa / Bean Bag Chair\n- Material: Chenille\n- Color: Coffee\n- Includes three pillows\n- For adults and kids\n- Indoor and outdoor use\n- Single gaming sofa chair\n- High back\n- No installation required\n\nLet me craft the listing:\n\n**Product Title (max 200 characters)**\nNeed to include:\n- Core keywords: lazy sofa, bean bag chair\n- Material: chenille\n- Color: coffee\n- Dimensions: not applicable (skip or note)\n- No brand words\n- No promotional words\n- Standard title case\n\nSince dimensions are \"Not Applicable\", I'll skip dimensions or use generic ones.\n\nTitle draft:\n\"Lazy Sofa Bean Bag Chair with High Back, Chenille Single Gaming Sofa with Three Pillows, Coffee Comfortable Lounger Couch for Adults Kids Indoor Outdoor Living Room Bedroom Office\"\n\nLet me count characters... that's around 175 characters. Good.\n\n**Five Bullet Points**\n\n1. Premium Chenille Fabric - Soft and durable chenille material provides cozy comfort for lounging, gaming, or relaxing. Coffee color complements any room decor.\n\n2. High Back Design with Three Pillows - Ergonomic high-back support plus three included pillows offer full body comfort for adults and teens during long gaming or reading sessions.\n\n3. No Assembly Required - Simply unbox and allow 48-72 hours for the bean bag to fully expand and regain its elasticity. Ready to use immediately after unpacking.\n\n4. Versatile Indoor and Outdoor Use - Perfect for bedroom, living room, playroom, office, or covered outdoor spaces. Lightweight design allows easy relocation to any room.\n\n5. Durable Comfort Construction - Built to withstand daily use by adults and kids. The sturdy lounger maintains shape and provides lasting comfort for gaming, watching TV, or casual seating.\n\n**Product Description**\n\nI'll write a description with HTML tags covering overview, features, use cases, instructions, and brand info.\n\n**Search Terms**\n\nFor bean bag chair related terms:\n- bean bag chair\n- lazy sofa\n- gaming chair\n- floor sofa\n- lounger\n- recliner chair\n- accent chair\n- comfy chair\n- bedroom chair\n- living room chair\n- chenille sofa\n- high back chair\n- single sofa\n- leisure chair\n- floor lounger\n- beanbag\n- soft chair\n- armchair\n- gaming sofa\n- cozy chair\n\nI need to avoid brand words and not repeat title words. Let me check title words to avoid duplicating in search terms:\n- \"Lazy Sofa\" - in title\n- \"Bean Bag Chair\" - in title\n- \"High Back\" - in title\n- \"Chenille\" - in title\n- \"Single Gaming Sofa\" - in title\n- \"Three Pillows\" - in title\n- \"Coffee\" - in title\n- \"Comfortable Lounger Couch\" - in title\n- \"Adults Kids Indoor Outdoor\" - in title\n- \"Living Room Bedroom Office\" - in title\n\nSo search terms should use synonyms/related terms not in title:\n- bean bag\n- floor chair\n- gaming lounger\n- accent seat\n- cozy lounger\n- soft seat\n- recliner\n- armchair\n- floor lounger\n- leisure chair\n- comfy chair\n- reading chair\n- tv chair\n- playroom furniture\n- teen furniture\n- kids furniture\n- gaming seat\n- rest chair\n- casual chair\n- nap chair\n- relaxation chair\n- padded chair\n- cushion chair\n\nLet me make sure these stay under 250 bytes.\n\nActually, wait. I need to re-read the task. The SEO Keyword Reference mentions planter, raised bed, garden bed... This is clearly wrong for a bean bag chair. I should follow the actual product and not the SEO reference, since the SEO reference is irrelevant to this product.\n\nLet me finalize my listing now.\n\nActually, looking more carefully at the original title, the dimensions are listed as \"Not Applicable\". Since this is a soft furniture item, I'll note dimensions aren't typically specified for bean bags.\n\nFinal Title:\n\"Lazy Sofa Bean Bag Chair with High Back, Chenille Single Gaming Sofa with Three Pillows, Coffee Comfortable Lounger Couch for Adults Kids Indoor Outdoor Living Room Bedroom Office\"\n\nHmm, let me count: that's about 175 chars. Good.\n\nActually let me think about whether I should mention \"bean bag chair\" twice. Looking at Amazon best practices, having the main keyword early is important. Let me refine:\n\n\"Lazy Sofa Bean Bag Chair with High Back and 3 Pillows, Chenille Gaming Sofa Chair, Coffee Floor Lounger Couch for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom\"\n\nThat's about 195 chars. Let me recount: \"Lazy Sofa Bean Bag Chair with High Back and 3 Pillows, Chenille Gaming Sofa Chair, Coffee Floor Lounger Couch for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom\" - around 195 chars. \n\nHmm, I should be careful with character count. Let me use \"Three\" spelled out and check.\n\n\"Lazy Sofa Bean Bag Chair High Back with 3 Pillows, Chenille Gaming Sofa Coffee Floor Lounger Couch for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom\"\n\nLet me count more carefully. I'll just aim for under 200.\n\nFinal Title:\n\"Lazy Sofa Bean Bag Chair High Back with Three Pillows, Chenille Gaming Sofa Floor Lounger Couch in Coffee for Adults Teens, Indoor Outdoor Comfy Seat for Bedroom Living Room Office Playroom\"\n\nCounting: Lazy(4) (5) Sofa(4) (10) Bean(4) (15) Bag(3) (19) Chair(5) (25) High(4) (30) Back(4) (35) with(4) (40) Three(5) (46) Pillows(7) (54), (1) (56) Chenille(8) (65) Gaming(6) (72) Sofa(4) (77) Floor(5) (83) Lounger(7) (91) Couch(5) (97) in(2) (100) Coffee(6) (107) for(3) (111) Adults(7) (119) Teens(5) (125), (1) (127) Indoor(6) (134) Outdoor(7) (142) Comfy(5) (148) Seat(4) (153) for(3) (157) Bedroom(8) (166) Living(6) (173) Room(4) (178) Office(6) (185) Playroom(8) (194)\n\nOK, 194 characters. \n\nNow for bullets:\n\nBullet 1: Premium Chenille Comfort - Soft, durable chenille fabric in rich coffee color provides cozy seating for gaming, reading, or relaxing. Skin-friendly material suitable for all-day lounging by adults and teens.\n
+
+--- PARSED ---
+title:        ''
+bullets:      0 items
+description:  0 chars
+search_terms: ''
+ai_status:    empty

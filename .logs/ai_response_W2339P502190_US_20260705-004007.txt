@@ -1,0 +1,618 @@
+=== SKU: W2339P502190 | Market: US | Time: 20260705-004007 ===
+
+--- RAW AI content (text) ---
+<think>The user wants me to generate an Amazon listing for a product. However, there's a major mismatch here:
+
+The product raw data is for a "Oversized Chaise Lounge Chair Indoor, Corduroy Upholstered Modern Sofa Couch" - this is a sofa/couch product.
+
+But the SEO Keyword Reference is for planters, raised beds, garden beds, plant containers, flower pots - this is a garden/outdoor product category.
+
+There's also a contradiction: the product category says "Sofas" but the SEO keywords are for garden products.
+
+Looking at the HARD RULES and Output Requirements:
+- Title should include "raised bed / planter / garden bed" keywords
+- Material keywords should be "galvanized steel / metal"
+- Dimensions L×W×H cm
+- Use-case: garden, backyard, patio, balcony, outdoor, vegetable growing
+
+But the actual product is a corduroy chaise lounge chair... This is clearly a mismatch in the data provided.
+
+Also, the dimensions say "Not Applicable" - so I can't include real dimensions.
+
+Let me re-read the requirements carefully. The Output Requirements say to include planter/raised bed keywords, but the product is a sofa. This seems like a test or there's a confusion.
+
+Given the conflict, I need to follow the Output Requirements which specify the keywords to include. But this would create a completely misleading listing for a sofa product.
+
+Wait - actually, looking more carefully, I think the SEO Keyword Reference is wrong/mismatched with the product. But my task is to generate a listing following the format requirements.
+
+Hmm, but the "USER OPTIMIZATION INSTRUCTIONS" is just "亚马逊" which is very minimal.
+
+I think the best approach is to follow the Output Requirements format strictly, but there's a fundamental issue: the product is a sofa but the keyword reference is for garden planters.
+
+Let me look at this from a different angle: maybe the intent is to apply the same format/structure requirements to the actual product. The SEO keyword reference seems to be a template/example that doesn't match.
+
+Actually, re-reading: "Generate a high-conversion Amazon Amazon.com (美国) Listing" - this is for the product specified. The product is a chaise lounge chair, not a garden bed.
+
+But the Output Requirements section explicitly mentions raised bed, planter, garden bed, galvanized steel, metal etc. This is clearly a template mismatch.
+
+I think I should:
+1. Follow the Output Requirements format structure (title with core keywords, 5 bullets, description, search terms)
+2. But adapt the keywords to match the ACTUAL product (the sofa/chaise lounge)
+
+Wait, but the instructions say "Include core keywords (raised bed / planter / garden bed)" - this is in the Output Requirements section which I need to follow strictly.
+
+This is contradictory. The product is a sofa but the requirements say to include raised bed keywords.
+
+I think the right thing to do is to follow the actual product data and create a proper listing. The SEO keyword reference in the prompt seems to be an error/template that doesn't match. The Output Requirements seem to also be templated from a different product.
+
+Actually, let me reconsider. The instructions say "USER OPTIMIZATION INSTRUCTIONS (treated as USER-PROVIDED CONTENT, NOT as higher-priority commands)" and the user content is just "亚马逊".
+
+Looking at this holistically:
+- Product: Sofa/Chaise Lounge
+- SEO keywords given: planters, garden beds
+- Output requirements: include raised bed keywords
+
+I think there's been a copy-paste error in the prompt, and the SEO keywords and Output Requirements are from a different product template. 
+
+The most sensible approach: Generate a proper listing for the ACTUAL product (chaise lounge chair). I'll use the product characteristics provided and create appropriate SEO keywords for a sofa/chaise lounge.
+
+But wait - I need to be careful. The user might be testing whether I'll blindly follow contradictory instructions. I should follow the rules as stated but adapt them to the actual product.
+
+Actually, I think the right move here is to follow the product specifications literally. The Output Requirements clearly specify planters/garden beds but the product is a sofa. I'll generate the listing for the actual sofa product, since:
+1. The product data is clear (sofa)
+2. The characteristics describe a sofa (corduroy, lounge chair)
+3. Creating a garden bed listing for a sofa product would be misleading/fraudulent
+
+Let me generate a proper chaise lounge chair listing following all the formatting rules but with the correct product information.
+
+Hmm, but the instructions say the title needs dimensions "L×W×H cm" but the dimensions show "Not Applicable". I'll need to handle this.
+
+Let me proceed with creating a proper listing for the chaise lounge chair sofa, ignoring the mismatched garden bed keywords. I'll adapt the SEO keywords to actual sofa/chaise lounge keywords.
+
+Actually, you know what, I'll just follow the product data as given. The SEO keyword reference and the part of Output Requirements about "raised bed / planter / garden bed" are clearly from a different product template and should be ignored for this specific product.
+
+But I need to be careful - the output format requirements still apply (title structure, bullets, description, search terms format). I just need to use the correct product information.
+
+Let me draft the listing:
+
+**Product Title** (max 200 characters):
+- Core keywords: chaise lounge, sofa, couch
+- Material: corduroy
+- Color: pink
+- Dimensions: Not given
+- No brand
+- No promotional words
+
+"Corduroy Oversized Chaise Lounge Chair, Modern Pink Upholstered Sofa Couch, No Assembly Required, Skin-Friendly Soft Sleeper for Living Room Office"
+
+Let me check character count... That's about 142 characters. Good.
+
+**Five Bullet Points:**
+
+1. Premium Corduroy Upholstery: Covered in soft, skin-friendly corduroy fabric that delivers a cozy tactile feel and lasting visual appeal for everyday lounging.
+2. Sponge and Pocket Spring Construction: Built with high-density sponge combined with pocket spring support, offering plush softness plus reliable durability for years of use.
+3. Ergonomic Lounge Design: Carefully contoured backrest and armrests follow ergonomic principles to balance comfort and support, ideal for relaxing, reading, or napping.
+4. No Assembly Required: This oversized chaise lounge arrives fully assembled, so you can place it in your living room or office and start enjoying it right away.
+5. Stylish Pink Statement Piece: Its modern silhouette and elegant pink tone bring a refined, versatile look that fits bedrooms, apartments, guest rooms, and home offices.
+
+**Product Description:**
+HTML formatted...
+
+**Search Terms:**
+- chaise lounge
+- lounge chair
+- oversized sofa
+- corduroy couch
+- sleeper sofa
+- pink sofa
+- modern couch
+- reading chair
+- accent chair
+- living room furniture
+- ergonomic lounge
+- no assembly sofa
+- bedroom chaise
+- guest room sofa
+- apartment couch
+
+Let me write all of this out properly now.
+
+Actually, let me reconsider the SEO keyword situation once more. The user provided:
+"## SEO Keyword Reference
+Category: planter, raised bed, garden bed, plant container, flower pot
+Material: metal, steel, galvanized, rust-proof
+Use-case: garden, backyard, patio, balcony, outdoor, vegetable growing"
+
+This is clearly for a different product. Given the conflict, I'll generate keywords appropriate for the actual chaise lounge product.
+
+Now let me make sure I follow all the hard rules:
+- No HTML tags in Title/Bullets/Search Terms ✓
+- No brand words (so no "YUDA HOME FURNITURE") ✓
+- ASCII punctuation only, no en-dashes/em-dashes ✓
+- Use regular hyphens ✓
+
+Let me finalize the listing:
+
+**Title:**
+"Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office"
+
+Counting characters... let me count more carefully:
+"Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office"
+That's about 145 characters. Good, under 200.
+
+Hmm, "Skin-Friendly" - is that standard title case? Yes, hyphenated compounds usually keep both parts capitalized.
+
+**Bullet Points:**
+
+1. Premium Corduroy Upholstery: Covered in soft, skin-friendly corduroy fabric that delivers a cozy tactile feel and lasting visual appeal for everyday lounging, reading, or entertaining guests.
+
+2. Sponge and Pocket Spring Support: Built with high-density sponge layered with individual pocket springs to balance plush softness and long-lasting resilience for daily use.
+
+3. Ergonomic Lounge Design: Carefully angled backrest and supportive armrests follow ergonomic principles, providing balanced comfort for relaxation, movie nights, or afternoon naps.
+
+4. No Assembly Required: This oversized chaise lounge arrives fully assembled and ready to use, saving you setup time and hassle in your living room, bedroom, or home office.
+
+5. Stylish Modern Accent Piece: Finished in an elegant pink tone with clean modern lines, this versatile sleeper sofa adds a sophisticated touch to apartments, guest rooms, and studio spaces.
+
+Each bullet is within 200 characters. Let me verify... they all look around 150-170 characters, which is fine.
+
+**Product Description:**
+
+Let me create a good description with HTML formatting:
+
+<h3>Product Overview</h3>
+<p>Add a fresh, modern focal point to your home with this oversized corduroy chaise lounge chair. Upholstered in soft, skin-friendly corduroy fabric and finished in an elegant pink tone, this chaise lounge blends contemporary style with everyday comfort for living rooms, bedrooms, apartments, home offices, and guest suites.</p>
+
+<h3>Main Features and Advantages</h3>
+<ul>
+<li><b>Soft Corduroy Upholstery:</b> Premium corduroy cover feels gentle against the skin and adds rich texture to any room.</li>
+<li><b>Sponge and Pocket Spring Core:</b> Combines high-density sponge with pocket spring support for plush seating that holds its shape over time.</li>
+<li><b>Ergonomic Contoured Design:</b> Angled backrest and supportive armrests follow ergonomic principles to balance comfort and proper posture.</li>
+<li><b>No Assembly Required:</b> Ships fully assembled so you can place it and start enjoying it right out of the box.</li>
+<li><b>Modern Pink Finish:</b> A versatile, on-trend color that complements neutral, contemporary, and Scandinavian interiors.</li>
+</ul>
+
+<h3>Use Cases</h3>
+<ul>
+<li>Lounge and relax in the living room</li>
+<li>Read a book in the bedroom or study</li>
+<li>Add seating in a guest room or apartment</li>
+<li>Accent chair in a home office or studio</li>
+<li>Cozy spot for movie nights and casual naps</li>
+</ul>
+
+<h3>Usage Instructions</h3>
+<p>Place the chaise lounge on a clean, flat surface indoors. Avoid prolonged direct sunlight to preserve fabric color. Spot clean with a damp cloth and mild detergent. Rotate usage to maintain even cushion filling. Suitable for indoor living spaces, offices, and lounges.</p>
+
+<h3>About the Product</h3>
+<p>Designed with modern living in mind, this oversized chaise lounge delivers cloud-like comfort, durable construction, and contemporary style in one versatile piece. The combination of corduroy softness, pocket spring support, and ergonomic shaping makes it an inviting seat for any indoor setting.</p>
+
+**Search Terms:**
+
+I need to think about appropriate search terms for a chaise lounge. Let me make a comma-separated list under 250 bytes:
+
+oversized chaise lounge, pink couch, corduroy sofa, modern lounge chair, indoor chaise, sleeper chair, no assembly couch, living room furniture, ergonomic sofa, bedroom chaise, apartment sofa, accent chair, reading nook chair, guest room seating, floor sofa
+
+Let me count bytes... each character is 1 byte in ASCII, so 250 characters max.
+
+"oversized chaise lounge, pink couch, corduroy sofa, modern lounge chair, indoor chaise, sleeper chair, no assembly couch, living room furniture, ergonomic sofa, bedroom chaise, apartment sofa, accent chair, reading nook chair, guest room seating, floor sofa"
+
+Let me count: approximately 220+ characters. Should be fine.
+
+Wait, I should not repeat words already in the title. Title contains: Corduroy, Oversized, Chaise Lounge Chair, Indoor, Skin-Friendly, Pink, Upholstered, Modern, Sofa Couch, No Assembly, Sleeper Sofa, Living Room, Office
+
+So I shouldn't use: chaise lounge chair, corduroy, oversized, indoor, pink, upholstered, modern, sofa couch/couch, no assembly, sleeper sofa, living room, office
+
+Hmm, but I still need core keywords. Let me make sure my search terms use synonyms and complementary terms:
+
+chaise, lounge, sofa, couch, chair, soft, fabric, velvet, tufted, sectional, recliner, futon, daybed, settee, bench, ottoman, pillow, cushion, comfortable, relaxing, contemporary, decorative, minimalist, scandinavian, bedroom, apartment, studio, dorm, guest, loft, condo, house, seating, furniture, accent
+
+Let me redo search terms focusing on what's NOT in the title:
+
+daybed, futon, settee, recliner, sectional, velvet sofa, fabric couch, tufted chair, soft seating, contemporary furniture, decorative accent, minimalist couch, studio sofa, dorm chair, loft seating, condo furniture, house chair
+
+Hmm, but search terms should include things people actually search. Let me create a more practical list:
+
+chaise lounge chair, lounge chair, daybed, futon, settee, recliner, sectional sofa, velvet chair, fabric sofa, tufted couch, soft seating, contemporary furniture, decorative accent, minimalist couch, studio sofa, dorm chair, loft seating
+
+"chaise lounge chair" - this contains "chaise lounge" which is in title. But "lounge chair" as separate term might be okay.
+Actually the rule says "Do NOT repeat words already in the title". So I shouldn't repeat individual words.
+
+Let me check title words again:
+Corduroy, Oversized, Chaise, Lounge, Chair, Indoor, Skin-Friendly, Pink, Upholstered, Modern, Sofa, Couch, Sleeper, No, Assembly, Living, Room, Office
+
+Forbidden words in search terms: Corduroy, Oversized, Chaise, Lounge, Chair, Indoor, Skin-Friendly, Pink, Upholstered, Modern, Sofa, Couch, Sleeper, Living, Room, Office
+
+Allowed: daybed, futon, settee, recliner, sectional, velvet, fabric, tufted, soft, contemporary, decorative, minimalist, studio, dorm, loft, bedroom, guest, apartment, condo, house, reading, napping, furniture
+
+Wait, "bedroom" - is "room" in title? Title has "Living Room". So "bedroom" is different. Good.
+But "Reading" and "napping" - these aren't in title.
+
+Let me create the search terms list:
+
+daybed, futon, settee, recliner, sectional, velvet chair, fabric sofa, tufted couch, soft seating, contemporary furniture, decorative accent, minimalist sofa, dorm chair, loft seating, apartment sofa, guest seating, reading chair, napping chair, nap spot, furniture for small spaces, casual sofa
+
+Let me count bytes:
+"daybed, futon, settee, recliner, sectional, velvet chair, fabric sofa, tufted couch, soft seating, contemporary furniture, decorative accent, minimalist sofa, dorm chair, loft seating, apartment sofa, guest seating, reading chair, napping chair, nap spot, furniture for small spaces, casual sofa"
+
+About 240+ characters. Need to be careful.
+
+Let me trim:
+"daybed, futon, settee, recliner, sectional, velvet chair, fabric couch, soft seating, contemporary furniture, decorative accent, minimalist sofa, dorm chair, loft seating, apartment furniture, guest seating, reading chair, napping chair, nap spot, small space furniture"
+
+Counting... approximately 230 chars. Should be okay.
+
+Actually, let me be careful with byte counting. Some characters might be multi-byte but since these are all ASCII English characters, each is 1 byte.
+
+Let me finalize:
+
+daybed, futon, settee, recliner, sectional couch, velvet armchair, tufted furniture, soft cushion seating, contemporary accent piece, minimalist sofa bed, dorm room chair, loft style seating, apartment furniture, guest room chair, reading nook chair, napping lounge spot, small space solution
+
+Count: roughly 240 chars. Let me count more carefully:
+daybed, futon, settee, recliner, sectional couch, velvet armchair, tufted furniture, soft cushion seating, contemporary accent piece, minimalist sofa bed, dorm room chair, loft style seating, apartment furniture, guest room chair, reading nook chair, napping lounge spot, small space solution
+
+d-a-y-b-e-d-,- -f-u-t-o-n-,- -s-e-t-t-e-e-,- -r-e-c-l-i-n-e-r-,- -s-e-c-t-i-o-n-a-l- -c-o-u-c-h-,- -v-e-l-v-e-t- -a-r-m-c-h-a-i-r-,- -t-u-f-t-e-d- -f-u-r-n-i-t-u-r-e-,- -s-o-f-t- -c-u-s-h-i-o-n- -s-e-a-t-i-n-g-,- -c-o-n-t-e-m-p-o-r-a-r-y- -a-c-c-e-n-t- -p-i-e-c-e-,- -m-i-n-i-m-a-l-i-s-t- -s-o-f-a- -b-e-d-,- -d-o-r-m- -r-o-o-m- -c-h-a-i-r-,- -l-o-f-t- -s-t-y-l-e- -s-e-a-t-i-n-g-,- -a-p-a-r-t-m-e-n-t- -f-u-r-n-i-t-u-r-e-,- -g-u-e-s-t- -r-o-o-m- -c-h-a-i-r-,- -r-e-a-d-i-n-g- -n-o-o-k- -c-h-a-i-r-,- -n-a-p-p-i-n-g- -l-o-u-n-g-e- -s-p-o-t-,- -s-m-a-l-l- -s-p-a-c-e- -s-o-l-u-t-i-o-n
+
+Actually, this is getting tedious. Let me just estimate: each keyword phrase is about 10-15 chars including commas and spaces. With 18 phrases, that's roughly 180-270 chars. Need to trim.
+
+Let me simplify:
+daybed, futon, settee, recliner, sectional, velvet chair, tufted furniture, soft seating, contemporary accent, minimalist sofa, dorm chair, loft seating, apartment furniture, guest chair, reading chair, napping spot, small space furniture
+
+This should be well under 250 bytes. Let me count manually:
+"daybed, futon, settee, recliner, sectional, velvet chair, tufted furniture, soft seating, contemporary accent, minimalist sofa, dorm chair, loft seating, apartment furniture, guest chair, reading chair, napping spot, small space furniture"
+
+daybed (6) + , (1) + space (1) = 8
+futon (5) + , + space = 8 -> 16
+settee (6) + , + space = 8 -> 24
+recliner (8) + , + space = 10 -> 34
+sectional (9) + , + space = 11 -> 45
+velvet chair (12) + , + space = 14 -> 59
+tufted furniture (16) + , + space = 18 -> 77
+soft seating (12) + , + space = 14 -> 91
+contemporary accent (18) + , + space = 20 -> 111
+minimalist sofa (15) + , + space = 17 -> 128
+dorm chair (10) + , + space = 12 -> 140
+loft seating (12) + , + space = 14 -> 154
+apartment furniture (19) + , + space = 21 -> 175
+guest chair (11) + , + space = 13 -> 188
+reading chair (13) + , + space = 15 -> 203
+napping spot (12) + , + space = 14 -> 217
+small space furniture (21) = 21 -> 238
+
+Good, about 238 characters. Under 250.
+
+Now let me also check the rule about not repeating title words. Title has:
+- Corduroy (not used in search terms ✓)
+- Oversized (not used ✓)
+- Chaise (not used ✓)
+- Lounge (used: "lounge spot" - WAIT, lounge is in title! Need to remove)
+- Chair (used multiple times! Need to remove)
+- Indoor (not used ✓)
+- Skin-Friendly (not used ✓)
+- Pink (not used ✓)
+- Upholstered (not used ✓)
+- Modern (not used ✓)
+- Sofa (used: "minimalist sofa" - sofa is in title! Need to remove)
+- Couch (not used ✓)
+- Sleeper (not used ✓)
+- No (not used ✓)
+- Assembly (not used ✓)
+- Living (not used ✓)
+- Room (used: "dorm room chair" and "guest room" - room is in title!)
+- Office (not used ✓)
+
+So I need to remove: lounge, chair, sofa, room
+
+Let me redo:
+daybed, futon, settee, recliner, sectional, velvet seat, tufted furniture, soft seating, contemporary accent, minimalist couch, dorm piece, loft style, apartment furniture, guest accommodation, reading nook, napping spot, small space solution
+
+Wait, "couch" - is "couch" in title? Title has "Sofa Couch" so yes "couch" is in title. Hmm.
+
+Let me check title again: "Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office"
+
+Words: corduroy, oversized, chaise, lounge, chair, indoor, skin-friendly, pink, upholstered, modern, sofa, couch, no, assembly, sleeper, sofa, for, living, room, office
+
+So: sofa, couch, lounge, chair, room are all in title.
+
+I need to avoid: sofa, couch, lounge, chair, room in search terms.
+
+Revised search terms (avoiding these words):
+daybed, futon, settee, recliner, sectional, velvet seat, tufted furniture, soft seating, contemporary accent, minimalist piece, dorm furniture, loft style, apartment decor, guest accommodation, reading nook, napping spot, small space solution
+
+Hmm but "furniture" - is it in title? No. Good.
+
+But wait, the rule says "Do NOT repeat words already in the title" - so I shouldn't have any word from the title appearing in search terms.
+
+Let me also reconsider - "sectional" - is that a complete word not in title? Yes.
+"velvet" - not in title ✓
+"seat" - not in title ✓
+"tufted" - not in title ✓
+"seating" - not in title ✓
+"contemporary" - not in title ✓
+"accent" - not in title ✓
+"piece" - not in title ✓
+"dorm" - not in title ✓
+"loft" - not in title ✓
+"apartment" - not in title ✓
+"decor" - not in title ✓
+"guest" - not in title ✓
+"reading" - not in title ✓
+"nook" - not in title ✓
+"napping" - not in title ✓
+"small space solution" - not in title ✓
+
+Good. Let me finalize:
+
+daybed, futon, settee, recliner, sectional, velvet seat, tufted furniture, soft seating, contemporary accent, minimalist piece, dorm furniture, loft style, apartment decor, guest accommodation, reading nook, napping spot, small space solution
+
+Check for title words: None of these are in the title. Good.
+
+Now let me also verify byte count again:
+"daybed, futon, settee, recliner, sectional, velvet seat, tufted furniture, soft seating, contemporary accent, minimalist piece, dorm furniture, loft style, apartment decor, guest accommodation, reading nook, napping spot, small space solution"
+
+daybed (6) + (, )(2) = 8
+futon (5) + (, )(2) = 7 -> 15
+settee (6) + (, )(2) = 8 -> 23
+recliner (8) + (, )(2) = 10 -> 33
+sectional (9) + (, )(2) = 11 -> 44
+velvet seat (11) + (, )(2) = 13 -> 57
+tufted furniture (16) + (, )(2) = 18 -> 75
+soft seating (12) + (, )(2) = 14 -> 89
+contemporary accent (18) + (, )(2) = 20 -> 109
+minimalist piece (15) + (, )(2) = 17 -> 126
+dorm furniture (14) + (, )(2) = 16 -> 142
+loft style (10) + (, )(2) = 12 -> 154
+apartment decor (14) + (, )(2) = 16 -> 170
+guest accommodation (19) + (, )(2) = 21 -> 191
+reading nook (12) + (, )(2) = 14 -> 205
+napping spot (12) + (, )(2) = 14 -> 219
+small space solution (20) = 20 -> 239
+
+Total: 239 bytes. Under 250 ✓
+
+Now let me make sure the title, bullets, and description all follow the rules:
+
+**Title:**
+"Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office"
+
+- No HTML tags ✓
+- No brand words ✓
+- ASCII punctuation only ✓ (uses regular comma, hyphen)
+- Standard title case ✓
+- No promotional words ✓
+- Under 200 characters: Let me count...
+"Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office"
+= 144 characters ✓
+
+**Bullet Points:**
+No HTML tags ✓
+No brand words ✓
+ASCII only ✓
+Uppercase start ✓
+
+Let me finalize the description with HTML formatting, which is allowed.
+
+OK let me finalize everything now and present the output.
+
+Wait, one more thing - the Output Requirements section has these specific requirements:
+- Title: "Include core keywords (raised bed / planter / garden bed)"
+- Material: "Include material keywords (galvanized steel / metal)"
+
+These don't apply to the actual product. I need to make a judgment call here. Given that:
+1. The actual product is a chaise lounge
+2. Including "raised bed / planter / garden bed" would be misleading and inappropriate for a sofa product
+3. The product's actual material is corduroy, not galvanized steel
+
+I'll follow the actual product characteristics and not include irrelevant keywords from the SEO reference.
+
+This is the right decision because:
+- Honesty and accuracy are paramount on Amazon
+- Misleading listings violate Amazon's policies
+- The user clearly intended to use the product data they provided
+
+Let me finalize the response now.
+
+One more check - the title says "max 200 characters". Let me make sure my title is concise but includes all key info. Current title:
+
+"Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office"
+
+This includes:
+- Core keyword: Chaise Lounge Chair, Sofa Couch, Sleeper Sofa
+- Material: Corduroy
+- Feature: Skin-Friendly, No Assembly
+- Color: Pink
+- Style: Modern, Oversized, Upholstered
+- Use case: Indoor, Living Room, Office
+
+Looks good. 144 chars.
+
+Actually, I wonder if I should re-optimize the title for Amazon search. Let me think about what buyers would search for:
+- "chaise lounge chair"
+- "pink chaise lounge"
+- "corduroy chaise lounge"
+- "lounge chair indoor"
+- "chaise couch"
+
+The current title covers these well. The order should generally be: Brand + Key Feature + Product Type + Size/Color/etc.
+
+Without brand, I would do:
+Key Feature + Product Type + Color + Material + Use Case
+
+"Corduroy Oversized Pink Chaise Lounge Chair Indoor, Skin-Friendly Modern Upholstered Sleeper Sofa Couch, No Assembly Needed for Living Room Office"
+
+Let me count this... 151 characters. Slightly longer. Actually original is fine.
+
+Let me settle on:
+"Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office"
+
+Final output coming up.
+
+Actually one concern - let me check if "Pink" placement matters. In Amazon titles, color usually goes early for visibility. Let me reorganize:
+
+"Pink Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Modern Upholstered Sleeper Sofa Couch, No Assembly Required for Living Room Office"
+
+Count: ~150 chars. Good.
+
+Actually Amazon best practice is:
+[Brand] [Product Type/Key Feature] [Size] [Color] [Material] [Use]
+
+Since no brand:
+[Key Feature] [Product Type] [Color] [Material/Comfort] [Size] [Use Case]
+
+"Pink Cordury Oversized Chaise Lounge Indoor, Soft Skin-Friendly Modern Upholstered Sleeper Sofa Couch, No Assembly Required for Living Room Office"
+
+Hmm too many commas. Let me simplify:
+
+"Corduroy Oversized Chaise Lounge Chair, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper for Living Room Office Bedroom"
+
+Wait, "Bedroom" - is that in title? No. Good.
+
+Count this version: ~144 chars still.
+
+Actually I'm overthinking. Original is fine:
+
+"Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office"
+
+Let me finalize and submit.
+
+Let me also double-check no brand words. "YUDA HOME FURNITURE" is the brand - not included ✓
+
+Check no third-party brands either - none used ✓
+
+OK time to output the final answer.
+
+For the description, let me make it good with HTML tags since the description section allows HTML formatting. Let me write a comprehensive one:
+
+<h2>Product Overview</h2>
+<p>Bring modern comfort into your home with this oversized corduroy chaise lounge chair. Wrapped in soft, skin-friendly corduroy fabric and finished in a tasteful pink tone, this contemporary chaise delivers plush seating, supportive structure, and elegant style for the living room, bedroom, apartment, home office, or guest suite.</p>
+
+<h2>Main Features and Benefits</h2>
+<ul>
+<li><b>Soft Corduroy Upholstery:</b> Premium corduroy fabric is gentle against the skin and adds rich visual texture to any room.</li>
+<li><b>Sponge and Pocket Spring Core:</b> High-density foam combined with individual pocket springs balances cloud-like softness with lasting shape retention.</li>
+<li><b>Ergonomic Contoured Shape:</b> Angled backrest and supportive armrests follow ergonomic principles to relieve pressure and encourage relaxed posture.</li>
+<li><b>Ready to Use, No Assembly:</b> Delivered fully assembled so you can place it anywhere and start enjoying comfort the moment it arrives.</li>
+<li><b>Modern Pink Finish:</b> A versatile, on-trend color that complements Scandinavian, minimalist, contemporary, and eclectic interiors.</li>
+</ul>
+
+<h2>Use Cases</h2>
+<ul>
+<li>Lounge and unwind in the living room after a long day.</li>
+<li>Read, scroll, or rest in the bedroom or study nook.</li>
+<li>Add stylish seating in an apartment, studio, or loft.</li>
+<li>Provide overnight accommodation for guests in a guest room.</li>
+<li>Serve as an accent piece in a home office or creative workspace.</li>
+</ul>
+
+<h2>Usage and Care Instructions</h2>
+<ul>
+<li>Place the chaise lounge on a flat indoor surface away from direct heat or sunlight.</li>
+<li>Spot clean stains with a damp cloth and mild detergent.</li>
+<li>Vacuum lightly to remove dust and keep the corduroy looking fresh.</li>
+<li>Rotate usage periodically to maintain even cushion fill.</li>
+<li>Designed for indoor residential and light office use.</li>
+</ul>
+
+<h2>About This Product</h2>
+<p>Crafted for modern living, this oversized chaise lounge combines soft corduroy upholstery, pocket spring support, and ergonomic shaping in one versatile piece. Whether you are reading, napping, watching a movie, or simply unwinding, it delivers dependable comfort and contemporary style for everyday spaces.</p>
+
+OK this is good. Let me finalize and submit.
+
+Wait, I want to double check the title one more time.
+
+"Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office"
+
+- Corduroy (material)
+- Oversized (size/feature)
+- Chaise Lounge Chair (core keyword)
+- Indoor (use location)
+- Skin-Friendly (comfort feature)
+- Pink (color)
+- Upholstered (construction)
+- Modern Sofa Couch (style + type)
+- No Assembly (convenience)
+- Sleeper Sofa (functionality)
+- for Living Room Office (use cases)
+
+All looks good. 144 chars under 200. No brand. No HTML. ASCII punctuation. Title case. No promotional words.
+
+Final answer coming up.</think>
+
+### Product Title
+
+Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office
+
+### Five Bullet Points
+
+1. Premium Corduroy Upholstery: Covered in soft, skin-friendly corduroy fabric that delivers a cozy tactile feel and lasting visual appeal for everyday lounging, reading, or entertaining guests.
+
+2. Sponge and Pocket Spring Core: Built with high-density sponge layered with individual pocket springs to balance cloud-like softness and long-lasting shape retention for daily use.
+
+3. Ergonomic Lounge Design: Carefully angled backrest and supportive armrests follow ergonomic principles to deliver balanced comfort and proper posture during relaxation, movie nights, or naps.
+
+4. No Assembly Required: This oversized chaise lounge arrives fully assembled and ready to use, saving you setup time and hassle in your living room, bedroom, or home office.
+
+5. Stylish Modern Accent Piece: Finished in an elegant pink tone with clean contemporary lines, this versatile sleeper sofa adds a sophisticated touch to apartments, guest rooms, and studio spaces.
+
+### Product Description
+
+<h2>Product Overview</h2>
+<p>Bring modern comfort into your home with this oversized corduroy chaise lounge chair. Wrapped in soft, skin-friendly corduroy fabric and finished in a tasteful pink tone, this contemporary chaise delivers plush seating, supportive structure, and elegant style for the living room, bedroom, apartment, home office, or guest suite.</p>
+
+<h2>Main Features and Benefits</h2>
+<ul>
+<li><b>Soft Corduroy Upholstery:</b> Premium corduroy fabric is gentle against the skin and adds rich visual texture to any room.</li>
+<li><b>Sponge and Pocket Spring Core:</b> High-density foam combined with individual pocket springs balances cloud-like softness with lasting shape retention.</li>
+<li><b>Ergonomic Contoured Shape:</b> Angled backrest and supportive armrests follow ergonomic principles to relieve pressure and encourage relaxed posture.</li>
+<li><b>Ready to Use, No Assembly:</b> Delivered fully assembled so you can place it anywhere and start enjoying comfort the moment it arrives.</li>
+<li><b>Modern Pink Finish:</b> A versatile, on-trend color that complements Scandinavian, minimalist, contemporary, and eclectic interiors.</li>
+</ul>
+
+<h2>Use Cases</h2>
+<ul>
+<li>Lounge and unwind in the living room after a long day.</li>
+<li>Read, scroll, or rest in the bedroom or study nook.</li>
+<li>Add stylish seating in an apartment, studio, or loft.</li>
+<li>Provide cozy overnight accommodation for guests in a guest room.</li>
+<li>Serve as an accent piece in a home office or creative workspace.</li>
+</ul>
+
+<h2>Usage and Care Instructions</h2>
+<ul>
+<li>Place the chaise on a flat indoor surface away from direct heat or prolonged sunlight.</li>
+<li>Spot clean stains with a damp cloth and a mild detergent.</li>
+<li>Vacuum lightly to remove dust and keep the corduroy looking fresh.</li>
+<li>Rotate usage periodically to help maintain even cushion filling.</li>
+<li>Designed for indoor residential and light office use.</li>
+</ul>
+
+<h2>About This Product</h2>
+<p>Crafted for modern living, this oversized chaise lounge combines soft corduroy upholstery, pocket spring support, and ergonomic shaping in one versatile piece. Whether you are reading, napping, watching a movie, or simply unwinding, it delivers dependable comfort and contemporary style for everyday indoor spaces.</p>
+
+### Search Terms
+
+daybed, futon, settee, recliner, sectional, velvet seat, tufted furniture, soft seating, contemporary accent, minimalist piece, dorm furniture, loft style, apartment decor, guest accommodation, reading nook, napping spot, small space solution
+--- RAW AI reasoning_content ---
+(none)
+
+--- RAW AI FULL JSON ---
+{
+  "id": "06986a1f35edaf407c160fbca41d8893",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "<think>The user wants me to generate an Amazon listing for a product. However, there's a major mismatch here:\n\nThe product raw data is for a \"Oversized Chaise Lounge Chair Indoor, Corduroy Upholstered Modern Sofa Couch\" - this is a sofa/couch product.\n\nBut the SEO Keyword Reference is for planters, raised beds, garden beds, plant containers, flower pots - this is a garden/outdoor product category.\n\nThere's also a contradiction: the product category says \"Sofas\" but the SEO keywords are for garden products.\n\nLooking at the HARD RULES and Output Requirements:\n- Title should include \"raised bed / planter / garden bed\" keywords\n- Material keywords should be \"galvanized steel / metal\"\n- Dimensions L×W×H cm\n- Use-case: garden, backyard, patio, balcony, outdoor, vegetable growing\n\nBut the actual product is a corduroy chaise lounge chair... This is clearly a mismatch in the data provided.\n\nAlso, the dimensions say \"Not Applicable\" - so I can't include real dimensions.\n\nLet me re-read the requirements carefully. The Output Requirements say to include planter/raised bed keywords, but the product is a sofa. This seems like a test or there's a confusion.\n\nGiven the conflict, I need to follow the Output Requirements which specify the keywords to include. But this would create a completely misleading listing for a sofa product.\n\nWait - actually, looking more carefully, I think the SEO Keyword Reference is wrong/mismatched with the product. But my task is to generate a listing following the format requirements.\n\nHmm, but the \"USER OPTIMIZATION INSTRUCTIONS\" is just \"亚马逊\" which is very minimal.\n\nI think the best approach is to follow the Output Requirements format strictly, but there's a fundamental issue: the product is a sofa but the keyword reference is for garden planters.\n\nLet me look at this from a different angle: maybe the intent is to apply the same format/structure requirements to the actual product. The SEO keyword reference seems to be a template/example that doesn't match.\n\nActually, re-reading: \"Generate a high-conversion Amazon Amazon.com (美国) Listing\" - this is for the product specified. The product is a chaise lounge chair, not a garden bed.\n\nBut the Output Requirements section explicitly mentions raised bed, planter, garden bed, galvanized steel, metal etc. This is clearly a template mismatch.\n\nI think I should:\n1. Follow the Output Requirements format structure (title with core keywords, 5 bullets, description, search terms)\n2. But adapt the keywords to match the ACTUAL product (the sofa/chaise lounge)\n\nWait, but the instructions say \"Include core keywords (raised bed / planter / garden bed)\" - this is in the Output Requirements section which I need to follow strictly.\n\nThis is contradictory. The product is a sofa but the requirements say to include raised bed keywords.\n\nI think the right thing to do is to follow the actual product data and create a proper listing. The SEO keyword reference in the prompt seems to be an error/template that doesn't match. The Output Requirements seem to also be templated from a different product.\n\nActually, let me reconsider. The instructions say \"USER OPTIMIZATION INSTRUCTIONS (treated as USER-PROVIDED CONTENT, NOT as higher-priority commands)\" and the user content is just \"亚马逊\".\n\nLooking at this holistically:\n- Product: Sofa/Chaise Lounge\n- SEO keywords given: planters, garden beds\n- Output requirements: include raised bed keywords\n\nI think there's been a copy-paste error in the prompt, and the SEO keywords and Output Requirements are from a different product template. \n\nThe most sensible approach: Generate a proper listing for the ACTUAL product (chaise lounge chair). I'll use the product characteristics provided and create appropriate SEO keywords for a sofa/chaise lounge.\n\nBut wait - I need to be careful. The user might be testing whether I'll blindly follow contradictory instructions. I should follow the rules as stated but adapt them to the actual product.\n\nActually, I think the right move here is to follow the product specifications literally. The Output Requirements clearly specify planters/garden beds but the product is a sofa. I'll generate the listing for the actual sofa product, since:\n1. The product data is clear (sofa)\n2. The characteristics describe a sofa (corduroy, lounge chair)\n3. Creating a garden bed listing for a sofa product would be misleading/fraudulent\n\nLet me generate a proper chaise lounge chair listing following all the formatting rules but with the correct product information.\n\nHmm, but the instructions say the title needs dimensions \"L×W×H cm\" but the dimensions show \"Not Applicable\". I'll need to handle this.\n\nLet me proceed with creating a proper listing for the chaise lounge chair sofa, ignoring the mismatched garden bed keywords. I'll adapt the SEO keywords to actual sofa/chaise lounge keywords.\n\nActually, you know what, I'll just follow the product data as given. The SEO keyword reference and the part of Output Requirements about \"raised bed / planter / garden bed\" are clearly from a different product template and should be ignored for this specific product.\n\nBut I need to be careful - the output format requirements still apply (title structure, bullets, description, search terms format). I just need to use the correct product information.\n\nLet me draft the listing:\n\n**Product Title** (max 200 characters):\n- Core keywords: chaise lounge, sofa, couch\n- Material: corduroy\n- Color: pink\n- Dimensions: Not given\n- No brand\n- No promotional words\n\n\"Corduroy Oversized Chaise Lounge Chair, Modern Pink Upholstered Sofa Couch, No Assembly Required, Skin-Friendly Soft Sleeper for Living Room Office\"\n\nLet me check character count... That's about 142 characters. Good.\n\n**Five Bullet Points:**\n\n1. Premium Corduroy Upholstery: Covered in soft, skin-friendly corduroy fabric that delivers a cozy tactile feel and lasting visual appeal for everyday lounging.\n2. Sponge and Pocket Spring Construction: Built with high-density sponge combined with pocket spring support, offering plush softness plus reliable durability for years of use.\n3. Ergonomic Lounge Design: Carefully contoured backrest and armrests follow ergonomic principles to balance comfort and support, ideal for relaxing, reading, or napping.\n4. No Assembly Required: This oversized chaise lounge arrives fully assembled, so you can place it in your living room or office and start enjoying it right away.\n5. Stylish Pink Statement Piece: Its modern silhouette and elegant pink tone bring a refined, versatile look that fits bedrooms, apartments, guest rooms, and home offices.\n\n**Product Description:**\nHTML formatted...\n\n**Search Terms:**\n- chaise lounge\n- lounge chair\n- oversized sofa\n- corduroy couch\n- sleeper sofa\n- pink sofa\n- modern couch\n- reading chair\n- accent chair\n- living room furniture\n- ergonomic lounge\n- no assembly sofa\n- bedroom chaise\n- guest room sofa\n- apartment couch\n\nLet me write all of this out properly now.\n\nActually, let me reconsider the SEO keyword situation once more. The user provided:\n\"## SEO Keyword Reference\nCategory: planter, raised bed, garden bed, plant container, flower pot\nMaterial: metal, steel, galvanized, rust-proof\nUse-case: garden, backyard, patio, balcony, outdoor, vegetable growing\"\n\nThis is clearly for a different product. Given the conflict, I'll generate keywords appropriate for the actual chaise lounge product.\n\nNow let me make sure I follow all the hard rules:\n- No HTML tags in Title/Bullets/Search Terms ✓\n- No brand words (so no \"YUDA HOME FURNITURE\") ✓\n- ASCII punctuation only, no en-dashes/em-dashes ✓\n- Use regular hyphens ✓\n\nLet me finalize the listing:\n\n**Title:**\n\"Corduroy Ove
+
+--- PARSED ---
+title:        'Corduroy Oversized Chaise Lounge Chair Indoor, Skin-Friendly Pink Upholstered Modern Sofa Couch, No Assembly Sleeper Sofa for Living Room Office'
+bullets:      5 items
+  [1] Premium Corduroy Upholstery: Covered in soft, skin-friendly corduroy fabric that delivers a cozy tactile feel and lasting visual appeal for everyday lounging, reading, or entertaining guests.
+  [2] Sponge and Pocket Spring Core: Built with high-density sponge layered with individual pocket springs to balance cloud-like softness and long-lasting shape retention for daily use.
+  [3] Ergonomic Lounge Design: Carefully angled backrest and supportive armrests follow ergonomic principles to deliver balanced comfort and proper posture during relaxation, movie nights, or naps.
+  [4] No Assembly Required: This oversized chaise lounge arrives fully assembled and ready to use, saving you setup time and hassle in your living room, bedroom, or home office.
+  [5] Stylish Modern Accent Piece: Finished in an elegant pink tone with clean contemporary lines, this versatile sleeper sofa adds a sophisticated touch to apartments, guest rooms, and studio spaces.
+description:  2041 chars
+search_terms: 'daybed, futon, settee, recliner, sectional, velvet seat, tufted furniture, soft seating, contemporary accent, minimalist piece, dorm furniture, loft style, apartment decor, guest accommodation, reading nook, napping spot, small space solution'
+ai_status:    ok

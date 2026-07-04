@@ -483,3 +483,51 @@ _追加者:Claude Sonnet 4.5 (Vite 编译错修复 + 关键词自然优先)_
 
 _追加时间:2026-07-04 21:40_
 _追加者:Claude Sonnet 4.5 (第六轮用户反馈修复)_
+
+---
+
+## 14. AI 输出被截断 bug — 2026-07-05
+
+### 14.1 用户报告
+
+SKU `W2678P312247` UK 跑流水线,中栏红框"AI 返回内容为空",但 `.logs/ai_response_W2678P312247_UK_20260705-000205.txt` 显示 AI 写了完整的 thinking + planning。
+
+### 14.2 根因(非拒答识别误伤)
+
+- AI 输出 `finish_reason: "length"` — **MiniMax M3 用了 8192 max_tokens 全花在超大 thinking 块上**,真正内容只输出一半就被裁断(在 "for Bedroom" 后断掉,后面 6-8 条 bullets / description / search_terms 全部缺失)
+- `_strip_think_blocks` 剥掉 thinking 后,parser 只剩半句话的 content,4 个字段全空
+- `filled == 0` → `_ai_status = "empty"` → 前端显示"AI 返回内容为空"
+- `_REFUSAL_MARKERS` 实际**没误伤** — 我之前推断错了,根因是 finish_reason=length 裁断
+- 额度/Key 都没问题(用户明确确认)
+
+### 14.3 修复
+
+#### 14.3.1 提高 max_tokens 上限
+
+- [app.py:931](app.py#L931) `_generate_text_local` 默认 `max_tokens` 从 **8192** 提到 **16384** — 给足缓冲,防止 thinking 块过大把真实内容挤掉
+
+#### 14.3.2 finish_reason=length 自动重试
+
+- [app.py:1021-1036](app.py#L1021-L1036) `ai_generate_copy` 增加检测逻辑:
+  - 检测 `gen["raw"]["choices"][0]["finish_reason"] == "length"`
+  - 如果是,且 4 字段全空 → 重试一次,prompt 末尾追加"## IMPORTANT (重试) 不要输出 thinking 块,直接用 json 给出最终 listing"
+  - 重试用同样的 16384 tokens(更安全)
+
+### 14.4 验证
+
+- ✅ Python `ast.parse` 通过
+- ✅ Flask 重启后 `/api/health` 返回 `ok`
+- ⏳ 用户跑一次流水线(SKU `W2678P312247` UK) 验证:
+  - 第 1 次:16384 tokens + 完整 thinking 块,内容不再截断
+  - 兜底:即使再次截断,自动重试 → 第二次无 thinking 直出 JSON
+
+### 14.5 Plan 文件交付
+
+完成 v5 + 6 轮反馈后的"bug 体检 + 简化复用 + 架构扩展性"梳理,交付 plan 文件:
+
+- **路径**:`C:\Users\Admin\.claude\plans\flickering-gathering-stallman.md`
+- **内容**:3 个 Explore agent 报告合并,5 bug + 5 simplify + 5 架构项,用户标记的优先拓展方向(多 SKU 批量 + 加更多 slot)
+- **状态**:用户标记"先看 plan 文件再决定",此次不动代码
+
+_追加时间:2026-07-05_
+_追加者:Claude Sonnet 4.5 (AI 输出截断修复 + plan 文件交付)_
