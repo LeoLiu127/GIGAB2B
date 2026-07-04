@@ -187,7 +187,7 @@ GIGA_ENV=production
 MINIMAX_API_KEY=<填你的>
 LAOZHANG_API_KEY=<填你的>
 MINIMAX_API_URL=https://api.minimaxi.com/v1
-MINIMAX_MODEL=MiniMax-M3
+MINIMAX_MODEL=MiniMax-Text-01
 LAOZHANG_API_URL=https://api.laozhang.ai/v1
 LAOZHANG_IMAGE_MODEL=gemini-3.1-flash-image-preview
 "@

@@ -427,6 +427,41 @@ Format: word1, word2, word3 ..."""
     return prompt
 
 
+def _try_parse_json(content: str) -> dict | None:
+    """尝试从 AI 输出中抽取 JSON 对象并解析。
+
+    支持以下几种格式:
+      1. 整段就是 JSON:  {"title": "...", ...}
+      2. Markdown ```json 包装: ```json\n{...}\n```
+      3. ```  无语言标记: ```\n{...}\n```
+      4. 正文里夹着 JSON:  ...\n{...}\n...
+
+    失败返回 None,让上层继续走 markdown 切分兜底。
+    """
+    if not content or "{" not in content:
+        return None
+
+    # 1) 优先抽 ```json ... ``` 块
+    m = re.search(r"```(?:json|JSON)?\s*(\{.*?\})\s*```", content, re.DOTALL)
+    candidate = m.group(1) if m else None
+
+    # 2) 兜底:找第一个 { 到最后一个 } 的子串
+    if not candidate:
+        start = content.find("{")
+        end = content.rfind("}")
+        if start >= 0 and end > start:
+            candidate = content[start:end + 1]
+
+    if not candidate:
+        return None
+
+    try:
+        obj = json.loads(candidate)
+        return obj if isinstance(obj, dict) else None
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+
 def _strip_think_blocks(text: str) -> str:
     """去除 reasoning 模型（如 MiniMax M3）的 思考过程 块。
     常见格式：<think>...</think> （可能多段）。
@@ -532,6 +567,22 @@ def _parse_copy_response(raw: dict) -> dict:
 
     # 0. 剥掉  思考块（MiniMax M3 等 reasoning 模型会输出）
     content = _strip_think_blocks(content)
+
+    # 0.5 优先尝试 JSON 直解（MiniMax-Text-01 / 其他模型常输出 ```json``` 块）
+    json_obj = _try_parse_json(content)
+    if json_obj and isinstance(json_obj, dict):
+        result["title"]       = str(json_obj.get("title", "")).strip()
+        result["search_terms"] = str(json_obj.get("search_terms", "")).strip()
+        desc = json_obj.get("description", "")
+        result["description"] = str(desc).strip() if desc else ""
+        bullets = json_obj.get("bullets", [])
+        if isinstance(bullets, list):
+            result["bullets"] = [str(b).strip() for b in bullets if str(b).strip()]
+        elif isinstance(bullets, str):
+            result["bullets"] = [bullets.strip()] if bullets.strip() else []
+        # 如果 JSON 解出来至少有 title 或 bullets,直接返回
+        if result["title"] or result["bullets"]:
+            return result
 
     blocks = _section_blocks(content)
 
