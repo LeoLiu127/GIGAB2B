@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"[Convert]::ToBase64String\\([System.IO.File]::ReadAllBytes\\(\\(Get-Location\\).Path + '\\\\\\\\.env'\\)\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('app.py syntax OK'\\)\")",
+      "Bash(node_modules/.bin/tsc.cmd --noEmit)",
+      "Bash(curl -s -X POST http://localhost:5182/api/parse-keywords -F \"keywords_file=@/tmp/kw_test.txt\")",
+      "Bash(ps -W)",
+      "Bash(awk '{print $1}')",
+      "Bash(xargs -I{} taskkill //PID {} //F)",
+      "Bash(cat /tmp/flask_smoke.log | head -30)",
+      "Read(//tmp/**)",
+      "Bash(taskkill //PID 10452 //F)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"5173: %{http_code}\\\\n\" http://localhost:5173)",
+      "WebFetch(domain:localhost)",
+      "Bash(awk -F= '{print $1, \"=\", length\\($2\\), \"字\"}')",
+      "Bash(curl -s http://localhost:5182/api/markets)"
+    ]
+  }
+}

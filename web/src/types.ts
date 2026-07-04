@@ -24,6 +24,29 @@ export interface PipelineResult {
   texture?: string;
   size?: string;
   attributes?: Record<string, string>;
+  // 原始文案(从 GIGA detailInfo 接口直透) — 让第二栏 compare-block 可以"上方原始 + 下方优化后"对照展示
+  // description / search_terms GIGA 没给原始,前端无需 original_* 字段,直接走空态
+  original_title?: string;
+  original_bullets?: string[];
+}
+
+/**
+ * 「抓取数据」按钮单独调 /api/fetch-product 拿到的轻量结果。
+ * 没调 AI,没填 Excel;只有 GIGA 原始字段。
+ */
+export interface FetchedProduct {
+  success: boolean;
+  sku: string;
+  market: string;
+  product_name: string;
+  original_bullets: string[];
+  imageUrls: string[];
+  image_count: number;
+  attributes?: Record<string, string>;
+  mainColor?: string;
+  mainMaterial?: string;
+  texture?: string;
+  size?: string;
 }
 
 export interface GigaImage {

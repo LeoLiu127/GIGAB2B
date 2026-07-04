@@ -1,0 +1,723 @@
+=== SKU: W3372P314940 | Market: DE_TAX | Time: 20260704-210835 ===
+
+--- RAW AI content (text) ---
+<think>Let me analyze the requirements carefully:
+
+1. Product Title (max 200 chars, German):
+- Include core keywords (Hochbeet / Pflanzenbeet / Gemüsebeet)
+- Include material keywords (Metall / Stahlblech / verzinkt)
+- Include main dimensions (L×W×H cm)
+- Include color
+- Include brand or manufacturer
+- No keyword stuffing, no promotional words (SALE / FREE / NEW)
+- First letter uppercase as standard Amazon.de format
+
+Wait - the rules say "禁止出现品牌词(如 COOLMORE、YUDA HOME FURNITURE 等)" - but also says "包含品牌或制造商". This is contradictory. Let me re-read...
+
+"Title / Bullets / Search Terms 中**禁止出现品牌词**(如 COOLMORE、YUDA HOME FURNITURE 等) — 这些是 GIGA 给的卖家品牌,Amazon Listing 不应出现卖家自己品牌以外的第三方品牌词"
+
+So it says "卖家自己品牌以外的第三方品牌词" - meaning third-party brands other than the seller's own brand. YUDA HOME FURNITURE is the seller's own brand, so it should be OK to include. But to be safe, let me include it since the title requirement says to include brand or manufacturer.
+
+Actually wait, re-reading: "Amazon Listing 不应出现卖家自己品牌以外的第三方品牌词" - this means Amazon Listing should not contain third-party brands other than the seller's own brand. So the seller's own brand YUDA HOME FURNITURE can be included.
+
+But also looking at HARD RULES: "Title / Bullets / Search Terms 中**禁止出现品牌词**(如 COOLMORE、YUDA HOME FURNITURE 等)"
+
+Hmm, this is a hard rule that says NO brand words in Title/Bullets/Search Terms. So I should NOT include the brand in those fields. The "include brand" in title requirements might be overruled by this hard rule.
+
+Let me follow the HARD RULES strictly: NO brand words in Title, Bullets, or Search Terms.
+
+2. Five Bullet Points (max 200 chars each, German):
+- Each starts with uppercase
+- Include dimensions/specs
+- Highlight buyer value
+- No keyword stuffing
+- Separated by blank lines
+
+3. Product Description (max 4000 chars, German):
+- Include overview, features, use cases, usage, brand info
+- Use HTML tags (<b>, <li>, <br>)
+- No keyword stuffing
+
+4. Search Terms (max 250 bytes, German):
+- Comma-separated
+- Include core, synonyms, long-tail
+- Include local consumer terms
+- No duplicates from title
+- No promotional words
+
+Let me now craft the listing:
+
+**Title (max 200 chars):**
+Let me draft:
+"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet in Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter & Blumen, Robustes Gemüsebeet ohne Boden für Terrasse & Balkon"
+
+Let me count: 
+"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet in Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter & Blumen, Robustes Gemüsebeet ohne Boden für Terrasse & Balkon"
+Count: ~177 chars - good
+
+Actually, the dimension format should use ASCII characters. "232x113,5x30" uses comma - that's OK in German. But let me use simpler: 232 x 113.5 x 30 cm - but the rules say no en-dash/em-dash. Period is OK.
+
+Let me refine:
+"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse Balkon Garten"
+
+Count: ~180 chars
+
+**Bullet Points:**
+
+1. Großzügige Abmessungen für vielfältigen Anbau: Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Hochbeet ausreichend Platz für Gemüse, Kräuter, Blumen und andere Pflanzen auf Terrasse, Balkon oder im Garten.
+
+2. Langlebiges & wetterfestes Material: Das verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist rostbeständig und garantiert eine lange Lebensdauer - auch bei wechselnden Witterungsbedingungen das ganze Jahr über.
+
+3. Sicheres Design ohne Verletzungsrisiko: Die 0,6 mm dicken Stahl-Wellbleche mit nach innen gefalteten Kanten schützen zuverlässig vor Schnittverletzungen - ideal für Familien mit Kindern und Haustieren.
+
+4. Optimales Pflanzenwachstum durch offenen Boden: Dank des bodenlosen Designs können Wurzeln tief in den natürlichen Erdboden wachsen und mehr Nährstoffe aufnehmen - für kräftigere und gesündere Pflanzen.
+
+5. Einfacher Aufbau & individuelle Befüllung: Der praktische Bausatz ermöglicht eine unkomplizierte Montage. Schichten Sie Äste, Laub, Kompost und Erde für eine ideale Drainage und nährstoffreiche Wachstumsbedingungen.
+
+**Product Description:**
+
+Let me write a comprehensive description with HTML tags.
+
+**Search Terms:**
+Need to be careful about not duplicating title words and staying under 250 bytes.
+
+Now let me think about the title more carefully. The instruction says "包含品牌或制造商" but HARD RULES says no brand. I'll follow HARD RULES and omit brand.
+
+Let me finalize the title:
+"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet in Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter & Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse & Balkon"
+
+Wait, the rules say no promotional words. "&" should be fine. Let me check "&" - it should be fine as it's commonly used.
+
+Actually let me reconsider - "&" might cause issues. Let me use "und" instead. But "&" is ASCII... it's character 38. Should be fine.
+
+Let me count the title more carefully:
+"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet in Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter & Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse & Balkon"
+
+H-o-c-h-b-e-e-t = 8
+space = 1
+M-e-t-a-l-l = 6
+space = 1
+2-3-2 = 3
+x = 1
+1-1-3-,-5 = 5
+x = 1
+3-0 = 2
+space = 1
+c-m = 2
+, = 1
+space = 1
+V-e-r-z-i-n-k-t-e-s = 10
+space = 1
+S-t-a-h-l-b-l-e-c-h = 10
+space = 1
+G-a-r-t-e-n-b-e-e-t = 10
+space = 1
+i-n = 2
+space = 1
+S-i-l-b-e-r = 6
+, = 1
+space = 1
+W-e-t-t-e-r-f-e-s-t-e-s = 12
+space = 1
+P-f-l-a-n-z-e-n-b-e-e-t = 12
+space = 1
+f-ü-r = 3
+space = 1
+G-e-m-ü-s-e = 6 (ü is 1 char but 2 bytes in UTF-8)
+space = 1
+K-r-ä-u-t-e-r = 7 (ä is 2 bytes)
+space = 1
+& = 1
+space = 1
+B-l-u-m-e-n = 6
+, = 1
+space = 1
+S-t-a-b-i-l-e-s = 8
+space = 1
+G-e-m-ü-s-e-b-e-e-t = 11
+space = 1
+O-h-n-e = 4
+space = 1
+B-o-d-e-n = 5
+space = 1
+f-ü-r = 3
+space = 1
+T-e-r-r-a-s-s-e = 8
+space = 1
+& = 1
+space = 1
+B-a-l-k-o-n = 6
+
+Total ASCII chars: ~175
+With umlauts adding extra bytes...
+
+Actually for Amazon.de, character limit for title is typically 200 characters (not bytes). Let me just keep it under 200 chars visually.
+
+Let me rewrite for clarity:
+"Hochbeet Metall 232x113,5x30 cm Verzinktes Stahlblech Gartenbeet Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse Balkon"
+
+Count: ~170 chars
+
+Actually, let me think about this differently. Amazon.de title has 200 character limit. Let me be more strategic:
+
+"Hochbeet Metall 232 x 113,5 x 30 cm Verzinkt, Gartenbeet Silber Pflanzenbeet für Gemüse Kräuter Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse Balkon"
+
+Let me count more precisely:
+Hochbeet = 8
+Metall = 6
+232 = 3
+x = 1
+113,5 = 5
+x = 1
+30 = 2
+cm = 2
+Verzinkt = 8
+Gartenbeet = 10
+Silber = 6
+Pflanzenbeet = 12
+für = 3
+Gemüse = 6
+Kräuter = 7
+Blumen = 6
+Stabiles = 8
+Gemüsebeet = 11
+Ohne = 4
+Boden = 5
+für = 3
+Terrasse = 8
+Balkon = 6
+
+Plus spaces and commas - approximately 175 chars. Good.
+
+Let me finalize:
+
+Title: "Hochbeet Metall 232 x 113,5 x 30 cm Verzinkt, Gartenbeet Silber Pflanzenbeet für Gemüse Kräuter Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse Balkon"
+
+That's about 167 characters. Good.
+
+Now bullets. Let me refine:
+
+Bullet 1: Generous dimensions - 
+"Großzügige Größe für vielfältigen Anbau: Mit 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für Gemüse, Kräuter, Blumen und andere Pflanzen in Garten, Terrasse oder Balkon."
+~170 chars
+
+Bullet 2: Durable material -
+"Langlebig & Wetterfest: Das 0,6 mm verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist rostbeständig und trotzt Regen, Schnee und Sonne - für eine lange Lebensdauer im Freien."
+~175 chars
+
+Bullet 3: Safe design -
+"Sicheres Gärtnern ohne Verletzungsrisiko: Dank der innen gefalteten Kanten und stabilen Verbindungen gibt es keine scharfen Kanten, die Haut oder Kleidung beschädigen könnten."
+~163 chars
+
+Bullet 4: Open bottom for healthy roots -
+"Gesundes Wurzelwachstum: Das offene Bodendesign lässt Pflanzenwurzeln tief in die Erde wachsen, sodass sie mehr Nährstoffe und Wasser aufnehmen können für kräftiges Wachstum."
+~163 chars
+
+Bullet 5: Easy assembly & layered filling -
+"Einfache Montage und flexible Befüllung: Der durchdachte Bausatz lässt sich schnell aufbauen. Schichten Sie Äste, Laub, Kompost und Erde für optimale Drainage und Nährstoffversorgung."
+~175 chars
+
+Description with HTML:
+
+Let me write:
+
+<b>Produktübersicht</b><br>
+Dieses geräumige Hochbeet aus Metall verwandelt Ihren Außenbereich in eine ertragreiche Gartenoase. Mit großzügigen Maßen von 232 x 113,5 x 30 cm bietet es ideale Wachstumsbedingungen für Gemüse, Kräuter und Blumen auf Terrasse, Balkon oder im Garten.
+
+<b>Hauptmerkmale und Vorteile</b><br>
+<ul>
+<li><b>Robustes Material:</b> 0,6 mm dickes verzinktes Stahlblech mit Zink-Aluminium-Beschichtung - rostfrei, wetterfest und langlebig.</li>
+<li><b>Großzügige Abmessungen:</b> 232 x 113,5 x 30 cm - reichlich Platz für eine vielfältige Bepflanzung.</li>
+<li><b>Sicheres Design:</b> Innen gefaltete Kanten verhindern Schnittverletzungen - ideal für Familien.</li>
+<li><b>Stabile Verbindungen:</b> Widerstandsfähige Konstruktion, die hohem Druck standhält, ohne sich zu verformen.</li>
+<li><b>Offener Boden:</b> Ermöglicht tiefes Wurzelwachstum für gesunde und kräftige Pflanzen.</li>
+</ul>
+
+<b>Vielseitige Einsatzmöglichkeiten</b><br>
+Ob im heimischen Garten, auf der Terrasse, dem Balkon oder im Innenhof - dieses Hochbeet passt sich flexibel Ihren Bedürfnissen an und eignet sich hervorragend für:<br>
+<li>Gemüseanbau wie Tomaten, Salat, Paprika und Zucchini</li>
+<li>Kräutergarten mit Basilikum, Petersilie, Schnittlauch und Minze</li>
+<li>Blumenbeet mit saisonalen Zierpflanzen</li>
+<li>Hochbeet-Schichtsystem für optimale Pflanzenernährung</li>
+
+<b>Empfohlene Befüllung in Schichten</b><br>
+Für beste Ergebnisse empfehlen wir eine schichtweise Befüllung:<br>
+<li>Untere Schicht: Grobe Materialien wie Äste und Zweige für Drainage</li>
+<li>Mittlere Schicht: Organische Abfälle wie Laub, Stroh und Kompost</li>
+<li>Obere Schicht: Hochwertige Pflanzerde für die Aussaat</li>
+
+<b>Einfache Montage</b><br>
+Der praktische Bausatz enthält alle notwendigen Teile für eine schnelle und unkomplizierte Montage. Dank der durchdachten Konstruktion ist das Hochbeet in kurzer Zeit aufgebaut und sofort einsatzbereit.
+
+<b>Pflegehinweise</b><br>
+Dank der hochwertigen Verzinkung benötigt das Hochbeet nur minimale Pflege. Gelegentliches Reinigen mit Wasser genügt, um es viele Jahre in einwandfreiem Zustand zu halten.
+
+<b>Marke</b><br>
+YUDA HOME FURNITURE steht für hochwertige Garten- und Wohnaccessoires, die Funktionalität und Design vereinen. Mit unserem Hochbeet entscheiden Sie sich für Qualität, Langlebigkeit und ein durchdachtes Produkt, das Ihren Garten bereichert.
+
+Wait - "Marke" / "YUDA HOME FURNITURE" - this is the seller's own brand. In description, brand can be mentioned. The hard rules only prohibit brand in Title, Bullets, and Search Terms.
+
+Let me also re-verify the description character count. It's under 4000 chars. Let me check.
+
+Description length looks good, around 2000 chars.
+
+**Search Terms:**
+
+Need to be comma-separated, max 250 bytes, no duplicates from title, no promotional words.
+
+Title contains: Hochbeet, Metall, Verzinkt, Gartenbeet, Silber, Pflanzenbeet, Gemüse, Kräuter, Blumen, Stabiles, Gemüsebeet, Ohne Boden, Terrasse, Balkon
+
+So search terms should not duplicate these. But I think the rule means don't duplicate exactly - so I can use synonyms.
+
+Search terms to include:
+- Pflanzkasten
+- Frühbeet
+- Hochbeet verzinkt (this overlaps with title)
+- Garten
+- Outdoor
+- Patio
+- Backyard
+- Gemuese
+- Anzucht
+- Pflanzen
+- Zink
+- wetterfest
+- winterfest
+- robust
+- gross
+- grosszügig
+- aufstell
+- montage
+- bausatz
+- stahl
+- eisen
+- blumenkasten
+- pflanztrog
+- kräuterbeet
+- gartnern
+- hobby
+- pflanztisch
+- beets
+
+Let me create a sensible list:
+
+"Pflanzkasten, Frühbeet, Kräuterbeet, Blumenkasten, Pflanztrog, Garten, Outdoor, Patio, Anzucht, Aufzucht, winterfest, wetterfest, robust, groß, Bausatz, Montage, Gärtnern, Hobbygärtner, Pflanzbeet, Garten Accessoires, Pflanzgefäß, Beet, Hochbeet Zubehör"
+
+Let me count bytes:
+"Pflanzkasten" = 12
+"," = 1
+"Frühbeet" = 8 (ü=2 bytes)
+"," = 1
+"Kräuterbeet" = 11
+"," = 1
+"Blumenkasten" = 12
+"," = 1
+"Pflanztrog" = 10
+"," = 1
+"Garten" = 6
+"," = 1
+"Outdoor" = 7
+"," = 1
+"Patio" = 5
+"," = 1
+"Anzucht" = 7
+"," = 1
+"Aufzucht" = 8
+"," = 1
+"winterfest" = 10
+"," = 1
+"wetterfest" = 10
+"," = 1
+"robust" = 6
+"," = 1
+"groß" = 5
+"," = 1
+"Bausatz" = 7
+"," = 1
+"Montage" = 7
+"," = 1
+"Gärtnern" = 8 (ä=2 bytes)
+"," = 1
+"Hobbygärtner" = 13 (ä=2 bytes)
+"," = 1
+"Pflanzbeet" = 10
+"," = 1
+"Beet" = 4
+"," = 1
+"Pflanzgefäß" = 11 (ä=2 bytes)
+"," = 1
+"Ernte" = 5
+"," = 1
+"Kompost" = 7
+
+Approximate byte count: 12+1+9+1+11+1+12+1+10+1+6+1+7+1+5+1+7+1+8+1+10+1+10+1+6+1+5+1+7+1+7+1+10+1+15+1+10+1+4+1+13+1+5+1+7 = approx 230 bytes
+
+Close to 250. Let me trim a bit:
+
+"Pflanzkasten, Frühbeet, Kräuterbeet, Blumenkasten, Pflanztrog, Garten, Outdoor, Patio, Anzucht, winterfest, wetterfest, robust, Bausatz, Montage, Hobbygärtner, Pflanzbeet, Pflanzgefäß, Kompost"
+
+Hmm, but "Pflanzbeet" is similar to "Pflanzenbeet" - but it's a different word so OK.
+
+Wait, the rule says "不要重复标题中的词". Title has "Pflanzenbeet" not "Pflanzbeet". So "Pflanzbeet" is different. Good.
+
+Let me check overlap:
+- Title: Hochbeet, Metall, 232, 113,5, 30, cm, Verzinkt, Gartenbeet, Silber, Pflanzenbeet, Gemüse, Kräuter, Blumen, Stabiles, Gemüsebeet, Ohne, Boden, Terrasse, Balkon
+
+Search terms should not repeat these. Let me check:
+- Pflanzkasten - new
+- Frühbeet - new
+- Kräuterbeet - has "Kräuter" but as a word Kräuterbeet is different
+- Blumenkasten - has "Blumen"
+- Pflanztrog - new
+- Garten - new
+- Outdoor - new
+- Patio - new
+- Anzucht - new
+- winterfest - new
+- wetterfest - new
+- robust - new
+- Bausatz - new
+- Montage - new
+- Hobbygärtner - has "gärtner"... wait it's not in title
+- Pflanzbeet - similar to Pflanzenbeet but different
+- Pflanzgefäß - new
+- Kompost - new
+
+Hmm, some have root words similar to title. But the rule says "不要重复标题中的词" - don't repeat words in title. Compound words are different words.
+
+Actually I think Amazon de-dup is based on stems so "Kräuterbeet" might be flagged with "Kräuter". Let me be safer and avoid compound words containing title words.
+
+Let me revise:
+"Pflanzkasten, Frühbeet, Pflanztrog, Outdoor, Patio, Anzucht, winterfest, wetterfest, robust, Bausatz, Montage, Hobbygärtner, Pflanzgefäß, Kompost, Erdbeere, Tomate, Salat, Aussaat, Rankhilfe, Hochbeet-Abdeckung"
+
+Hmm but "Hochbeet-Abdeckung" - wait the rule says no en-dash. Let me use "Hochbeetabdeckung".
+
+Actually wait, let me reconsider. The hyphen is allowed (normal ASCII), just not en-dash (–) or em-dash (—). So "Hochbeet-Abdeckung" is fine.
+
+Let me also avoid "Hochbeet" since it's in title. Let me try:
+
+"Pflanzkasten, Frühbeet, Pflanztrog, Outdoor, Patio, Anzucht, winterfest, wetterfest, robust, Bausatz, Montage, Hobbygärtner, Pflanzgefäß, Kompost, Erdbeere, Tomate, Salat, Aussaat, Rankhilfe"
+
+Byte count:
+Pflanzkasten = 12
+Frühbeet = 8 (ü=2)
+Pflanztrog = 10
+Outdoor = 7
+Patio = 5
+Anzucht = 7
+winterfest = 10
+wetterfest = 10
+robust = 6
+Bausatz = 7
+Montage = 7
+Hobbygärtner = 13 (ä=2)
+Pflanzgefäß = 13 (ä=2)
+Kompost = 7
+Erdbeere = 8
+Tomate = 6
+Salat = 5
+Aussaat = 7
+Rankhilfe = 10
+
+Total chars: 12+1+8+1+10+1+7+1+5+1+7+1+10+1+10+1+6+1+7+1+7+1+13+1+13+1+7+1+8+1+6+1+5+1+7+1+10 = 181 chars + commas (18 commas) = ~199
+
+Plus umlauts adding bytes: ü(1), ü(1), ä(1), ä(1) = 4 extra bytes
+Total: ~203 bytes
+
+Good, under 250.
+
+Let me also add "Ernte" and "Gartenfreude" but watch the byte limit:
+
+Adding "Ernte" = 5+1 = 6 chars. Total: 209. OK.
+Adding "Gartenfreude" - wait, "Garten" is in title. Hmm "Gartenbeet" is in title but "Gartenfreude" is different.
+
+Actually I realize I should double-check. The rule is about Title words. Let me be careful:
+
+Title words (exact): Hochbeet, Metall, 232, x, 113,5, 30, cm, Verzinkt, Gartenbeet, Silber, Pflanzenbeet, für, Gemüse, Kräuter, Blumen, Stabiles, Gemüsebeet, Ohne, Boden, Terrasse, Balkon
+
+So:
+- Pflanzkasten - OK (different from all title words)
+- Frühbeet - OK (different from all title words)
+- Kräuterbeet - contains "Kräuter" from title? Let me skip this to be safe
+- Blumenkasten - contains "Blumen" from title? Skip to be safe
+- Pflanztrog - OK
+- Garten - separate word from "Gartenbeet"? Different compound word but Garten is a substring. Better skip.
+- Outdoor - OK
+- Patio - OK
+- Anzucht - OK
+- winterfest - OK
+- wetterfest - OK
+- robust - OK
+- Bausatz - OK
+- Montage - OK
+- Hobbygärtner - OK
+- Pflanzgefäß - OK
+- Kompost - OK
+- Erdbeere - OK
+- Tomate - OK
+- Salat - OK
+- Aussaat - OK
+- Rankhilfe - OK
+
+Let me finalize:
+"Pflanzkasten, Frühbeet, Pflanztrog, Outdoor, Patio, Anzucht, winterfest, wetterfest, robust, Bausatz, Montage, Hobbygärtner, Pflanzgefäß, Kompost, Erdbeere, Tomate, Salat, Aussaat, Rankhilfe, Gemueseanbau"
+
+Wait, "Gemüseanbau" contains "Gemüse". Skip.
+
+Let me try:
+"Pflanzkasten, Frühbeet, Pflanztrog, Outdoor, Patio, Anzucht, winterfest, wetterfest, robust, Bausatz, Montage, Hobbygärtner, Pflanzgefäß, Kompost, Erdbeere, Tomate, Salat, Aussaat, Rankhilfe, Gartenzubehör"
+
+"Gartenzubehör" contains "Garten". Skip.
+
+How about:
+"Pflanzkasten, Frühbeet, Pflanztrog, Outdoor, Patio, Anzucht, winterfest, wetterfest, robust, Bausatz, Montage, Hobbygärtner, Pflanzgefäß, Kompost, Erdbeere, Tomate, Salat, Aussaat, Rankhilfe, Schnecken"
+
+Add some more terms:
+- Schneckenschutz (anti-snail)
+- Pflanzenschutz
+- Wachstum
+- Wurzel
+
+Let me finalize:
+"Pflanzkasten, Frühbeet, Pflanztrog, Outdoor, Patio, Anzucht, winterfest, wetterfest, robust, Bausatz, Montage, Hobbygärtner, Pflanzgefäß, Kompost, Erdbeere, Tomate, Salat, Aussaat, Rankhilfe, Wurzel"
+
+Byte count check:
+Pflanzkasten=12
+Frühbeet=8
+Pflanztrog=10
+Outdoor=7
+Patio=5
+Anzucht=7
+winterfest=10
+wetterfest=10
+robust=6
+Bausatz=7
+Montage=7
+Hobbygärtner=13
+Pflanzgefäß=13
+Kompost=7
+Erdbeere=8
+Tomate=6
+Salat=5
+Aussaat=7
+Rankhilfe=10
+Wurzel=6
+
+Subtotal chars: 12+8+10+7+5+7+10+10+6+7+7+13+13+7+8+6+5+7+10+6 = 164
+Commas: 19
+Spaces (after commas): 19
+
+Total: 164+19+19 = 202 chars
+
+Umlauts: ü, ü, ä, ä = 4 extra bytes
+Total bytes: ~206
+
+Good, under 250.
+
+Wait, I need to verify this won't have issues. Let me look at the title again:
+"Hochbeet Metall 232 x 113,5 x 30 cm Verzinkt, Gartenbeet Silber Pflanzenbeet für Gemüse Kräuter Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse Balkon"
+
+I should also avoid "Boden" but I don't have Boden in search terms. Good.
+
+Actually "Bausatz" - I need to check if it's in the title. The original product data mentions "Hochbeet Bausatz ohne Boden" but I'm not putting Bausatz in the title. Let me check my title again... no, I don't have "Bausatz" in my title. Good.
+
+Let me look at my search terms once more:
+"Pflanzkasten, Frühbeet, Pflanztrog, Outdoor, Patio, Anzucht, winterfest, wetterfest, robust, Bausatz, Montage, Hobbygärtner, Pflanzgefäß, Kompost, Erdbeere, Tomate, Salat, Aussaat, Rankhilfe, Wurzel"
+
+None of these appear in my title. 
+
+Now let me also consider the bullet point character limits. Let me count each:
+
+Bullet 1: "Großzügige Größe für vielfältigen Anbau: Mit 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für Gemüse, Kräuter, Blumen und andere Pflanzen in Garten, Terrasse oder Balkon."
+Length: Let me count more carefully
+G-r-o-ß-z-ü-g-i-g-e = 11 (ß=1, ü=1)
+space
+G-r-ö-ß-e = 6 (ö=1, ß=1)
+space
+f-ü-r = 4 (ü=1)
+space
+v-i-e-l-f-ä-l-t-i-g-e-n = 12 (ä=1)
+space
+A-n-b-a-u = 5
+: = 1
+space
+M-i-t = 3
+space
+2-3-2 = 3
+space
+x = 1
+space
+1-1-3-,-5 = 5
+space
+x = 1
+space
+3-0 = 2
+space
+c-m = 2
+space
+b-i-e-t-e-t = 6
+space
+d-i-e-s-e-s = 6
+space
+H-o-c-h-b-e-e-t = 8
+space
+r-e-i-c-h-l-i-c-h = 9
+space
+P-l-a-t-z = 5
+space
+f-ü-r = 4
+space
+G-e-m-ü-s-e = 6 (ü=1)
+, = 1
+space
+K-r-ä-u-t-e-r = 7 (ä=1)
+, = 1
+space
+B-l-u-m-e-n = 6
+space
+u-n-d = 3
+space
+a-n-d-e-r-e = 6
+space
+P-f-l-a-n-z-e-n = 8
+space
+i-n = 2
+space
+G-a-r-t-e-n = 6
+, = 1
+space
+T-e-r-r-a-s-s-e = 8
+space
+o-d-e-r = 4
+space
+B-a-l-k-o-n = 6
+. = 1
+
+Count chars: 11+1+6+1+4+1+12+1+5+1+1+1+3+1+3+1+1+1+5+1+1+1+2+1+6+1+6+1+8+1+9+1+5+1+4+1+6+1+1+1+7+1+1+1+6+1+3+1+6+1+8+1+2+1+6+1+1+1+8+1+4+1+6+1+1 = approx 198
+
+That's near 200. Let me shorten slightly:
+
+"Großzügige Größe für vielfältigen Anbau: Mit 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für Gemüse, Kräuter, Blumen und andere Pflanzen auf Terrasse, Balkon oder im Garten."
+
+Let me count:
+Großzügige = 10 (ß=1)
+space
+Größe = 5 (ö=1, ß=1)
+space
+für = 3
+space
+vielfältigen = 11 (ä=1)
+space
+Anbau = 5
+: = 1
+space
+Mit = 3
+space
+232 = 3
+space
+x = 1
+space
+113,5 = 5
+space
+x = 1
+space
+30 = 2
+space
+cm = 2
+space
+bietet = 6
+space
+dieses = 6
+space
+Hochbeet = 8
+space
+reichlich = 9
+space
+Platz = 5
+space
+für = 3
+space
+Gemüse = 6 (ü=1)
+, = 1
+space
+Kräuter = 7 (ä=1)
+, = 1
+space
+Blumen = 6
+space
+und = 3
+space
+andere = 6
+space
+Pflanzen = 8
+space
+auf = 3
+space
+Terrasse = 8
+, = 1
+space
+Balkon = 6
+space
+oder = 4
+space
+im = 2
+space
+Garten = 6
+. = 1
+
+Total: 10+1+5+1+3+1+11+1+5+1+1+1+3+1+3+1+1+1+5+1+1+1+2+1+2+1+6+1+6+1+8+1+9+1+5+1+3+1+6+1+1+1+7+1+1+1+6+1+3+1+6+1+8+1+3+1+8+1+1+1+6+1+4+1+2+1+6+1+1 = approx 175
+
+Good, under 200.
+
+Bullet 2: "Langlebig & Wetterfest: Das 0,6 mm verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist rostfrei und trotzt Regen, Schnee und Sonne - so bleibt das Hochbeet jahrelang schön."
+Count: ~165 chars - good
+
+Bullet 3: "Sicheres Design für unbeschwertes Gärtnern: Innen gefaltete Kanten verhindern Schnittverletzungen. Stabile Verbindungen halten hohem Druck stand, ohne sich zu verformen oder zu lockern."
+Count: ~165 chars - good
+
+Bullet 4: "Offener Boden für gesundes Wachstum: Das bodenlose Design ermöglicht tiefes Wurzelwachstum in die natürliche Erde. Pflanzen nehmen mehr Nährstoffe auf und entwickeln sich kräftiger."
+Count: ~170 chars - good
+
+Bullet 5: "Flexible Schichtbefüllung & einfacher Aufbau: Beginnen Sie mit Ästen für Drainage, dann Laub und Kompost, oben Erde - so entsteht ein nährstoffreiches, gut belüftetes Pflanzenklima."
+Count: ~178 chars - good
+
+Let me also double-check no en-dashes or em-dashes are in my bullets. I used "-" in "0,6 mm" - that's not a dash. Wait, I have "0,6 mm verzinkte" - no dash there. Let me re-check each bullet.
+
+Actually I notice in my first draft I had "Trotzt Regen, Schnee und Sonne - so bleibt" - that "-" might be a hyphen-minus which is OK. Let me make sure.
+
+ASCII hyphen-minus is "-" (U+002D). This is fine per the rules.
+
+Now let me finalize everything and write the response:
+
+Actually wait, let me also reconsider the title. Let me make it more Amazon.de standard:
+
+Amazon.de titles typically follow this format:
+[Brand] [Product Type] [Key Feature 1] [Key Feature 2] [Size/Color]
+
+Since brand is not allowed, let me try:
+"Hochbeet Metall 232 x 113,5 x 30 cm Verzinkt, Gartenbeet Silber Pflanzenbeet, Stabiles Gemüsebeet Ohne Boden für Gemüse Kräuter Blumen, Terrasse Balkon Garten"
+
+Hmm, "Gemüse" appears twice. Let me clean up:
+
+"Hochbeet Metall 232 x 113,5 x 30 cm Verzinkt, Gartenbeet Silber Pflanzenbeet, Stabiles Gemüsebeet Ohne</think>
+
+
+--- RAW AI reasoning_content ---
+(none)
+
+--- RAW AI FULL JSON ---
+{
+  "id": "0698386fda25f2f281a82e2a66c4d13c",
+  "choices": [
+    {
+      "finish_reason": "length",
+      "index": 0,
+      "message": {
+        "content": "<think>Let me analyze the requirements carefully:\n\n1. Product Title (max 200 chars, German):\n- Include core keywords (Hochbeet / Pflanzenbeet / Gemüsebeet)\n- Include material keywords (Metall / Stahlblech / verzinkt)\n- Include main dimensions (L×W×H cm)\n- Include color\n- Include brand or manufacturer\n- No keyword stuffing, no promotional words (SALE / FREE / NEW)\n- First letter uppercase as standard Amazon.de format\n\nWait - the rules say \"禁止出现品牌词(如 COOLMORE、YUDA HOME FURNITURE 等)\" - but also says \"包含品牌或制造商\". This is contradictory. Let me re-read...\n\n\"Title / Bullets / Search Terms 中**禁止出现品牌词**(如 COOLMORE、YUDA HOME FURNITURE 等) — 这些是 GIGA 给的卖家品牌,Amazon Listing 不应出现卖家自己品牌以外的第三方品牌词\"\n\nSo it says \"卖家自己品牌以外的第三方品牌词\" - meaning third-party brands other than the seller's own brand. YUDA HOME FURNITURE is the seller's own brand, so it should be OK to include. But to be safe, let me include it since the title requirement says to include brand or manufacturer.\n\nActually wait, re-reading: \"Amazon Listing 不应出现卖家自己品牌以外的第三方品牌词\" - this means Amazon Listing should not contain third-party brands other than the seller's own brand. So the seller's own brand YUDA HOME FURNITURE can be included.\n\nBut also looking at HARD RULES: \"Title / Bullets / Search Terms 中**禁止出现品牌词**(如 COOLMORE、YUDA HOME FURNITURE 等)\"\n\nHmm, this is a hard rule that says NO brand words in Title/Bullets/Search Terms. So I should NOT include the brand in those fields. The \"include brand\" in title requirements might be overruled by this hard rule.\n\nLet me follow the HARD RULES strictly: NO brand words in Title, Bullets, or Search Terms.\n\n2. Five Bullet Points (max 200 chars each, German):\n- Each starts with uppercase\n- Include dimensions/specs\n- Highlight buyer value\n- No keyword stuffing\n- Separated by blank lines\n\n3. Product Description (max 4000 chars, German):\n- Include overview, features, use cases, usage, brand info\n- Use HTML tags (<b>, <li>, <br>)\n- No keyword stuffing\n\n4. Search Terms (max 250 bytes, German):\n- Comma-separated\n- Include core, synonyms, long-tail\n- Include local consumer terms\n- No duplicates from title\n- No promotional words\n\nLet me now craft the listing:\n\n**Title (max 200 chars):**\nLet me draft:\n\"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet in Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter & Blumen, Robustes Gemüsebeet ohne Boden für Terrasse & Balkon\"\n\nLet me count: \n\"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet in Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter & Blumen, Robustes Gemüsebeet ohne Boden für Terrasse & Balkon\"\nCount: ~177 chars - good\n\nActually, the dimension format should use ASCII characters. \"232x113,5x30\" uses comma - that's OK in German. But let me use simpler: 232 x 113.5 x 30 cm - but the rules say no en-dash/em-dash. Period is OK.\n\nLet me refine:\n\"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse Balkon Garten\"\n\nCount: ~180 chars\n\n**Bullet Points:**\n\n1. Großzügige Abmessungen für vielfältigen Anbau: Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Hochbeet ausreichend Platz für Gemüse, Kräuter, Blumen und andere Pflanzen auf Terrasse, Balkon oder im Garten.\n\n2. Langlebiges & wetterfestes Material: Das verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist rostbeständig und garantiert eine lange Lebensdauer - auch bei wechselnden Witterungsbedingungen das ganze Jahr über.\n\n3. Sicheres Design ohne Verletzungsrisiko: Die 0,6 mm dicken Stahl-Wellbleche mit nach innen gefalteten Kanten schützen zuverlässig vor Schnittverletzungen - ideal für Familien mit Kindern und Haustieren.\n\n4. Optimales Pflanzenwachstum durch offenen Boden: Dank des bodenlosen Designs können Wurzeln tief in den natürlichen Erdboden wachsen und mehr Nährstoffe aufnehmen - für kräftigere und gesündere Pflanzen.\n\n5. Einfacher Aufbau & individuelle Befüllung: Der praktische Bausatz ermöglicht eine unkomplizierte Montage. Schichten Sie Äste, Laub, Kompost und Erde für eine ideale Drainage und nährstoffreiche Wachstumsbedingungen.\n\n**Product Description:**\n\nLet me write a comprehensive description with HTML tags.\n\n**Search Terms:**\nNeed to be careful about not duplicating title words and staying under 250 bytes.\n\nNow let me think about the title more carefully. The instruction says \"包含品牌或制造商\" but HARD RULES says no brand. I'll follow HARD RULES and omit brand.\n\nLet me finalize the title:\n\"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet in Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter & Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse & Balkon\"\n\nWait, the rules say no promotional words. \"&\" should be fine. Let me check \"&\" - it should be fine as it's commonly used.\n\nActually let me reconsider - \"&\" might cause issues. Let me use \"und\" instead. But \"&\" is ASCII... it's character 38. Should be fine.\n\nLet me count the title more carefully:\n\"Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet in Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter & Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse & Balkon\"\n\nH-o-c-h-b-e-e-t = 8\nspace = 1\nM-e-t-a-l-l = 6\nspace = 1\n2-3-2 = 3\nx = 1\n1-1-3-,-5 = 5\nx = 1\n3-0 = 2\nspace = 1\nc-m = 2\n, = 1\nspace = 1\nV-e-r-z-i-n-k-t-e-s = 10\nspace = 1\nS-t-a-h-l-b-l-e-c-h = 10\nspace = 1\nG-a-r-t-e-n-b-e-e-t = 10\nspace = 1\ni-n = 2\nspace = 1\nS-i-l-b-e-r = 6\n, = 1\nspace = 1\nW-e-t-t-e-r-f-e-s-t-e-s = 12\nspace = 1\nP-f-l-a-n-z-e-n-b-e-e-t = 12\nspace = 1\nf-ü-r = 3\nspace = 1\nG-e-m-ü-s-e = 6 (ü is 1 char but 2 bytes in UTF-8)\nspace = 1\nK-r-ä-u-t-e-r = 7 (ä is 2 bytes)\nspace = 1\n& = 1\nspace = 1\nB-l-u-m-e-n = 6\n, = 1\nspace = 1\nS-t-a-b-i-l-e-s = 8\nspace = 1\nG-e-m-ü-s-e-b-e-e-t = 11\nspace = 1\nO-h-n-e = 4\nspace = 1\nB-o-d-e-n = 5\nspace = 1\nf-ü-r = 3\nspace = 1\nT-e-r-r-a-s-s-e = 8\nspace = 1\n& = 1\nspace = 1\nB-a-l-k-o-n = 6\n\nTotal ASCII chars: ~175\nWith umlauts adding extra bytes...\n\nActually for Amazon.de, character limit for title is typically 200 characters (not bytes). Let me just keep it under 200 chars visually.\n\nLet me rewrite for clarity:\n\"Hochbeet Metall 232x113,5x30 cm Verzinktes Stahlblech Gartenbeet Silber, Wetterfestes Pflanzenbeet für Gemüse Kräuter Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse Balkon\"\n\nCount: ~170 chars\n\nActually, let me think about this differently. Amazon.de title has 200 character limit. Let me be more strategic:\n\n\"Hochbeet Metall 232 x 113,5 x 30 cm Verzinkt, Gartenbeet Silber Pflanzenbeet für Gemüse Kräuter Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse Balkon\"\n\nLet me count more precisely:\nHochbeet = 8\nMetall = 6\n232 = 3\nx = 1\n113,5 = 5\nx = 1\n30 = 2\ncm = 2\nVerzinkt = 8\nGartenbeet = 10\nSilber = 6\nPflanzenbeet = 12\nfür = 3\nGemüse = 6\nKräuter = 7\nBlumen = 6\nStabiles = 8\nGemüsebeet = 11\nOhne = 4\nBoden = 5\nfür = 3\nTerrasse = 8\nBalkon = 6\n\nPlus spaces and commas - approximately 175 chars. Good.\n\nLet me finalize:\n\nTitle: \"Hochbeet Metall 232 x 113,5 x 30 cm Verzinkt, Gartenbeet Silber Pflanzenbeet für Gemüse Kräuter Blumen, Stabiles Gemüsebeet Ohne Boden für Terrasse Balkon\"\n\nThat's about 167 characters. Good.\n\nNow bullets. Let me refine:\n\nBullet 1: Generous dimensions - \n\"Großzügige Größe für vielfältigen Anbau: Mit 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für Gemüse, Kräuter, Blumen und andere Pflanzen in Garten, Terrasse oder Balkon.\"\n~170 chars\n\nBullet 2: Durable material -\n\"Langlebig & Wetterfest: Das 0,6 mm verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist rostbeständig und trotzt Regen, Schnee und Sonne - für e
+
+--- PARSED ---
+title:        ''
+bullets:      0 items
+description:  0 chars
+search_terms: ''
+ai_status:    empty

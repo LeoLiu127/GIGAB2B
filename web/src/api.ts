@@ -124,6 +124,20 @@ export const api = {
     });
   },
 
+  /**
+   * 解析关键词文件 (.txt / .csv / .xlsx),返回 list[str].
+   * 失败抛出 Error,前端降级处理(警告 + 跳过该文件,不影响流水线)。
+   */
+  parseKeywords(file: File, signal?: AbortSignal) {
+    const fd = new FormData();
+    fd.append("keywords_file", file);
+    return request<{ filename: string; keywords: string[]; count: number }>("/parse-keywords", {
+      method: "POST",
+      body: fd,
+      signal,
+    });
+  },
+
   runPipeline(
     sku: string,
     market: string,
@@ -131,6 +145,7 @@ export const api = {
     imageStrategy: string = "use_giga",
     onEvent?: (e: Record<string, unknown>) => void,
     externalSignal?: AbortSignal,
+    extra?: { prompt_extra?: string; keywords?: string[] },
   ) {
     return request<{
       type: "done";
@@ -140,7 +155,14 @@ export const api = {
     }>("/run-pipeline", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sku, market, template_filename, image_strategy: imageStrategy }),
+      body: JSON.stringify({
+        sku,
+        market,
+        template_filename,
+        image_strategy: imageStrategy,
+        prompt_extra: extra?.prompt_extra ?? "",
+        keywords: extra?.keywords ?? [],
+      }),
       // 流式：AI 文案单步可到 50s+，给 5 分钟兜底，远大于实际可能耗时
       timeout: 300_000,
       stream: true,
@@ -150,7 +172,7 @@ export const api = {
   },
 
   generateImage(opts: {
-    slot: "main" | "detail";
+    slot: "main" | "sub" | "detail";
     sku?: string;
     size: string;
     prompt_extra?: string;
@@ -187,6 +209,17 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sku, market }),
+    });
+  },
+
+  fetchProduct(sku: string, market: string, signal?: AbortSignal) {
+    // 「抓取数据」按钮单独用：只调 GIGA, 不调 AI, 不填 Excel
+    return request<import("./types").FetchedProduct>("/fetch-product", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sku, market }),
+      timeout: 30_000,
+      signal,
     });
   },
 };

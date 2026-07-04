@@ -1,0 +1,11 @@
+127.0.0.1 - - [02/Jul/2026 10:09:14] "GET /api/health HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 10:09:24] "POST /api/run-pipeline HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 10:10:38] "GET /api/server-status HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 10:10:39] "GET /api/markets HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 10:10:39] "GET /api/server-status HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 10:10:39] "GET /api/markets HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 10:10:49] "POST /api/run-pipeline HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 10:10:58] "POST /api/run-pipeline HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jul/2026 19:20:59] "GET /api/server-status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jul/2026 19:20:59] "GET /api/health HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jul/2026 19:24:47] "GET /api/server-status HTTP/1.1" 200 -

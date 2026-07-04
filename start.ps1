@@ -1,4 +1,4 @@
-<#
+﻿<#
   GIGAB2B one-shot launcher (PowerShell).
   Solves two chronic Windows dev issues:
     1. cmd /c bat files garble CJK output when invoked from PowerShell.

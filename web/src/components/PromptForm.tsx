@@ -1,9 +1,10 @@
 export interface ImageType {
-  type: "main" | "detail";
+  type: "main" | "sub" | "detail";
 }
 
 export const IMAGE_TYPE_OPTIONS: { value: ImageType["type"]; label: string; hint: string }[] = [
   { value: "main",   label: "主图",   hint: "白底/纯色居中，主体占比 ≥80%" },
+  { value: "sub",    label: "副图",   hint: "尺寸图或场景图，1600×1600" },
   { value: "detail", label: "详情图", hint: "场景/特写，展示材质工艺细节" },
 ];
 

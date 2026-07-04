@@ -1,0 +1,533 @@
+=== SKU: W3372P314940 | Market: DE_TAX | Time: 20260704-211020 ===
+
+--- RAW AI content (text) ---
+<think>The user wants me to create an Amazon.de listing in German for a metal raised garden bed. Let me carefully follow all the rules:
+
+1. Product Title - max 200 chars, German, with specific keywords
+2. Five Bullet Points - max 200 chars each, German
+3. Product Description - max 4000 chars, German with HTML tags
+4. Search Terms - max 250 bytes, German, comma-separated
+
+HARD RULES:
+- No HTML in Title/Bullets/Search Terms
+- No brand words (including "YUDA HOME FURNITURE")
+- Only ASCII punctuation, no en-dash/em-dash
+- Use plain hyphens
+
+Let me draft each section:
+
+**Title (max 200 chars):**
+Need: Hochbeet/Pflanzenbeet/Gemüsebeet + Metall/Stahlblech/verzinkt + dimensions (232 x 113.5 x 30 cm) + Silver color
+
+Draft:
+"Hochbeet Metall 232 x 113,5 x 30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robustes Gemüsebeet ohne Boden für Garten Terrasse Balkon, Wetterfest & Langlebig"
+
+Let me count: that should be under 200 chars. Let me verify - approximately 160 chars, good.
+
+**Bullet Points (5 items, max 200 chars each):**
+
+1. Großzügige Maße: Mit Abmessungen von 232 x 113,5 x 30 cm bietet dieses Hochbeet aus Metall reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und anderen Pflanzen im Garten, auf der Terrasse oder dem Balkon.
+
+2. Langlebig & Wetterfest: Das verzinkte Stahlblech mit 0,6 mm Stärke und Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost und Korrosion. Das Hochbeet ist viele Jahre haltbar und pflegeleicht - ideal für den ganzjährigen Einsatz im Freien.
+
+3. Sicheres Design: Die innere Kante ist gefaltet, sodass keine scharfen Kanten vorhanden sind. Dies schützt vor Hautkratzern und sorgt für maximale Sicherheit beim Bepflanzen, Jäten und Ernten - auch für Familien mit Kindern geeignet.
+
+4. Freie Basis für gesundes Wachstum: Dank des offenen Bodens können sich die Wurzeln Ihrer Pflanzen frei im Erdreich entwickeln und haben Zugang zu essentiellen Nährstoffen. Dies fördert ein optimales Wachstum und eine reiche Ernte.
+
+5. Einfacher Aufbau: Der Hochbeet Bausatz lässt sich mit den stabilen Verbindungen schnell und unkompliziert montieren. Die robuste Konstruktion hält hohem Druck stand, ohne sich zu lockern oder zu verformen - für unbeschwertes Gärtnern.
+
+**Product Description (max 4000 chars):**
+
+Will use HTML tags for formatting.
+
+**Search Terms (max 250 bytes):**
+
+Need to avoid duplicating title words, include synonyms, local terms.
+
+Let me check the title keywords to avoid:
+- Hochbeet, Metall, 232, 113, 5, 30, cm, Verzinktes, Stahlblech, Pflanzenbeet, Silber, Robustes, Gemüsebeet, ohne, Boden, Garten, Terrasse, Balkon, Wetterfest, Langlebig
+
+Search terms could include:
+pflanzkasten, gartenbeet, kräuterbeet, blumenbeet, outdoor, backyard, patio, balcony, rostfrei, stahl, wellblech, erhöht, anbau, aussaat, beetanlage, gartenarbeit, frühbeet
+
+Wait, I should double-check - Garten, Terrasse, Balkon are already in title. The instruction says "不要重复标题中的词" but then says "包含适用场景词（Garten / Terrasse / Balkon）" - so there's a contradiction. Looking again: "包含适用场景词（Garten / Terrasse / Balkon）" - actually this says to include them, but then "不要重复标题中的词" says don't duplicate. 
+
+Hmm, but the SEO Keyword Reference also says these local search terms. I think the rule means don't unnecessarily duplicate the exact same words, but key search terms that are important for SEO should still be included. Let me include some context variations.
+
+Actually re-reading more carefully: "不要重复标题中的词" - this seems strict. So I should avoid words already in title. Let me skip Garten, Terrasse, Balkon since they're in title.
+
+Wait but those are listed as required "适用场景词". This is contradictory. Let me interpret it as: don't repeat the same exact word, but include semantic equivalents. Or include them since the rule "包含适用场景词" overrides.
+
+I'll include them anyway since both rules seem important and they're common search terms. Actually let me follow the strictest interpretation and avoid duplicating. I'll use alternatives like "Freiland", "Außenbereich", "Hof" instead.
+
+Actually, looking at the Amazon backend search terms rules - Amazon themselves state that you don't need to repeat words already in the title. So I'll avoid them.
+
+Search terms draft:
+pflanzkasten erhöht, kräuterbeet metall, blumenbeet stahl, gartenbeet verzinkt, frühbeet, beetanlage, gartenarbeit, rostfrei, stahl wellblech, outdoor pflanzbeet, backyard garden, patio planter, balcony garden, anbau zuhause, aussaat beet
+
+Let me count bytes... German words with umlauts (ä, ö, ü, ß) typically use 2 bytes each in UTF-8. Let me be conservative.
+
+Actually, since Amazon backend measures bytes for search terms, let me estimate:
+- "pflanzkasten erhöht" = 19 chars but with bytes
+- Let me just write it out and keep it under 250 bytes
+
+Final search terms:
+pflanzkasten erhöht, kräuterbeet, blumenbeet, frühbeet, beetanlage, gartenarbeit, rostfrei, stahl wellblech, outdoor pflanzbeet, backyard garden bed, patio planter, balcony garden, anbau zuhause, aussaat beet, gemüse anbau, pflanzbeet outdoor
+
+Let me count approximate bytes:
+- pflanzkasten erhöht = 19 chars (ä=2 bytes, total ~20 bytes)
+- kräuterbeet = 11 chars (~12 bytes with ä)
+- blumenbeet = 10 bytes
+- frühbeet = 9 bytes (~10 with ü)
+- beetanlage = 10 bytes
+- gartenarbeit = 12 bytes
+- rostfrei = 8 bytes
+- stahl wellblech = 14 bytes
+- outdoor pflanzbeet = 18 bytes
+- backyard garden bed = 18 bytes
+- patio planter = 13 bytes
+- balcony garden = 14 bytes
+- anbau zuhause = 13 bytes
+- aussaat beet = 12 bytes
+- gemüse anbau = 12 bytes (~13 with ü)
+- pflanzbeet outdoor = 18 bytes
+
+Total: ~205 bytes, plus commas and spaces. Should be fine under 250.
+
+Now let me also verify - the user said no brand names, including YUDA HOME FURNITURE. So I won't include any brand.
+
+Also re-checking character encoding for the title - I need to use commas not periods for German decimal numbers. The dimension is 232 x 113,5 x 30 cm (with comma for German decimal). 
+
+Wait - looking at the raw data: "232.00 x 113.50 x 30.00 cm" - in German this should be "232 x 113,5 x 30 cm". Let me check if using a comma (,) is fine. The hard rule says "标点只用普通 ASCII 字符" - comma is ASCII. So using comma is fine.
+
+Let me finalize the title:
+"Hochbeet Metall 232 x 113,5 x 30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robustes Gemüsebeet ohne Boden für Garten Terrasse Balkon, Wetterfest & Langlebig"
+
+Counting: ~165 chars, well under 200.
+
+Actually wait - the German ampersand "&" - is that ASCII? Yes, & is ASCII. But I shouldn't use it according to the rules. Let me use "und" instead.
+
+"Hochbeet Metall 232 x 113,5 x 30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robustes Gemüsebeet ohne Boden für Garten Terrasse Balkon, Wetterfest und Langlebig"
+
+Let me also remove "&" and use proper German formatting.
+
+For bullets, let me make sure each is under 200 chars.
+
+Bullet 1: "Großzügige Maße: Mit Abmessungen von 232 x 113,5 x 30 cm bietet dieses Hochbeet aus Metall reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und anderen Pflanzen im Garten, auf der Terrasse oder dem Balkon."
+Count: ~195 chars - good
+
+Bullet 2: "Langlebig und Wetterfest: Das verzinkte Stahlblech mit 0,6 mm Stärke und Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost und Korrosion. Das Hochbeet ist viele Jahre haltbar und pflegeleicht, ideal für den ganzjährigen Einsatz im Freien."
+Count: ~210 chars - too long! Let me shorten.
+
+Bullet 2 revised: "Langlebig und Wetterfest: Das 0,6 mm verzinkte Stahlblech mit Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost und Korrosion. Das Hochbeet ist viele Jahre haltbar und pflegeleicht, ideal für den ganzjährigen Einsatz im Freien."
+Count: ~195 chars - good
+
+Bullet 3: "Sicheres Design: Die innere Kante ist gefaltet, sodass keine scharfen Kanten vorhanden sind. Dies schützt vor Hautkratzern und sorgt für maximale Sicherheit beim Bepflanzen und Ernten, auch für Familien mit Kindern geeignet."
+Count: ~205 chars - slightly too long
+
+Bullet 3 revised: "Sicheres Design: Die innere Kante ist gefaltet, sodass keine scharfen Kanten vorhanden sind. Dies schützt vor Hautkratzern und sorgt für maximale Sicherheit beim Bepflanzen und Ernten."
+Count: ~165 chars - good
+
+Bullet 4: "Freie Basis für gesundes Wachstum: Dank des offenen Bodens können sich die Wurzeln Ihrer Pflanzen frei im Erdreich entwickeln und haben Zugang zu essentiellen Nährstoffen. Dies fördert ein optimales Wachstum und eine reiche Ernte."
+Count: ~210 chars - too long
+
+Bullet 4 revised: "Freie Basis für gesundes Wachstum: Dank des offenen Bodens können sich die Wurzeln frei im Erdreich entwickeln und haben Zugang zu essentiellen Nährstoffen. Dies fördert ein optimales Wachstum und eine reiche Ernte."
+Count: ~195 chars - good
+
+Bullet 5: "Einfacher Aufbau als Bausatz: Das Hochbeet lässt sich mit stabilen Verbindungen schnell und unkompliziert montieren. Die robuste Konstruktion hält hohem Druck stand, ohne sich zu lockern oder zu verformen, für unbeschwertes Gärtnern."
+Count: ~210 chars - too long
+
+Bullet 5 revised: "Einfacher Aufbau als Bausatz: Das Hochbeet lässt sich mit stabilen Verbindungen schnell montieren. Die robuste Konstruktion hält hohem Druck stand, ohne sich zu lockern oder zu verformen, für unbeschwertes Gärtnern."
+Count: ~190 chars - good
+
+Now the Product Description - max 4000 chars with HTML tags:
+
+```html
+<b>Hochbeet Metall 232 x 113,5 x 30 cm - Ihr vielseitiger Gartenbegleiter</b><br>
+<br>
+Verwandeln Sie Ihren Außenbereich in eine blühende Oase mit unserem großzügigen Hochbeet aus verzinktem Stahlblech. Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Pflanzenbeet reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und vielen weiteren Pflanzen.<br>
+<br>
+<b>Produktmerkmale und Vorteile:</b><br>
+<ul>
+<li><b>Robustes Material:</b> Hergestellt aus 0,6 mm dickem Stahl-Wellblech mit hochwertiger Zink-Aluminium-Beschichtung, ist dieses Hochbeet besonders wetterfest und langlebig.</li>
+<li><b>Rostschutz:</b> Die verzinkte Oberfläche schützt zuverlässig vor Korrosion und sorgt für eine lange Lebensdauer, selbst bei ganzjährigem Einsatz im Freien.</li>
+<li><b>Sicheres Design:</b> Die innere Kante ist gefaltet, sodass keine scharfen Kanten vorhanden sind. Dies schützt vor Hautkratzern und ermöglicht sicheres Gärtnern für die ganze Familie.</li>
+<li><b>Offener Boden:</b> Dank des offenen Designs können sich die Wurzeln Ihrer Pflanzen frei im Erdreich entwickeln und haben Zugang zu allen wichtigen Nährstoffen.</li>
+<li><b>Stabile Konstruktion:</b> Die robusten Verbindungen halten hohem Druck stand, ohne sich zu lockern oder zu verformen.</li>
+</ul>
+<br>
+<b>Vielseitige Einsatzmöglichkeiten:</b><br>
+<ul>
+<li>Gemüseanbau: Tomaten, Salat, Paprika, Zucchini und vieles mehr</li>
+<li>Kräutergarten: Basilikum, Petersilie, Schnittlauch, Rosmarin</li>
+<li>Blumenbeet: Bunte Sommerblumen, Stauden oder Zierpflanzen</li>
+<li>Einsatzorte: Garten, Terrasse, Balkon, Innenhof oder Hof</li>
+</ul>
+<br>
+<b>Optimale Schichtbefüllung für beste Ergebnisse:</b><br>
+Für ein gesundes Pflanzenwachstum empfehlen wir eine schichtweise Befüllung:<br>
+1. <b>Untere Schicht:</b> Grobes Material wie Äste und Zweige für die Drainage<br>
+2. <b>Mittlere Schicht:</b> Organische Abfälle wie Laub, Stroh und Kompost<br>
+3. <b>Obere Schicht:</b> Hochwertige Gartenerde als Pflanzgrundlage<br>
+<br>
+So entsteht ein gut belüftetes, nährstoffreiches und warmes Umfeld, das ideales Wachstum für Ihre Pflanzen fördert.<br>
+<br>
+<b>Einfache Montage:</b><br>
+Der Hochbeet Bausatz lässt sich schnell und unkompliziert aufbauen. Alle benötigten Teile sind im Lieferumfang enthalten. Dank der durchdachten Konstruktion ist das Hochbeet in kurzer Zeit einsatzbereit.<br>
+<br>
+<b>Pflegeleicht und langlebig:</b><br>
+Die pflegeleichte Oberfläche lässt sich einfach reinigen und behält auch nach vielen Jahren ihr ansprechendes silbernes Aussehen. Eine lohnende Investition für passionierte Gärtner und Hobbygärtner gleichermaßen.<br>
+<br>
+Bringen Sie mehr Grün in Ihren Alltag und ernten Sie frisches Gemüse, aromatische Kräuter und wunderschöne Blumen direkt vor Ihrer Haustür.
+```
+
+This should be under 4000 chars. Let me estimate - looks around 2000 chars, well within limit.
+
+Now let me put it all together and verify everything once more.
+
+Actually, I want to re-check the hard rules:
+- No HTML in Title/Bullets/Search Terms ✓
+- No brand names (no YUDA HOME FURNITURE) ✓
+- ASCII punctuation only, no en-dash/em-dash - I need to use "-" not "–" or "—" - my text only uses regular hyphens and commas ✓
+
+Let me double-check title:
+"Hochbeet Metall 232 x 113,5 x 30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robustes Gemüsebeet ohne Boden für Garten Terrasse Balkon, Wetterfest und Langlebig"
+
+Checklist:
+- Core keywords (Hochbeet, Pflanzenbeet, Gemüsebeet) ✓
+- Material (Metall, Stahlblech, verzinkt) ✓
+- Dimensions (232 x 113,5 x 30 cm) ✓
+- Color (Silber) ✓
+- No brand ✓
+- No promotional words ✓
+- Under 200 chars ✓
+
+Wait, I should double-check the character count. Let me count:
+H-o-c-h-b-e-e-t = 8
+" " = 1
+M-e-t-a-l-l = 6
+" " = 1
+2-3-2 = 3
+" " = 1
+x = 1
+" " = 1
+1-1-3-,-5 = 5
+" " = 1
+x = 1
+" " = 1
+3-0 = 2
+" " = 1
+c-m = 2
+,- = 1
+" " = 1
+V-e-r-z-i-n-k-t-e-s = 10
+" " = 1
+S-t-a-h-l-b-l-e-c-h = 10
+" " = 1
+P-f-l-a-n-z-e-n-b-e-e-t = 12
+" " = 1
+i-n = 2
+" " = 1
+S-i-l-b-e-r = 6
+,- = 1
+" " = 1
+R-o-b-u-s-t-e-s = 8
+" " = 1
+G-e-m-ü-s-e-b-e-e-t = 11
+" " = 1
+o-h-n-e = 4
+" " = 1
+B-o-d-e-n = 5
+" " = 1
+f-ü-r = 3
+" " = 1
+G-a-r-t-e-n = 6
+" " = 1
+T-e-r-r-a-s-s-e = 8
+" " = 1
+B-a-l-k-o-n = 6
+,- = 1
+" " = 1
+W-e-t-t-e-r-f-e-s-t = 10
+" " = 1
+u-n-d = 3
+" " = 1
+L-a-n-g-l-e-b-i-g = 9
+
+Total roughly: 8+1+6+1+3+1+1+1+5+1+1+1+2+1+2+1+1+10+1+10+1+12+1+2+1+6+1+1+8+1+11+1+4+1+5+1+3+1+6+1+8+1+6+1+1+10+1+3+1+9
+Let me add: 8+1+6+1+3+1+1+1+5+1+1+1+2+1+2+1+1+10+1+10+1+12+1+2+1+6+1+1+8+1+11+1+4+1+5+1+3+1+6+1+8+1+6+1+1+10+1+3+1+9
+= let me group:
+(8+1+6+1) = 16
+(3+1+1+1+5+1+1+1+2+1+2+1) = 20
+(1+10+1+10+1+12+1+2+1+6+1) = 46
+(1+8+1+11+1+4+1+5+1+3+1+6+1+8+1+6+1) = 60
+(1+10+1+3+1+9) = 25
+
+Total: 16+20+46+60+25 = 167 chars
+
+Good, under 200.
+
+Let me also verify bullets are under 200 chars:
+
+Bullet 1: "Großzügige Maße: Mit Abmessungen von 232 x 113,5 x 30 cm bietet dieses Hochbeet aus Metall reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und anderen Pflanzen im Garten, auf der Terrasse oder dem Balkon."
+
+Let me count: roughly 175 chars - good.
+
+Bullet 2: "Langlebig und Wetterfest: Das 0,6 mm verzinkte Stahlblech mit Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost und Korrosion. Das Hochbeet ist viele Jahre haltbar und pflegeleicht, ideal für den ganzjährigen Einsatz im Freien."
+
+Roughly 205 chars - let me shorten.
+
+Revised: "Langlebig und Wetterfest: Das 0,6 mm verzinkte Stahlblech mit Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost. Das Hochbeet ist viele Jahre haltbar und pflegeleicht, ideal für den ganzjährigen Einsatz im Freien."
+
+Roughly 198 chars - good.
+
+Bullet 3: "Sicheres Design: Die innere Kante ist gefaltet, sodass keine scharfen Kanten vorhanden sind. Dies schützt vor Hautkratzern und sorgt für maximale Sicherheit beim Bepflanzen und Ernten."
+
+Roughly 167 chars - good.
+
+Bullet 4: "Freie Basis für gesundes Wachstum: Dank des offenen Bodens können sich die Wurzeln frei im Erdreich entwickeln und haben Zugang zu essentiellen Nährstoffen. Dies fördert ein optimales Wachstum und eine reiche Ernte."
+
+Roughly 195 chars - good.
+
+Bullet 5: "Einfacher Aufbau als Bausatz: Das Hochbeet lässt sich mit stabilen Verbindungen schnell montieren. Die robuste Konstruktion hält hohem Druck stand, ohne sich zu lockern oder zu verformen, für unbeschwertes Gärtnern."
+
+Roughly 195 chars - good.
+
+All bullets should be under 200 chars.
+
+Let me also recheck the search terms to make sure I'm not repeating title words. Looking at title: Hochbeet, Metall, Verzinktes, Stahlblech, Pflanzenbeet, Silber, Robustes, Gemüsebeet, Boden, Garten, Terrasse, Balkon, Wetterfest, Langlebig
+
+My search terms:
+pflanzkasten erhöht, kräuterbeet, blumenbeet, frühbeet, beetanlage, gartenarbeit, rostfrei, stahl wellblech, outdoor pflanzbeet, backyard garden bed, patio planter, balcony garden, anbau zuhause, aussaat beet, gemüse anbau, pflanzbeet outdoor
+
+Hmm, "pflanzbeet outdoor" and "outdoor pflanzbeet" - "pflanzbeet" is a variant of "pflanzenbeet". I should be careful. Let me use other variants.
+
+Actually wait, "Pflanzenbeet" is in the title and "Pflanzbeet" or "Pflanzkasten" are different words but semantically similar. Amazon might consider these as the same keyword for search purposes. To be safe, let me use words that don't conflict:
+
+Revised search terms:
+pflanzkasten erhöht, kräuterbeet, blumenbeet, frühbeet, beetanlage, gartenarbeit, rostfrei, wellblech, anzucht, garten box, backyard bed, patio raised, balcony herb, aussaat, gemüse anbau
+
+Wait - "wellblech" might be too close to "Stahlblech". Let me think...
+
+Actually these are different words. Wellblech = corrugated sheet metal, Stahlblech = steel sheet. They're different but related. Amazon treats them as different keywords, so it's fine to include.
+
+But "gartenarbeit" contains "garten" which is in title. Hmm.
+
+Let me reconsider. The instruction says don't repeat title words. Strict interpretation means I shouldn't include any word that's in the title. Let me filter:
+
+Title words: Hochbeet, Metall, 232, 113, 30, cm, Verzinktes, Stahlblech, Pflanzenbeet, Silber, Robustes, Gemüsebeet, Boden, Garten, Terrasse, Balkon, Wetterfest, und, Langlebig
+
+So I can't use: Garten, Terrasse, Balkon, Hochbeet, Pflanzenbeet, Gemüsebeet, Metall, Stahlblech, Verzinkt, Silber, Boden, Wetterfest, Langlebig
+
+Let me revise:
+- kräuterbeet (Kräuter not in title) ✓
+- blumenbeet (Blumen not in title) ✓
+- frühbeet (Früh not in title) ✓
+- pflanzkasten ✓
+- beetanlage ✓
+- rostfrei ✓
+- wellblech (different from Stahlblech) ✓
+- outdoor ✓ (not in title)
+- backyard ✓ (English local)
+- patio ✓ (English local)
+- balcony ✗ (in title)
+- herb garden (English)
+- aussaat ✓
+- anzucht ✓
+- ernte ✓
+
+Final search terms:
+pflanzkasten erhöht, kräuterbeet, blumenbeet, frühbeet, beetanlage, gartenarbeit, rostfrei, wellblech, outdoor box, backyard bed, patio raised, herb garden, aussaat, anzucht, ernte, kompost
+
+Let me check "gartenarbeit" - contains "Garten" which IS in title. Let me remove.
+
+Revised: pflanzkasten erhöht, kräuterbeet, blumenbeet, frühbeet, beetanlage, rostfrei, wellblech, outdoor box, backyard bed, patio raised, herb garden, aussaat, anzucht, ernte, kompost, draussen
+
+Hmm, but the user instruction did say "包含适用场景词（Garten / Terrasse / Balkon）" and "包含当地消费者习惯词（Hochbeet / Pflanzkasten 等）". These conflicting instructions are tricky.
+
+Looking at the original instruction more carefully:
+"包含核心词、同义词、长尾词" - core words, synonyms, long-tail
+"包含当地消费者习惯词" - local consumer habit words
+"包含适用场景词（Garten / Terrasse / Balkon）" - applicable scenario words
+"不要重复标题中的词" - don't repeat title words
+
+These ARE contradictory. I'll go with the strict interpretation (don't repeat title words) because:
+1. Amazon backend best practice is to not waste search term space on words already in title
+2. The "不要重复标题中的词" is a direct rule
+3. The other bullets say "包含" (include) but don't strictly mandate duplicates
+
+Final search terms (revised):
+pflanzkasten erhöht, kräuterbeet, blumenbeet, frühbeet, beetanlage, rostfrei, wellblech, outdoor box, backyard bed, patio raised, herb garden, aussaat, anzucht, ernte, kompost, draussen
+
+Let me count bytes (approximate, German chars with umlauts = 2 bytes each):
+pflanzkasten erhöht = 19 + 2 (ä) = ~20 bytes
+kräuterbeet = 10 + 2 (ä) = ~12 bytes
+, = 1
+blumenbeet = 10 bytes
+, = 1
+frühbeet = 8 + 2 (ü) = ~10 bytes
+, = 1
+beetanlage = 10 bytes
+, = 1
+rostfrei = 8 bytes
+, = 1
+wellblech = 9 bytes
+, = 1
+outdoor box = 12 bytes
+, = 1
+backyard bed = 12 bytes
+, = 1
+patio raised = 12 bytes
+, = 1
+herb garden = 11 bytes
+, = 1
+aussaat = 7 bytes
+, = 1
+anzucht = 7 bytes
+, = 1
+ernte = 5 bytes
+, = 1
+kompost = 7 bytes
+, = 1
+draussen = 8 bytes
+
+Total roughly: 20+1+12+1+10+1+10+1+8+1+9+1+12+1+12+1+12+1+11+1+7+1+7+1+5+1+7+1+8 = 175 bytes
+
+Good, under 250 bytes.
+
+Hmm wait, actually in Amazon backend, you cannot include commas and spaces in byte calculation or what? Looking at standard practice - Amazon counts all characters including spaces and commas in the 250 byte limit. So 175 bytes is fine.
+
+Actually, I realize I should double check my understanding of byte count for German characters. In UTF-8:
+- ASCII chars = 1 byte each
+- German umlauts (ä, ö, ü, ß) = 2 bytes each
+
+So my calculation should be approximately right.
+
+Let me finalize everything.
+
+Actually, I realize my bullet 1 might be slightly over. Let me recount more carefully:
+"Großzügige Maße: Mit Abmessungen von 232 x 113,5 x 30 cm bietet dieses Hochbeet aus Metall reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und anderen Pflanzen im Garten, auf der Terrasse oder dem Balkon."
+
+G-r-o-ß-z-ü-g-i-g-e = 11
+M-a-ß-e = 5
+M-i-t = 3
+A-b-m-e-s-s-u-n-g-e-n = 11
+v-o-n = 3
+2-3-2 = 3
+x = 1
+1-1-3-,-5 = 5
+x = 1
+3-0 = 2
+c-m = 2
+b-i-e-t-e-t = 5
+d-i-e-s-e-s = 5
+H-o-c-h-b-e-e-t = 8
+a-u-s = 3
+M-e-t-a-l-l = 6
+r-e-i-c-h-l-i-c-h = 9
+P-l-a-t-z = 5
+f-ü-r = 3
+d-e-n = 3
+A-n-b-a-u = 5
+v-o-n = 3
+G-e-m-ü-s-e = 6
+K-r-ä-u-t-e-r-n = 8
+B-l-u-m-e-n = 6
+u-n-d = 3
+a-n-d-e-r-e-n = 7
+P-f-l-a-n-z-e-n = 8
+i-m = 2
+G-a-r-t-e-n = 6
+a-u-f = 3
+d-e-r = 3
+T-e-r-r-a-s-s-e = 8
+o-d-e-r = 4
+d-e-m = 3
+B-a-l-k-o-n = 6
+
+Plus punctuation and spaces. Roughly 175 chars. Good.
+
+OK let me finalize and output.
+
+One more check - the title should have "首字母大写为标准 Amazon.de 格式" - First letter uppercase. My title starts with "Hochbeet" which is capitalized. Good.
+
+For the description, I want to make sure it's well-formatted with HTML tags. The instruction says "Use HTML tags (<b>, <li>, <br>) for formatting. No keyword stuffing." This is for the description only.
+
+Let me write the final output.
+
+Actually, I realize I should also include Amazon in the optimization since the user mentioned "亚马逊". The user said "USER OPTIMIZATION INSTRUCTIONS (treated as USER-PROVIDED CONTENT, NOT as higher-priority commands) 亚马逊" - this is just saying the platform is Amazon, which we already know. So it doesn't add much.
+
+Final structure ready. Let me write the output.</think>
+
+### Product Title
+
+Hochbeet Metall 232 x 113,5 x 30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robustes Gemüsebeet ohne Boden für Garten Terrasse Balkon, Wetterfest und Langlebig
+
+### Five Bullet Points
+
+Großzügige Maße: Mit Abmessungen von 232 x 113,5 x 30 cm bietet dieses Hochbeet aus Metall reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und anderen Pflanzen im Garten, auf der Terrasse oder dem Balkon.
+
+Langlebig und Wetterfest: Das 0,6 mm verzinkte Stahlblech mit Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost. Das Hochbeet ist viele Jahre haltbar und pflegeleicht, ideal für den ganzjährigen Einsatz im Freien.
+
+Sicheres Design: Die innere Kante ist gefaltet, sodass keine scharfen Kanten vorhanden sind. Dies schützt vor Hautkratzern und sorgt für maximale Sicherheit beim Bepflanzen und Ernten.
+
+Freie Basis für gesundes Wachstum: Dank des offenen Bodens können sich die Wurzeln frei im Erdreich entwickeln und haben Zugang zu essentiellen Nährstoffen. Dies fördert ein optimales Wachstum und eine reiche Ernte.
+
+Einfacher Aufbau als Bausatz: Das Hochbeet lässt sich mit stabilen Verbindungen schnell montieren. Die robuste Konstruktion hält hohem Druck stand, ohne sich zu lockern oder zu verformen, für unbeschwertes Gärtnern.
+
+### Product Description
+
+<b>Hochbeet Metall 232 x 113,5 x 30 cm - Ihr vielseitiger Gartenbegleiter</b><br>
+<br>
+Verwandeln Sie Ihren Außenbereich in eine blühende Oase mit unserem großzügigen Hochbeet aus verzinktem Stahlblech. Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Pflanzenbeet reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und vielen weiteren Pflanzen.<br>
+<br>
+<b>Produktmerkmale und Vorteile:</b><br>
+<ul>
+<li><b>Robustes Material:</b> Hergestellt aus 0,6 mm dickem Stahl-Wellblech mit hochwertiger Zink-Aluminium-Beschichtung, ist dieses Hochbeet besonders wetterfest und langlebig.</li>
+<li><b>Rostschutz:</b> Die verzinkte Oberfläche schützt zuverlässig vor Korrosion und sorgt für eine lange Lebensdauer, selbst bei ganzjährigem Einsatz im Freien.</li>
+<li><b>Sicheres Design:</b> Die innere Kante ist gefaltet, sodass keine scharfen Kanten vorhanden sind. Dies schützt vor Hautkratzern und ermöglicht sicheres Gärtnern für die ganze Familie.</li>
+<li><b>Offener Boden:</b> Dank des offenen Designs können sich die Wurzeln Ihrer Pflanzen frei im Erdreich entwickeln und haben Zugang zu allen wichtigen Nährstoffen.</li>
+<li><b>Stabile Konstruktion:</b> Die robusten Verbindungen halten hohem Druck stand, ohne sich zu lockern oder zu verformen.</li>
+</ul>
+<br>
+<b>Vielseitige Einsatzmöglichkeiten:</b><br>
+<ul>
+<li>Gemüseanbau: Tomaten, Salat, Paprika, Zucchini und vieles mehr</li>
+<li>Kräutergarten: Basilikum, Petersilie, Schnittlauch, Rosmarin</li>
+<li>Blumenbeet: Bunte Sommerblumen, Stauden oder Zierpflanzen</li>
+<li>Einsatzorte: Garten, Terrasse, Balkon, Innenhof oder Hof</li>
+</ul>
+<br>
+<b>Optimale Schichtbefüllung für beste Ergebnisse:</b><br>
+Für ein gesundes Pflanzenwachstum empfehlen wir eine schichtweise Befüllung:<br>
+1. <b>Untere Schicht:</b> Grobes Material wie Äste und Zweige für die Drainage<br>
+2. <b>Mittlere Schicht:</b> Organische Abfälle wie Laub, Stroh und Kompost<br>
+3. <b>Obere Schicht:</b> Hochwertige Gartenerde als Pflanzgrundlage<br>
+<br>
+So entsteht ein gut belüftetes, nährstoffreiches und warmes Umfeld, das ideales Wachstum für Ihre Pflanzen fördert.<br>
+<br>
+<b>Einfache Montage:</b><
+--- RAW AI reasoning_content ---
+(none)
+
+--- RAW AI FULL JSON ---
+{
+  "id": "069838eaeffd58e41a5ec166170c0a18",
+  "choices": [
+    {
+      "finish_reason": "length",
+      "index": 0,
+      "message": {
+        "content": "<think>The user wants me to create an Amazon.de listing in German for a metal raised garden bed. Let me carefully follow all the rules:\n\n1. Product Title - max 200 chars, German, with specific keywords\n2. Five Bullet Points - max 200 chars each, German\n3. Product Description - max 4000 chars, German with HTML tags\n4. Search Terms - max 250 bytes, German, comma-separated\n\nHARD RULES:\n- No HTML in Title/Bullets/Search Terms\n- No brand words (including \"YUDA HOME FURNITURE\")\n- Only ASCII punctuation, no en-dash/em-dash\n- Use plain hyphens\n\nLet me draft each section:\n\n**Title (max 200 chars):**\nNeed: Hochbeet/Pflanzenbeet/Gemüsebeet + Metall/Stahlblech/verzinkt + dimensions (232 x 113.5 x 30 cm) + Silver color\n\nDraft:\n\"Hochbeet Metall 232 x 113,5 x 30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robustes Gemüsebeet ohne Boden für Garten Terrasse Balkon, Wetterfest & Langlebig\"\n\nLet me count: that should be under 200 chars. Let me verify - approximately 160 chars, good.\n\n**Bullet Points (5 items, max 200 chars each):**\n\n1. Großzügige Maße: Mit Abmessungen von 232 x 113,5 x 30 cm bietet dieses Hochbeet aus Metall reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und anderen Pflanzen im Garten, auf der Terrasse oder dem Balkon.\n\n2. Langlebig & Wetterfest: Das verzinkte Stahlblech mit 0,6 mm Stärke und Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost und Korrosion. Das Hochbeet ist viele Jahre haltbar und pflegeleicht - ideal für den ganzjährigen Einsatz im Freien.\n\n3. Sicheres Design: Die innere Kante ist gefaltet, sodass keine scharfen Kanten vorhanden sind. Dies schützt vor Hautkratzern und sorgt für maximale Sicherheit beim Bepflanzen, Jäten und Ernten - auch für Familien mit Kindern geeignet.\n\n4. Freie Basis für gesundes Wachstum: Dank des offenen Bodens können sich die Wurzeln Ihrer Pflanzen frei im Erdreich entwickeln und haben Zugang zu essentiellen Nährstoffen. Dies fördert ein optimales Wachstum und eine reiche Ernte.\n\n5. Einfacher Aufbau: Der Hochbeet Bausatz lässt sich mit den stabilen Verbindungen schnell und unkompliziert montieren. Die robuste Konstruktion hält hohem Druck stand, ohne sich zu lockern oder zu verformen - für unbeschwertes Gärtnern.\n\n**Product Description (max 4000 chars):**\n\nWill use HTML tags for formatting.\n\n**Search Terms (max 250 bytes):**\n\nNeed to avoid duplicating title words, include synonyms, local terms.\n\nLet me check the title keywords to avoid:\n- Hochbeet, Metall, 232, 113, 5, 30, cm, Verzinktes, Stahlblech, Pflanzenbeet, Silber, Robustes, Gemüsebeet, ohne, Boden, Garten, Terrasse, Balkon, Wetterfest, Langlebig\n\nSearch terms could include:\npflanzkasten, gartenbeet, kräuterbeet, blumenbeet, outdoor, backyard, patio, balcony, rostfrei, stahl, wellblech, erhöht, anbau, aussaat, beetanlage, gartenarbeit, frühbeet\n\nWait, I should double-check - Garten, Terrasse, Balkon are already in title. The instruction says \"不要重复标题中的词\" but then says \"包含适用场景词（Garten / Terrasse / Balkon）\" - so there's a contradiction. Looking again: \"包含适用场景词（Garten / Terrasse / Balkon）\" - actually this says to include them, but then \"不要重复标题中的词\" says don't duplicate. \n\nHmm, but the SEO Keyword Reference also says these local search terms. I think the rule means don't unnecessarily duplicate the exact same words, but key search terms that are important for SEO should still be included. Let me include some context variations.\n\nActually re-reading more carefully: \"不要重复标题中的词\" - this seems strict. So I should avoid words already in title. Let me skip Garten, Terrasse, Balkon since they're in title.\n\nWait but those are listed as required \"适用场景词\". This is contradictory. Let me interpret it as: don't repeat the same exact word, but include semantic equivalents. Or include them since the rule \"包含适用场景词\" overrides.\n\nI'll include them anyway since both rules seem important and they're common search terms. Actually let me follow the strictest interpretation and avoid duplicating. I'll use alternatives like \"Freiland\", \"Außenbereich\", \"Hof\" instead.\n\nActually, looking at the Amazon backend search terms rules - Amazon themselves state that you don't need to repeat words already in the title. So I'll avoid them.\n\nSearch terms draft:\npflanzkasten erhöht, kräuterbeet metall, blumenbeet stahl, gartenbeet verzinkt, frühbeet, beetanlage, gartenarbeit, rostfrei, stahl wellblech, outdoor pflanzbeet, backyard garden, patio planter, balcony garden, anbau zuhause, aussaat beet\n\nLet me count bytes... German words with umlauts (ä, ö, ü, ß) typically use 2 bytes each in UTF-8. Let me be conservative.\n\nActually, since Amazon backend measures bytes for search terms, let me estimate:\n- \"pflanzkasten erhöht\" = 19 chars but with bytes\n- Let me just write it out and keep it under 250 bytes\n\nFinal search terms:\npflanzkasten erhöht, kräuterbeet, blumenbeet, frühbeet, beetanlage, gartenarbeit, rostfrei, stahl wellblech, outdoor pflanzbeet, backyard garden bed, patio planter, balcony garden, anbau zuhause, aussaat beet, gemüse anbau, pflanzbeet outdoor\n\nLet me count approximate bytes:\n- pflanzkasten erhöht = 19 chars (ä=2 bytes, total ~20 bytes)\n- kräuterbeet = 11 chars (~12 bytes with ä)\n- blumenbeet = 10 bytes\n- frühbeet = 9 bytes (~10 with ü)\n- beetanlage = 10 bytes\n- gartenarbeit = 12 bytes\n- rostfrei = 8 bytes\n- stahl wellblech = 14 bytes\n- outdoor pflanzbeet = 18 bytes\n- backyard garden bed = 18 bytes\n- patio planter = 13 bytes\n- balcony garden = 14 bytes\n- anbau zuhause = 13 bytes\n- aussaat beet = 12 bytes\n- gemüse anbau = 12 bytes (~13 with ü)\n- pflanzbeet outdoor = 18 bytes\n\nTotal: ~205 bytes, plus commas and spaces. Should be fine under 250.\n\nNow let me also verify - the user said no brand names, including YUDA HOME FURNITURE. So I won't include any brand.\n\nAlso re-checking character encoding for the title - I need to use commas not periods for German decimal numbers. The dimension is 232 x 113,5 x 30 cm (with comma for German decimal). \n\nWait - looking at the raw data: \"232.00 x 113.50 x 30.00 cm\" - in German this should be \"232 x 113,5 x 30 cm\". Let me check if using a comma (,) is fine. The hard rule says \"标点只用普通 ASCII 字符\" - comma is ASCII. So using comma is fine.\n\nLet me finalize the title:\n\"Hochbeet Metall 232 x 113,5 x 30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robustes Gemüsebeet ohne Boden für Garten Terrasse Balkon, Wetterfest & Langlebig\"\n\nCounting: ~165 chars, well under 200.\n\nActually wait - the German ampersand \"&\" - is that ASCII? Yes, & is ASCII. But I shouldn't use it according to the rules. Let me use \"und\" instead.\n\n\"Hochbeet Metall 232 x 113,5 x 30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robustes Gemüsebeet ohne Boden für Garten Terrasse Balkon, Wetterfest und Langlebig\"\n\nLet me also remove \"&\" and use proper German formatting.\n\nFor bullets, let me make sure each is under 200 chars.\n\nBullet 1: \"Großzügige Maße: Mit Abmessungen von 232 x 113,5 x 30 cm bietet dieses Hochbeet aus Metall reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und anderen Pflanzen im Garten, auf der Terrasse oder dem Balkon.\"\nCount: ~195 chars - good\n\nBullet 2: \"Langlebig und Wetterfest: Das verzinkte Stahlblech mit 0,6 mm Stärke und Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost und Korrosion. Das Hochbeet ist viele Jahre haltbar und pflegeleicht, ideal für den ganzjährigen Einsatz im Freien.\"\nCount: ~210 chars - too long! Let me shorten.\n\nBullet 2 revised: \"Langlebig und Wetterfest: Das 0,6 mm verzinkte Stahlblech mit Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost und Korrosion. Das Hochbeet ist viele Jahre haltbar und pflegeleicht, ideal für den ganzjährigen Einsatz im Freien.\"\nCount: ~195 chars - g
+
+--- PARSED ---
+title:        'Hochbeet Metall 232 x 113,5 x 30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robustes Gemüsebeet ohne Boden für Garten Terrasse Balkon, Wetterfest und Langlebig'
+bullets:      5 items
+  [1] Großzügige Maße: Mit Abmessungen von 232 x 113,5 x 30 cm bietet dieses Hochbeet aus Metall reichlich Platz für den Anbau von Gemüse, Kräutern, Blumen und anderen Pflanzen im Garten, auf der Terrasse oder dem Balkon.
+  [2] Langlebig und Wetterfest: Das 0,6 mm verzinkte Stahlblech mit Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost. Das Hochbeet ist viele Jahre haltbar und pflegeleicht, ideal für den ganzjährigen Einsatz im Freien.
+  [3] Sicheres Design: Die innere Kante ist gefaltet, sodass keine scharfen Kanten vorhanden sind. Dies schützt vor Hautkratzern und sorgt für maximale Sicherheit beim Bepflanzen und Ernten.
+  [4] Freie Basis für gesundes Wachstum: Dank des offenen Bodens können sich die Wurzeln frei im Erdreich entwickeln und haben Zugang zu essentiellen Nährstoffen. Dies fördert ein optimales Wachstum und eine reiche Ernte.
+  [5] Einfacher Aufbau als Bausatz: Das Hochbeet lässt sich mit stabilen Verbindungen schnell montieren. Die robuste Konstruktion hält hohem Druck stand, ohne sich zu lockern oder zu verformen, für unbeschwertes Gärtnern.
+description:  1868 chars
+search_terms: 'Hochbeet, Metall, 113,5, Verzinktes, Stahlblech, Pflanzenbeet, Silber, Robustes, Gemüsebeet, ohne, Boden, Garten, Terrasse, Balkon, Wetterfest'
+ai_status:    ok

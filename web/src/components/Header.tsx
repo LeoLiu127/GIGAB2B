@@ -13,7 +13,6 @@ export function Header({ status }: HeaderProps) {
   const studio = status.image_studio;
   const gigaMarkets = Object.entries(status.giga_markets).filter(([, v]) => v);
 
-  const studioOk = studio.ok;
   const minimaxOk = studio.providers?.minimax === "configured";
   const laozhangOk = studio.providers?.laozhang === "configured";
 
@@ -22,21 +21,17 @@ export function Header({ status }: HeaderProps) {
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         <span style={{ fontSize: "11px", color: "#999" }}>系统状态：</span>
 
-        <span className={`badge ${studioOk ? "badge-ok" : "badge-error"}`}>
-          {studioOk ? "image-studio " : "image-studio离线"}
-        </span>
-
         <span className={`badge ${minimaxOk ? "badge-ok" : "badge-warn"}`}>
-          MiniMax {minimaxOk ? "OK" : "未配置"}
+          文案优化大模型 {minimaxOk ? "OK" : "未配置"}
         </span>
 
         <span className={`badge ${laozhangOk ? "badge-ok" : "badge-warn"}`}>
-          laozhang {laozhangOk ? "OK" : "未配置"}
+          生图大模型 {laozhangOk ? "OK" : "未配置"}
         </span>
 
         {gigaMarkets.length > 0 && (
           <span className="badge badge-ok">
-            GIGA {gigaMarkets.length} 市场
+            GIGAB2B API OK
           </span>
         )}
 
@@ -56,16 +51,7 @@ export function Header({ status }: HeaderProps) {
             <h3 style={{ fontSize: "18px", fontWeight: 500, marginBottom: "24px" }}>系统状态详情</h3>
 
             <div style={{ marginBottom: "20px" }}>
-              <div style={{ fontWeight: 500, marginBottom: "8px" }}>image-studio Server</div>
-              <div style={{ fontSize: "13px", color: "#666" }}>
-                {studio.ok
-                  ? `已连接 · MiniMax: ${studio.providers?.minimax} · laozhang: ${studio.providers?.laozhang}`
-                  : "未运行。请先启动 start_studio.bat（位于 image-studio 目录）"}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: "20px" }}>
-              <div style={{ fontWeight: 500, marginBottom: "8px" }}>GIGA 凭证</div>
+              <div style={{ fontWeight: 500, marginBottom: "8px" }}>GIGAB2B API 凭证</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                 {Object.entries(status.giga_markets).map(([market, ok]) => (
                   <div key={market} style={{ fontSize: "13px" }}>
@@ -81,10 +67,10 @@ export function Header({ status }: HeaderProps) {
             </div>
 
             <div style={{ marginBottom: "20px" }}>
-              <div style={{ fontWeight: 500, marginBottom: "8px" }}>API Keys</div>
+              <div style={{ fontWeight: 500, marginBottom: "8px" }}>大模型配置</div>
               <div style={{ fontSize: "13px", color: "#666" }}>
-                MiniMax: {minimaxOk ? "已配置" : "请在 .env 中设置 MINIMAX_API_KEY"}<br/>
-                laozhang: {laozhangOk ? "已配置" : "请在 .env 中设置 LAOZHANG_API_KEY"}
+                文案优化大模型: {minimaxOk ? "已配置" : "请在 .env 中设置 MINIMAX_API_KEY"}<br/>
+                生图大模型: {laozhangOk ? "已配置" : "请在 .env 中设置 LAOZHANG_API_KEY"}
               </div>
             </div>
 

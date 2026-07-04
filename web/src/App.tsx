@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "./api";
-import type { PipelineResult, ServerStatus, MarketInfo } from "./types";
+import type { PipelineResult, ServerStatus, MarketInfo, FetchedProduct } from "./types";
 import { Header } from "./components/Header";
 import { LeftPanel } from "./components/LeftPanel";
 import { CenterPanel } from "./components/CenterPanel";
 import { ReferenceImages } from "./components/ReferenceImages";
-import { PromptForm } from "./components/PromptForm";
+import { PromptForm, type ImageType } from "./components/PromptForm";
 import { GeneratedGallery, type GeneratedImage } from "./components/GeneratedGallery";
 
 const S = {
@@ -17,9 +17,11 @@ const S = {
     alignItems: "center",
     justifyContent: "space-between",
   } as React.CSSProperties,
-  headerTitle: { fontSize: "22px", fontWeight: 300, letterSpacing: "-0.3px" } as React.CSSProperties,
-  main: { display: "grid", gridTemplateColumns: "320px 1fr 2fr", minHeight: "calc(100vh - 77px)" } as React.CSSProperties,
-  colRight: { padding: "20px", borderLeft: "1px solid #eee", overflowY: "auto", maxHeight: "calc(100vh - 77px)", display: "flex", flexDirection: "column" } as React.CSSProperties,
+  headerTitle: { fontSize: "22px", fontWeight: 300, letterSpacing: "-0.3px", display: "flex", alignItems: "baseline", gap: "10px" } as React.CSSProperties,
+  // 原型规定三栏:320px 固定 + 中/右等分剩余 (1fr 1fr)
+  main: { display: "grid", gridTemplateColumns: "320px 1fr 1fr", minHeight: "calc(100vh - 77px)" } as React.CSSProperties,
+  // 右栏:整体不滚动,内部 3 段各自管自己。生成按钮 + 图片类型 + 尺寸必须直接可见,不被滚动条遮挡
+  colRight: { padding: "20px", borderLeft: "1px solid #eee", height: "calc(100vh - 77px)", display: "flex", flexDirection: "column", overflow: "hidden" } as React.CSSProperties,
   colRightSection: { paddingBottom: "16px", borderBottom: "1px solid #f0f0f0" } as React.CSSProperties,
 };
 
@@ -34,10 +36,15 @@ export default function App() {
   const [result, setResult] = useState<PipelineResult | null>(null);
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
 
+  // 抓取数据 → 文案优化 两段式流水线 (v5)
+  const [fetchedProduct, setFetchedProduct] = useState<FetchedProduct | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+
   // AI 生图状态
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [uploadedDataUrls, setUploadedDataUrls] = useState<string[]>([]);
-  const [imageType, setImageType] = useState<"main" | "detail">("main");
+  const [imageType, setImageType] = useState<ImageType["type"]>("main");
   const [size, setSize] = useState<string>("1600x1600");
   const [promptExtra, setPromptExtra] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -50,8 +57,16 @@ export default function App() {
   const [copyDescription, setCopyDescription] = useState("");
   const [copySearchTerms, setCopySearchTerms] = useState("");
 
+  // 优化输入(v4 新增,提交 run-pipeline 时带上)
+  const [copyPromptExtra, setCopyPromptExtra] = useState("");
+  const [keywordsList, setKeywordsList] = useState<string[]>([]);
+  const [keywordsError, setKeywordsError] = useState<string | null>(null);
+  const [keywordsBusy, setKeywordsBusy] = useState(false);
+
   // 流水线 AbortController：用于切换市场/重跑时取消正在进行的 SSE（致命 F-6 修复）
   const pipelineAbortRef = useRef<AbortController | null>(null);
+  // 抓取数据按钮的 AbortController（与 AI 流式分两套，避免互相干扰）
+  const fetchAbortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -64,6 +79,7 @@ export default function App() {
     return () => {
       mountedRef.current = false;
       pipelineAbortRef.current?.abort();
+      fetchAbortRef.current?.abort();
       ctrl.abort();
     };
   }, []);
@@ -74,6 +90,8 @@ export default function App() {
     setSteps([]);
     setError(null);
     setSelectedIndices(new Set());
+    // 切市场时清空抓取结果,避免上一 SKU 的原始残留
+    setFetchedProduct(null);
   };
 
   const handleTemplateUpload = async (file: File) => {
@@ -88,17 +106,93 @@ export default function App() {
     }
   };
 
-  const handleRun = async () => {
+  // 关键词文件上传解析(降级:失败仅警告,不阻塞流水线)
+  // 多次上传是**追加**(去重),不是覆盖 — 用户常分多个文件给关键词,覆盖会让前一份丢失
+  const handleKeywordsUpload = async (file: File) => {
+    setKeywordsBusy(true);
+    setKeywordsError(null);
+    try {
+      const res = await api.parseKeywords(file);
+      setKeywordsList((prev) => {
+        const merged = [...prev, ...(res.keywords || [])];
+        // 按 lowercase 去重,保留第一次出现的形态
+        const seen = new Set<string>();
+        const out: string[] = [];
+        for (const k of merged) {
+          const key = k.toLowerCase();
+          if (!seen.has(key)) { seen.add(key); out.push(k); }
+        }
+        return out;
+      });
+    } catch (e) {
+      setKeywordsError(String(e instanceof Error ? e.message : e));
+    } finally {
+      setKeywordsBusy(false);
+    }
+  };
+
+  const handleFetch = async () => {
     if (!sku.trim()) return;
+    // 取消上一次还在跑的抓取
+    fetchAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    fetchAbortRef.current = ctrl;
+
+    setIsFetching(true);
+    setError(null);
+    // 不清空 fetchedProduct:让用户能看到前一次的抓取结果作底
+    // 但清掉旧的 result(AI 部分)和 steps(进度),让 UI 干净
+    setResult(null);
+    setSteps([{ step: "fetch", status: "running" }]);
+    setGeneratedImages([]);
+
+    try {
+      const res = await api.fetchProduct(sku.trim(), selectedMarket, ctrl.signal);
+      if (!mountedRef.current || ctrl.signal.aborted) return;
+      setFetchedProduct(res);
+      // 把 running 步骤标记为 ok
+      setSteps((prev) => prev.map(s =>
+        s.step === "fetch" && s.status === "running"
+          ? { ...s, status: "ok", product_name: (res.product_name || "").slice(0, 80) }
+          : s
+      ));
+    } catch (e) {
+      if (ctrl.signal.aborted) {
+        // 用户主动取消/被新一轮 fetch 顶替:把 running 步骤清掉,避免 UI 永远转圈
+        setSteps((prev) => prev.filter(s => !(s.step === "fetch" && s.status === "running")));
+      } else if (mountedRef.current) {
+        setSteps((prev) => prev.map(s =>
+          s.step === "fetch" && s.status === "running"
+            ? { ...s, status: "error", message: String(e) }
+            : s
+        ));
+        setError(String(e));
+      }
+    } finally {
+      if (mountedRef.current) setIsFetching(false);
+      if (fetchAbortRef.current === ctrl) fetchAbortRef.current = null;
+    }
+  };
+
+  const handleOptimize = async () => {
+    if (!sku.trim()) return;
+    // 必须先有 fetchedProduct,否则拒绝执行(由按钮 disabled 守住,这里再兜底一次)
+    if (!fetchedProduct) {
+      setError("请先点击「抓取数据」,再点「文案优化」。");
+      return;
+    }
     // 取消上一次还在跑的流水线（致命 F-6 修复）
     pipelineAbortRef.current?.abort();
     const ctrl = new AbortController();
     pipelineAbortRef.current = ctrl;
 
     setIsRunning(true);
+    setIsOptimizing(true);
     setError(null);
     setResult(null);
-    setSteps([]);
+    // 重置 steps:之前 fetch 的 ok 行不要保留,避免和新的 ai_copy 行重复显示
+    // (fetchedProduct 已经在 state 里,compare-block 上半部分继续显示原始侧)
+    setSteps([{ step: "ai_copy", status: "running" }]);
     setGeneratedImages([]);
 
     try {
@@ -111,19 +205,18 @@ export default function App() {
         (evt) => {
           // 已被取消就不更新 UI,避免 ghost update
           if (!mountedRef.current || ctrl.signal.aborted) return;
-          // 实时把已完成步骤累加到 steps（running 表示进行中 — 替换前一条 running 为 ok）
+          // 实时把已完成步骤累加到 steps（同名 step 替换,不重复追加 — 修 "1.GIGA 取数 出现两次" 等 bug）
           if (evt.type === "step") {
-            const incoming = evt as { step: string; status: string };
+            const incoming = evt as { step: string; status: string; [k: string]: unknown };
             setSteps((prev) => {
-              // 把最近一条同名 step=step 且 status=running 的标记为 ok，再追加新的
-              if (incoming.status === "ok") {
-                return [...prev.map((s) => s.step === incoming.step && s.status === "running" ? { ...s, status: "ok" } : s)];
-              }
-              return [...prev, incoming as unknown as { step: string; status: string }];
+              // 同名 step 只保留最新一条,后续 status=running/ok/skipped/error 直接替换
+              const filtered = prev.filter((s) => s.step !== incoming.step);
+              return [...filtered, incoming as unknown as { step: string; status: string }];
             });
           }
         },
         ctrl.signal,
+        { prompt_extra: copyPromptExtra, keywords: keywordsList },
       );
       // res 是 done 事件
       // 收尾：把最后一条 running 标 ok（放到 finally 里也行,但此处更直观）
@@ -160,7 +253,10 @@ export default function App() {
         setError(String(e));
       }
     } finally {
-      if (mountedRef.current) setIsRunning(false);
+      if (mountedRef.current) {
+        setIsRunning(false);
+        setIsOptimizing(false);
+      }
       if (pipelineAbortRef.current === ctrl) pipelineAbortRef.current = null;
     }
   };
@@ -258,7 +354,8 @@ export default function App() {
     <div style={S.root}>
       <header style={S.header}>
         <div style={S.headerTitle}>
-          GIGAB2B <span style={{ fontSize: "13px", color: "#999", fontWeight: 400, marginLeft: "8px" }}>Listing Optimizer</span>
+          <span style={{ fontSize: "22px", fontWeight: 300, color: "#333" }}>Listing Creator &amp; Optimizer</span>
+          <span style={{ fontSize: "14px", fontWeight: 400, color: "#999" }}>for GIGAB2B</span>
         </div>
         <Header status={serverStatus} />
       </header>
@@ -269,17 +366,40 @@ export default function App() {
           onMarketChange={handleMarketChange}
           markets={markets}
           sku={sku}
-          onSkuChange={v => { setSku(v); setResult(null); setSteps([]); setError(null); }}
+          onSkuChange={v => {
+            setSku(v);
+            setResult(null);
+            setSteps([]);
+            setError(null);
+            // 换 SKU 时清空关键词 — 不同产品的关键词不能混(否则 AI 会因为产品/关键词不匹配而拒答)
+            setKeywordsList([]);
+            setKeywordsError(null);
+            // fetchedProduct 不清:用户可能只是微调 SKU,保留上次抓取结果作底;handleFetch 自己会覆盖
+          }}
           templateFile={templateFile}
           onTemplateUpload={handleTemplateUpload}
-          onRun={handleRun}
+          onFetch={handleFetch}
+          onOptimize={handleOptimize}
+          isFetching={isFetching}
+          isOptimizing={isOptimizing}
           isRunning={isRunning}
+          fetchedProduct={fetchedProduct}
           steps={steps}
           error={error}
+          copyPromptExtra={copyPromptExtra}
+          onCopyPromptExtraChange={setCopyPromptExtra}
+          keywordsList={keywordsList}
+          keywordsBusy={keywordsBusy}
+          keywordsError={keywordsError}
+          onKeywordsUpload={handleKeywordsUpload}
+          onClearKeywords={() => { setKeywordsList([]); setKeywordsError(null); }}
         />
         <CenterPanel
           result={result}
           isRunning={isRunning}
+          isFetching={isFetching}
+          isOptimizing={isOptimizing}
+          fetchedProduct={fetchedProduct}
           title={copyTitle}
           bullets={copyBullets}
           description={copyDescription}
@@ -290,18 +410,14 @@ export default function App() {
           onSearchTermsChange={setCopySearchTerms}
         />
         <aside style={S.colRight}>
-          {!result ? (
-            <div style={{ fontSize: "12px", color: "#999", padding: "12px", background: "#fafafa", border: "1px dashed #e0e0e0", borderRadius: "4px", textAlign: "center" }}>
-              跑完流水线后可在此生成 AI 图片
-            </div>
-          ) : (
-            <>
-              {/* 上 1/4：参考图（更窄，给结果区让出空间） */}
-              <section style={{ ...S.colRightSection, flex: "0 1 25%", minHeight: 0, overflowY: "auto" }}>
+          {(result || fetchedProduct) ? (
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+              {/* 上:参考图 — 最多占 45% 高度,超出可滚动,确保下方生成结果区始终有空间 */}
+              <section style={{ ...S.colRightSection, flex: "1 1 45%", minHeight: 0, overflowY: "auto" }}>
                 <ReferenceImages
-                  sku={result.sku}
+                  sku={result?.sku || fetchedProduct?.sku || ""}
                   market={selectedMarket}
-                  imageUrls={result.imageUrls || []}
+                  imageUrls={result?.imageUrls || fetchedProduct?.imageUrls || []}
                   selectedIndices={selectedIndices}
                   onToggle={toggleRef}
                   onUploadedAdd={addUploaded}
@@ -327,8 +443,8 @@ export default function App() {
                 )}
               </section>
 
-              {/* 中 1/4：表单（中等高度） */}
-              <section style={{ ...S.colRightSection, flex: "0 1 25%", minHeight: 0, overflowY: "auto" }}>
+              {/* 中:表单 — 不滚动,生成按钮始终可见 */}
+              <section style={{ ...S.colRightSection, flex: "0 0 auto", marginTop: "8px" }}>
                 <PromptForm
                   imageType={imageType}
                   onImageTypeChange={setImageType}
@@ -350,11 +466,15 @@ export default function App() {
                 )}
               </section>
 
-              {/* 下 1/2：生成结果（最大，给大图预留空间） */}
-              <section style={{ flex: "1 1 50%", minHeight: 0, overflowY: "auto" }}>
+              {/* 下:生成结果 — 占满剩余空间,默认至少 50% 高度,保证图片可见 */}
+              <section style={{ flex: "1 1 55%", minHeight: 200, overflowY: "auto" }}>
                 <GeneratedGallery images={generatedImages} onClear={clearGenerated} />
               </section>
-            </>
+            </div>
+          ) : (
+            <div style={{ fontSize: "12px", color: "#999", padding: "12px", background: "#fafafa", border: "1px dashed #e0e0e0", borderRadius: "4px", textAlign: "center" }}>
+              请先抓取产品数据
+            </div>
           )}
         </aside>
       </main>

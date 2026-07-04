@@ -1,0 +1,159 @@
+=== SKU: W3372P314940 | Market: DE_TAX | Time: 20260704-165226 ===
+
+--- RAW AI content (text) ---
+<think>Let me analyze the product data and create a high-conversion Amazon.de listing in German.
+
+Product Details:
+- SKU: W3372P314940
+- Original Title: Hochbeet Metall Pflanzenbeet
+- Material: Metal (Steel)
+- Color: Silver
+- Dimensions: 232 x 113.5 x 30 cm
+- Manufacturer: YUDA HOME FURNITURE
+- Model: HW-905C-SIL
+
+Let me create each section carefully:
+
+**Product Title (max 200 chars):**
+Need to include: core keyword (Hochbeet/Pflanzenbeet/Gemüsebeet), material (Metall/Stahlblech/verzinkt), dimensions, color, brand/manufacturer
+No keyword stuffing, no promotional language, German Amazon formatting
+
+Let me draft:
+"YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Pflanzenbeet Silber, Robust & Rostfrei Gemüsebeet Bausatz für Garten Terrasse Balkon"
+
+Let me count characters... that's about 175 characters. Good.
+
+**Five Bullet Points:**
+Each max 200 chars, start with uppercase, include specs, buyer value, no keyword stuffing.
+
+1. Großzügige Maße (232 x 113,5 x 30 cm): Bietet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen. Perfekt geeignet für Garten, Terrasse oder Balkon.
+
+2. Langlebiges verzinktes Stahlblech: Die 0,6 mm dicke Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost und Witterung. Das Hochbeet ist robust, formstabil und viele Jahre haltbar.
+
+3. Sicheres Design ohne Verletzungsrisiko: Die gefalteten Innenkanten verhindern scharfe Kanten und Hautkratzer. So können Sie und Ihre Familie sorglos gärtnern.
+
+4. Optimales Pflanzenwachstum: Dank offenem Boden ohne Bodenplatte können sich Wurzeln frei entwickeln und tieferliegende Nährstoffe aus dem Erdreich aufnehmen. Empfohlene Schichtbefüllung sorgt für ideale Drainage und Nährstoffversorgung.
+
+5. Einfache Montage als Bausatz: Das Hochbeet wird als praktischer Bausatz geliefert und lässt sich schnell und unkompliziert aufbauen. Die stabilen Verbindungen halten hohem Druck stand, ohne sich zu lockern.
+
+**Product Description (max 4000 chars):**
+Need: product overview, features, use cases, usage instructions, brand info, HTML formatting
+
+**Search Terms (max 250 bytes):**
+German search keywords, comma-separated, includes core/synonyms/long-tail/local usage words, no title repetition, no promotional words.
+
+Let me craft the search terms carefully to be under 250 bytes:
+"Pflanzkasten, Gartenbeet erhöht, Hochbeet Bausatz, Stahlblech Garten, Metall Pflanzkasten, Gemüsehochbeet, Kräuterbeet, Blumenbeet, Outdoor Pflanzgefäß, Terrassenbeet, Balkon Hochbeet, Gartenzubehör, verzinktes Beet, rostfrei Garten"
+
+Let me check bytes... should be around 200 bytes. Good.
+
+Let me write the full listing now:</think>
+
+### Product Title (200 characters max, Deutsch)
+
+YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robust & Rostfrei Gemüsebeet Bausatz Ohne Boden für Garten, Terrasse und Balkon
+
+---
+
+### Five Bullet Points
+
+1. Großzügige Anbaufläche von 232 x 113,5 x 30 cm: Bietet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen – ideal für Familien, Hobbygärtner und Selbstversorger auf Terrasse, Balkon oder im Garten.
+
+2. Langlebiges, verzinktes Stahlblech (0,6 mm): Die hochwertige Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost, Regen und UV-Strahlung. Das Hochbeet ist formstabil, druckfest und auf eine lange Lebensdauer ausgelegt.
+
+3. Sicheres Design mit gefalteten Innenkanten: Alle Blechkanten sind sauber gefalzt, sodass keine scharfen Schnittkanten entstehen. Das ermöglicht sicheres und sorgenfreies Gärtnern – auch mit Kindern in Haus und Garten.
+
+4. Offener Boden für gesundes Wurzelwachstum: Der bewusste Verzicht auf eine Bodenplatte erlaubt es den Wurzeln, sich frei im Erdreich auszubreiten und tieferliegende Nährstoffe sowie Wasser optimal aufzunehmen.
+
+5. Praktischer Bausatz mit einfacher Montage: Wird zerlegt geliefert und lässt sich mit wenigen Handgriffen schnell aufbauen. Stabile Verbindungen halten dauerhaft hohen Belastungen stand, ohne sich zu lockern oder zu verformen.
+
+---
+
+### Product Description
+
+<b>YUDA HOME FURNITURE – Hochbeet aus verzinktem Stahlblech für Ihren Traumgarten</b>
+
+Verwandeln Sie Terrasse, Balkon oder Garten in eine ertragreiche grüne Oase – mit dem geräumigen Hochbeet von YUDA HOME FURNITURE. Mit seinen großzügigen Maßen von 232 x 113,5 x 30 cm bietet es ausreichend Platz für die parallele Anzucht von Gemüse, aromatischen Kräutern und farbenfrohen Blumen.
+
+<b>Produktmerkmale im Überblick:</b>
+<br>• <b>Material:</b> 0,6 mm starkes, verzinktes Stahlblech mit Zink-Aluminium-Beschichtung
+<br>• <b>Farbe:</b> Silber
+<br>• <b>Maße (LxBxH):</b> 232 x 113,5 x 30 cm
+<br>• <b>Modell:</b> HW-905C-SIL
+<br>• <b>Lieferung:</b> Als Bausatz ohne Bodenplatte
+
+<b>Robust, langlebig und pflegeleicht</b>
+<br>Dank der hochwertigen Verzinkung ist das Hochbeet besonders wetterfest und trotzt Regen, Schnee und Sonneneinstrahlung. Der Stahl ist rostgeschützt und behält seine Form – auch nach vielen Gartensaisons. Die stabil konstruierten Verbindungen halten hohem Erddruck stand und sorgen für maximale Standfestigkeit.
+
+<b>Sicherheit für die ganze Familie</b>
+<br>Alle Innenkanten sind sorgfältig gefalzt, sodass keine scharfen Schnittkanten entstehen. Damit ist das Hochbeet auch in Haushalten mit Kindern bedenkenlos einsetzbar.
+
+<b>Optimale Wachstumsbedingungen</b>
+<br>Der offene Boden ohne Bodenplatte lässt die Wurzeln tief in das Erdreich hineinwachsen, wo sie wertvolle Nährstoffe und Feuchtigkeit aufnehmen. Für beste Ergebnisse empfiehlt sich der klassische Schichtaufbau:
+<br>1. Grobes Material wie Äste oder kleine Zweige für die Drainage
+<br>2. Organische Abfälle wie Laub, Stroh oder Grasschnitt
+<br>3. Hochwertige Gartenerde als oberste Schicht
+<br>Diese Schichtung sorgt für ein gut belüftetes, nährstoffreiches und warmes Milieu, das das Pflanzenwachstum spürbar fördert.
+
+<b>Vielseitige Einsatzmöglichkeiten</b>
+<br>Ob Tomaten, Salat, Kräuter oder Zierpflanzen – das Hochbeet eignet sich für eine Vielzahl von Pflanzen. Dank der bequemen Arbeitshöhe von 30 cm schonen Sie zudem Ihren Rücken beim Säen, Pflanzen und Ernten.
+
+<b>Über YUDA HOME FURNITURE</b>
+<br>YUDA HOME FURNITURE steht für durchdachte, langlebige Produkte rund um Haus und Garten. Wir verbinden funktionales Design mit hochwertigen Materialien, damit Sie lange Freude an Ihrem neuen Garten-Highlight haben.
+
+---
+
+### Search Terms (max 250 bytes)
+
+Pflanzkasten, Gartenbeet erhöht, Hochbeet Bausatz, Stahlblech Garten, Metall Pflanzkasten, Gemüsehochbeet, Kräuterbeet, Blumenbeet, Outdoor Pflanzgefäß, Terrassenbeet, Balkon Hochbeet, Gartenzubehör, verzinktes Beet, rostfrei Garten, Anzucht, Selbstversorger
+--- RAW AI reasoning_content ---
+(none)
+
+--- RAW AI FULL JSON ---
+{
+  "id": "0697fcb83a7d3b0c8d0b477fbd0afd60",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "<think>Let me analyze the product data and create a high-conversion Amazon.de listing in German.\n\nProduct Details:\n- SKU: W3372P314940\n- Original Title: Hochbeet Metall Pflanzenbeet\n- Material: Metal (Steel)\n- Color: Silver\n- Dimensions: 232 x 113.5 x 30 cm\n- Manufacturer: YUDA HOME FURNITURE\n- Model: HW-905C-SIL\n\nLet me create each section carefully:\n\n**Product Title (max 200 chars):**\nNeed to include: core keyword (Hochbeet/Pflanzenbeet/Gemüsebeet), material (Metall/Stahlblech/verzinkt), dimensions, color, brand/manufacturer\nNo keyword stuffing, no promotional language, German Amazon formatting\n\nLet me draft:\n\"YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Pflanzenbeet Silber, Robust & Rostfrei Gemüsebeet Bausatz für Garten Terrasse Balkon\"\n\nLet me count characters... that's about 175 characters. Good.\n\n**Five Bullet Points:**\nEach max 200 chars, start with uppercase, include specs, buyer value, no keyword stuffing.\n\n1. Großzügige Maße (232 x 113,5 x 30 cm): Bietet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen. Perfekt geeignet für Garten, Terrasse oder Balkon.\n\n2. Langlebiges verzinktes Stahlblech: Die 0,6 mm dicke Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost und Witterung. Das Hochbeet ist robust, formstabil und viele Jahre haltbar.\n\n3. Sicheres Design ohne Verletzungsrisiko: Die gefalteten Innenkanten verhindern scharfe Kanten und Hautkratzer. So können Sie und Ihre Familie sorglos gärtnern.\n\n4. Optimales Pflanzenwachstum: Dank offenem Boden ohne Bodenplatte können sich Wurzeln frei entwickeln und tieferliegende Nährstoffe aus dem Erdreich aufnehmen. Empfohlene Schichtbefüllung sorgt für ideale Drainage und Nährstoffversorgung.\n\n5. Einfache Montage als Bausatz: Das Hochbeet wird als praktischer Bausatz geliefert und lässt sich schnell und unkompliziert aufbauen. Die stabilen Verbindungen halten hohem Druck stand, ohne sich zu lockern.\n\n**Product Description (max 4000 chars):**\nNeed: product overview, features, use cases, usage instructions, brand info, HTML formatting\n\n**Search Terms (max 250 bytes):**\nGerman search keywords, comma-separated, includes core/synonyms/long-tail/local usage words, no title repetition, no promotional words.\n\nLet me craft the search terms carefully to be under 250 bytes:\n\"Pflanzkasten, Gartenbeet erhöht, Hochbeet Bausatz, Stahlblech Garten, Metall Pflanzkasten, Gemüsehochbeet, Kräuterbeet, Blumenbeet, Outdoor Pflanzgefäß, Terrassenbeet, Balkon Hochbeet, Gartenzubehör, verzinktes Beet, rostfrei Garten\"\n\nLet me check bytes... should be around 200 bytes. Good.\n\nLet me write the full listing now:</think>\n\n### Product Title (200 characters max, Deutsch)\n\nYUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robust & Rostfrei Gemüsebeet Bausatz Ohne Boden für Garten, Terrasse und Balkon\n\n---\n\n### Five Bullet Points\n\n1. Großzügige Anbaufläche von 232 x 113,5 x 30 cm: Bietet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen – ideal für Familien, Hobbygärtner und Selbstversorger auf Terrasse, Balkon oder im Garten.\n\n2. Langlebiges, verzinktes Stahlblech (0,6 mm): Die hochwertige Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost, Regen und UV-Strahlung. Das Hochbeet ist formstabil, druckfest und auf eine lange Lebensdauer ausgelegt.\n\n3. Sicheres Design mit gefalteten Innenkanten: Alle Blechkanten sind sauber gefalzt, sodass keine scharfen Schnittkanten entstehen. Das ermöglicht sicheres und sorgenfreies Gärtnern – auch mit Kindern in Haus und Garten.\n\n4. Offener Boden für gesundes Wurzelwachstum: Der bewusste Verzicht auf eine Bodenplatte erlaubt es den Wurzeln, sich frei im Erdreich auszubreiten und tieferliegende Nährstoffe sowie Wasser optimal aufzunehmen.\n\n5. Praktischer Bausatz mit einfacher Montage: Wird zerlegt geliefert und lässt sich mit wenigen Handgriffen schnell aufbauen. Stabile Verbindungen halten dauerhaft hohen Belastungen stand, ohne sich zu lockern oder zu verformen.\n\n---\n\n### Product Description\n\n<b>YUDA HOME FURNITURE – Hochbeet aus verzinktem Stahlblech für Ihren Traumgarten</b>\n\nVerwandeln Sie Terrasse, Balkon oder Garten in eine ertragreiche grüne Oase – mit dem geräumigen Hochbeet von YUDA HOME FURNITURE. Mit seinen großzügigen Maßen von 232 x 113,5 x 30 cm bietet es ausreichend Platz für die parallele Anzucht von Gemüse, aromatischen Kräutern und farbenfrohen Blumen.\n\n<b>Produktmerkmale im Überblick:</b>\n<br>• <b>Material:</b> 0,6 mm starkes, verzinktes Stahlblech mit Zink-Aluminium-Beschichtung\n<br>• <b>Farbe:</b> Silber\n<br>• <b>Maße (LxBxH):</b> 232 x 113,5 x 30 cm\n<br>• <b>Modell:</b> HW-905C-SIL\n<br>• <b>Lieferung:</b> Als Bausatz ohne Bodenplatte\n\n<b>Robust, langlebig und pflegeleicht</b>\n<br>Dank der hochwertigen Verzinkung ist das Hochbeet besonders wetterfest und trotzt Regen, Schnee und Sonneneinstrahlung. Der Stahl ist rostgeschützt und behält seine Form – auch nach vielen Gartensaisons. Die stabil konstruierten Verbindungen halten hohem Erddruck stand und sorgen für maximale Standfestigkeit.\n\n<b>Sicherheit für die ganze Familie</b>\n<br>Alle Innenkanten sind sorgfältig gefalzt, sodass keine scharfen Schnittkanten entstehen. Damit ist das Hochbeet auch in Haushalten mit Kindern bedenkenlos einsetzbar.\n\n<b>Optimale Wachstumsbedingungen</b>\n<br>Der offene Boden ohne Bodenplatte lässt die Wurzeln tief in das Erdreich hineinwachsen, wo sie wertvolle Nährstoffe und Feuchtigkeit aufnehmen. Für beste Ergebnisse empfiehlt sich der klassische Schichtaufbau:\n<br>1. Grobes Material wie Äste oder kleine Zweige für die Drainage\n<br>2. Organische Abfälle wie Laub, Stroh oder Grasschnitt\n<br>3. Hochwertige Gartenerde als oberste Schicht\n<br>Diese Schichtung sorgt für ein gut belüftetes, nährstoffreiches und warmes Milieu, das das Pflanzenwachstum spürbar fördert.\n\n<b>Vielseitige Einsatzmöglichkeiten</b>\n<br>Ob Tomaten, Salat, Kräuter oder Zierpflanzen – das Hochbeet eignet sich für eine Vielzahl von Pflanzen. Dank der bequemen Arbeitshöhe von 30 cm schonen Sie zudem Ihren Rücken beim Säen, Pflanzen und Ernten.\n\n<b>Über YUDA HOME FURNITURE</b>\n<br>YUDA HOME FURNITURE steht für durchdachte, langlebige Produkte rund um Haus und Garten. Wir verbinden funktionales Design mit hochwertigen Materialien, damit Sie lange Freude an Ihrem neuen Garten-Highlight haben.\n\n---\n\n### Search Terms (max 250 bytes)\n\nPflanzkasten, Gartenbeet erhöht, Hochbeet Bausatz, Stahlblech Garten, Metall Pflanzkasten, Gemüsehochbeet, Kräuterbeet, Blumenbeet, Outdoor Pflanzgefäß, Terrassenbeet, Balkon Hochbeet, Gartenzubehör, verzinktes Beet, rostfrei Garten, Anzucht, Selbstversorger",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783155129,
+  "model": "MiniMax-M3",
+  "object": "chat.completion",
+  "usage": {
+    "total_tokens": 3218,
+    "total_characters": 0,
+    "prompt_tokens": 1248,
+    "completion_tokens": 1970,
+    "prompt_tokens_details": {
+      "cached_tokens": 128
+    }
+  },
+  "input_sensitive": false,
+  "output_sensitive": false,
+  "input_sensitive_type": 0,
+  "output_sensitive_type": 0,
+  "output_sensitive_int": 0,
+  "service_tier": "standard",
+  "base_resp": {
+    "status_code": 0,
+    "status_msg": ""
+  }
+}
+
+--- PARSED ---
+title:        'YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Pflanzenbeet in Silber, Robust & Rostfrei Gemüsebeet Bausatz Ohne Boden für Garten, Terrasse und Balkon'
+bullets:      5 items
+  [1] Großzügige Anbaufläche von 232 x 113,5 x 30 cm: Bietet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen – ideal für Familien, Hobbygärtner und Selbstversorger auf Terrasse, Balkon oder im Garten.
+  [2] Langlebiges, verzinktes Stahlblech (0,6 mm): Die hochwertige Zink-Aluminium-Beschichtung schützt zuverlässig vor Rost, Regen und UV-Strahlung. Das Hochbeet ist formstabil, druckfest und auf eine lange Lebensdauer ausgelegt.
+  [3] Sicheres Design mit gefalteten Innenkanten: Alle Blechkanten sind sauber gefalzt, sodass keine scharfen Schnittkanten entstehen. Das ermöglicht sicheres und sorgenfreies Gärtnern – auch mit Kindern in Haus und Garten.
+  [4] Offener Boden für gesundes Wurzelwachstum: Der bewusste Verzicht auf eine Bodenplatte erlaubt es den Wurzeln, sich frei im Erdreich auszubreiten und tieferliegende Nährstoffe sowie Wasser optimal aufzunehmen.
+  [5] Praktischer Bausatz mit einfacher Montage: Wird zerlegt geliefert und lässt sich mit wenigen Handgriffen schnell aufbauen. Stabile Verbindungen halten dauerhaft hohen Belastungen stand, ohne sich zu lockern oder zu verformen.
+description:  2298 chars
+search_terms: 'Pflanzkasten, Gartenbeet erhöht, Hochbeet Bausatz, Stahlblech Garten, Metall Pflanzkasten, Gemüsehochbeet, Kräuterbeet, Blumenbeet, Outdoor Pflanzgefäß, Terrassenbeet, Balkon Hochbeet, Gartenzubehör, verzinktes Beet, rostfrei Garten, Anzucht, Selbstversorger'
+ai_status:    ok

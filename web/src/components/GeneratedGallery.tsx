@@ -11,6 +11,8 @@ export interface GeneratedImage {
 
 const SLOT_LABEL: Record<string, string> = {
   main: "主图",
+  sub: "副图",
+  detail: "详情图",
   pt1: "辅图 1",
   pt2: "辅图 2",
   pt3: "辅图 3",
@@ -21,7 +23,7 @@ const SLOT_LABEL: Record<string, string> = {
   pt8: "辅图 8",
 };
 
-const SLOT_ORDER = ["main", "pt1", "pt2", "pt3", "pt4", "pt5", "pt6", "pt7", "pt8"];
+const SLOT_ORDER = ["main", "sub", "detail", "pt1", "pt2", "pt3", "pt4", "pt5", "pt6", "pt7", "pt8"];
 
 interface GeneratedGalleryProps {
   images: GeneratedImage[];

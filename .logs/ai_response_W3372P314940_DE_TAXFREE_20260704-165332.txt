@@ -1,0 +1,291 @@
+=== SKU: W3372P314940 | Market: DE_TAXFREE | Time: 20260704-165332 ===
+
+--- RAW AI content (text) ---
+<think>
+The user wants me to create an Amazon.de listing in German for a metal raised garden bed. Let me analyze the requirements carefully:
+
+1. **Product Title** (max 200 characters, German)
+- Core keywords: Hochbeet / Pflanzenbeet / Gemüsebeet
+- Material: Metall / Stahlblech / verzinkt
+- Dimensions: 232 x 113.5 x 30 cm
+- Color: Silver
+- Brand/Manufacturer: YUDA HOME FURNITURE
+- No keyword stuffing, no promotional words
+- Title Case (First letter capitalized per Amazon.de format)
+
+2. **Five Bullet Points** (each max 200 characters)
+- Start with uppercase letter
+- Include dimension/spec data
+- Highlight buyer value points
+- No keyword stuffing
+- Blank lines between bullets
+
+3. **Product Description** (max 4000 characters, German)
+- Product overview, features, use cases, usage instructions, brand info
+- HTML formatting
+
+4. **Search Terms** (max 250 bytes, German)
+- Comma-separated
+- No duplicates from title
+- No promotional words
+
+Let me craft this carefully.
+
+**Title:**
+"YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet ohne Boden, Silber Pflanzenbeet für Gemüse Kräuter Blumen, Robust & Rostschutz"
+Let me count characters... this should be under 200.
+
+Let me count: "YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet ohne Boden, Silber Pflanzenbeet für Gemüse Kräuter Blumen, Robust & Rostschutz"
+Y-U-D-A- -H-O-M-E- -F-U-R-N-I-T-U-R-E- -H-o-c-h-b-e-e-t- -M-e-t-a-l-l- 2 3 2 x 1 1 3 , 5 x 3 0- c m ,- -V-e-r-z-i-n-k-t-e-s- -S-t-a-h-l-b-l-e-c-h- -G-a-r-t-e-n-b-e-e-t- -o-h-n-e- -B-o-d-e-n-,- -S-i-l-b-e-r- -P-f-l-a-n-z-e-n-b-e-e-t- -f-ü-r- -G-e-m-ü-s-e- -K-r-ä-u-t-e-r- -B-l-u-m-e-n-,- -R-o-b-u-s-t- -&- -R-o-s-t-s-c-h-u-t-z
+
+That's around 170-180 characters. Let me verify and count more carefully.
+
+Y(1)U(2)D(3)A(4) (5)H(6)O(7)M(8)E(9) (10)F(11)U(12)R(13)N(14)I(15)T(16)U(17)R(18)E(19) (20)H(21)o(22)c(23)h(24)b(25)e(26)e(27)t(28) (29)M(30)e(31)t(32)a(33)l(34)l(35) (36)2(37)3(38)2(39)x(40)1(41)1(42)3(43),(44)5(45)x(46)3(47)0(48) (49)c(50)m(51),(52) (53)V(54)e(55)r(56)z(57)i(58)n(59)k(60)t(61)e(62)s(63) (64)S(65)t(66)a(67)h(68)l(69)b(70)l(71)e(72)c(73)h(74) (75)G(76)a(77)r(78)t(79)e(80)n(81)b(82)e(83)e(84)t(85) (86)o(87)h(88)n(89)e(90) (91)B(92)o(93)d(94)e(95)n(96),(97) (98)S(99)i(100)l(101)b(102)e(103)r(104) (105)P(106)f(107)l(108)a(109)n(110)z(111)e(112)n(113)b(114)e(115)e(116)t(117) (118)f(119)ü(120)r(121) (122)G(123)e(124)m(125)ü(126)s(127)e(128) (129)K(130)r(131)ä(132)u(133)t(134)e(135)r(136) (137)B(138)l(139)u(140)m(141)e(142)n(143),(144) (145)R(146)o(147)b(148)u(149)s(150)t(151) (152)&(153) (154)R(155)o(156)s(157)t(158)s(159)c(160)h(161)u(162)t(163)z(164)
+
+164 characters. Good, under 200.
+
+**Bullet Points:**
+
+1. Großzügige Anbaufläche: Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen. Ideal für Terrasse, Hof oder Garten.
+
+2. Langlebig & Rostgeschützt: Das 0,6 mm dicke, verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist wetterfest, formstabil und überzeugt durch eine besonders lange Lebensdauer im Freien.
+
+3. Sicheres Design: Die gefalteten Innenkanten verhindern Schnittverletzungen beim Bepflanzen oder Pflegen. So genießen Sie und Ihre Familie unbeschwertes, sicheres Gärtnern.
+
+4. Optimale Wachstumsbedingungen: Dank offenem Boden können Pflanzenwurzeln tief in den Mutterboden wachsen und Nährstoffe sowie Wasser optimal aufnehmen – für gesundes, kräftiges Wachstum.
+
+5. Einfache Montage: Der durchdachte Bausatz enthält alle nötigen Teile für eine schnelle, werkzeuglose oder werkzeugarme Montage. Schichtweises Befüllen (Äste, Laub, Erde) maximiert die Nährstoffversorgung.
+
+Let me check character count for each bullet - they should be under 200.
+
+Bullet 1: ~180 characters
+Bullet 2: ~175 characters
+Bullet 3: ~155 characters
+Bullet 4: ~180 characters
+Bullet 5: ~195 characters
+
+Let me check more carefully:
+Bullet 1: "Großzügige Anbaufläche: Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen. Ideal für Terrasse, Hof oder Garten."
+G-r-o-ß-z-ü-g-i-g-e- -A-n-b-a-u-f-l-ä-c-h-e-:- -M-i-t- -M-a-ß-e-n- -v-o-n- -2-3-2- -x- -1-1-3-,-5- -x- -3-0- -c-m- -b-i-e-t-e-t- -d-i-e-s-e-s- -H-o-c-h-b-e-e-t- -r-e-i-c-h-l-i-c-h- -P-l-a-t-z- -f-ü-r- -d-e-n- -g-l-e-i-c-h-z-e-i-t-i-g-e-n- -A-n-b-a-u- -v-o-n- -G-e-m-ü-s-e-,- -K-r-ä-u-t-e-r-n- -u-n-d- -B-l-u-m-e-n-.- -I-d-e-a-l- -f-ü-r- -T-e-r-r-a-s-s-e-,- -H-o-f- -o-d-e-r- -G-a-r-t-e-n-.
+
+That's about 178 characters. Good.
+
+Bullet 2: "Langlebig & Rostgeschützt: Das 0,6 mm dicke, verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist wetterfest, formstabil und überzeugt durch eine besonders lange Lebensdauer im Freien."
+About 175 characters. Good.
+
+Bullet 3: "Sicheres Design: Die gefalteten Innenkanten verhindern Schnittverletzungen beim Bepflanzen oder Pflegen. So genießen Sie und Ihre Familie unbeschwertes, sicheres Gärtnern."
+About 158 characters. Good.
+
+Bullet 4: "Optimale Wachstumsbedingungen: Dank offenem Boden können Pflanzenwurzeln tief in den Mutterboden wachsen und Nährstoffe sowie Wasser optimal aufnehmen – für gesundes, kräftiges Wachstum."
+About 180 characters. Good.
+
+Bullet 5: "Einfache Montage: Der durchdachte Bausatz enthält alle nötigen Teile für eine schnelle Montage. Schichtweises Befüllen mit Ästen, Laub und Erde fördert Belüftung und Nährstoffversorgung Ihrer Pflanzen."
+About 180 characters. Good.
+
+**Product Description:**
+
+I'll use HTML formatting with <b>, <li>, <br> tags.
+
+**Search Terms:**
+
+Need to be under 250 bytes in German.
+Let me think of useful search terms not in the title:
+- pflanzkasten
+- garten
+- terrasse
+- balkon
+- outdoor
+- beet
+- gartengestaltung
+- gemüse anbauen
+- kräutergarten
+- blumenbeet
+- stahl
+- wetterfest
+- langlebig
+- backyard
+- patio
+- balcony
+- erhöht
+- groß
+- XXL
+- anbaufläche
+- gärtnern
+- hobbygärtner
+- eigenanbau
+- gartenideen
+
+But I need to be careful with the byte limit. German umlauts count as 2 bytes in UTF-8.
+
+Let me try: pflanzkasten, garten, terrasse, balkon, outdoor, beet, wetterfest, langlebig, stahl, erhöht, groß, gartengestaltung, gemüseanbau, kräutergarten, blumenbeet, hobbygärtner, eigenanbau, gartenideen, backyard, patio, balcony, anbaufläche
+
+Let me count bytes (UTF-8):
+- pflanzkasten: 12 bytes
+- garten: 6 bytes
+- terrasse: 8 bytes
+- balkon: 6 bytes
+- outdoor: 7 bytes
+- beet: 4 bytes
+- wetterfest: 10 bytes
+- langlebig: 10 bytes
+- stahl: 5 bytes
+- erhöht: 6 bytes (ä = 2 bytes)
+- groß: 5 bytes (ß = 2 bytes)
+- gartengestaltung: 16 bytes
+- gemüseanbau: 11 bytes (ü = 2 bytes)
+- kräutergarten: 14 bytes (ä = 2 bytes)
+- blumenbeet: 10 bytes
+- hobbygärtner: 13 bytes (ä = 2 bytes)
+- eigenanbau: 10 bytes
+- gartenideen: 11 bytes
+- backyard: 8 bytes
+- patio: 5 bytes
+- balcony: 7 bytes
+- anbaufläche: 11 bytes
+
+Total approximate: 12+6+8+6+7+4+10+10+5+6+5+16+11+14+10+13+10+11+8+5+7+11 = 195 bytes
+Plus commas and spaces: 21 commas + 21 spaces = 42 bytes
+Total: ~237 bytes
+
+That should be under 250 bytes. Let me trim slightly to be safe.
+
+Let me finalize my response now.
+
+Actually, let me also double-check the title length more carefully:
+
+"YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet ohne Boden, Silber Pflanzenbeet für Gemüse Kräuter Blumen, Robust & Rostschutz"
+
+Let me count again:
+Y(1)U(2)D(3)A(4) (5)H(6)O(7)M(8)E(9) (10)F(11)U(12)R(13)N(14)I(15)T(16)U(17)R(18)E(19) (20)
+H(21)o(22)c(23)h(24)b(25)e(26)e(27)t(28) (29)M(30)e(31)t(32)a(33)l(34)l(35) (36)2(37)3(38)2(39)x(40)1(41)1(42)3(43),(44)5(45)x(46)3(47)0(48) (49)c(50)m(51),(52) (53)
+V(54)e(55)r(56)z(57)i(58)n(59)k(60)t(61)e(62)s(63) (64)S(65)t(66)a(67)h(68)l(69)b(70)l(71)e(72)c(73)h(74) (75)G(76)a(77)r(78)t(79)e(80)n(81)b(82)e(83)e(84)t(85) (86)o(87)h(88)n(89)e(90) (91)B(92)o(93)d(94)e(95)n(96),(97) (98)
+S(99)i(100)l(101)b(102)e(103)r(104) (105)P(106)f(107)l(108)a(109)n(110)z(111)e(112)n(113)b(114)e(115)e(116)t(117) (118)f(119)ü(120)r(121) (122)G(123)e(124)m(125)ü(126)s(127)e(128) (129)K(130)r(131)ä(132)u(133)t(134)e(135)r(136) (137)B(138)l(139)u(140)m(141)e(142)n(143),(144) (145)R(146)o(147)b(148)u(149)s(150)t(151) (152)&(153) (154)R(155)o(156)s(157)t(158)s(159)c(160)h(161)u(162)t(163)z(164)
+
+164 characters. 
+
+Now let me finalize my output. I need to be very careful with formatting requirements - especially the blank lines between bullets and proper HTML.
+
+Let me write the description:
+
+```html
+<b>YUDA HOME FURNITURE – Hochbeet aus Metall für Ihren Garten</b><br><br>
+
+Verwandeln Sie Ihren Außenbereich in eine blühende Oase mit dem großzügigen Hochbeet von YUDA HOME FURNITURE. Mit den Maßen 232 x 113,5 x 30 cm bietet dieses elegante Gartenbeet in Silber reichlich Platz für Gemüse, Kräuter, Blumen und Zierpflanzen.<br><br>
+
+<b>Produktmerkmale im Überblick:</b>
+<li><b>Robustes Material:</b> 0,6 mm dickes, verzinktes Stahlblech mit zusätzlicher Zink-Aluminium-Beschichtung – wetterfest, rostgeschützt und langlebig.</li>
+<li><b>Sicheres Design:</b> Innere Kanten sind gefaltet – kein Risiko von Schnittverletzungen bei der Gartenarbeit.</li>
+<li><b>Offener Boden:</b> Wurzeln wachsen frei in den Mutterboden, profitieren von natürlichen Nährstoffen und besserer Wasserversorgung.</li>
+<li><b>Vielseitig einsetzbar:</b> Perfekt für Garten, Terrasse, Balkon oder Hof – ideal für Hobbygärtner und Familien.</li>
+<li><b>Einfache Montage:</b> Praktischer Bausatz mit stabilen Verbindungen, schnell und unkompliziert aufgebaut.</li>
+
+<b>Optimale Befüllung für gesundes Pflanzenwachstum:</b><br>
+Schichten Sie zunächst grobes Material wie Äste und Zweige als Drainageschicht. Darauf folgen organische Abfälle wie Laub und Stroh, die als natürlicher Dünger dienen. Den Abschluss bildet eine Schicht hochwertige Gartenerde. Dieses Schichtsystem sorgt für gute Belüftung, gleichmäßige Wärme und eine reichhaltige Nährstoffversorgung.<br><br>
+
+<b>Pflegehinweise:</b><br>
+Das verzinkte Hochbeet ist besonders pflegeleicht. Eine gelegentliche Reinigung mit Wasser genügt, um es viele Jahre in einwandfreiem Zustand zu halten.<br><br>
+
+<b>Über YUDA HOME FURNITURE:</b><br>
+YUDA HOME FURNITURE steht für durchdachte, langlebige Produkte rund um Haus und Garten. Mit hoher Qualität und funktionalem Design möchten wir Ihr Zuhause schöner und komfortabler gestalten – Saison für Saison.
+```
+
+Let me check character count... it should be under 4000 characters.
+
+Let me also verify the search terms one more time. They need to be in German and not repeat title words.
+
+Title has: Hochbeet, Metall, Verzinktes, Stahlblech, Gartenbeet, Boden, Silber, Pflanzenbeet, Gemüse, Kräuter, Blumen, Robust, Rostschutz, YUDA, HOME, FURNITURE
+
+So I should avoid repeating these in search terms.
+
+Let me create search terms that are complementary:
+pflanzkasten, garten, terrasse, balkon, outdoor, beet, wetterfest, langlebig, stahl, erhöht, gartengestaltung, gemüseanbau, kräutergarten, blumenbeet, hobbygärtner, eigenanbau, gartenideen, backyard, patio, balcony, anbaufläche, XXL
+
+Wait, "stahl" might be too close to "Stahlblech" - but it's a different word, so it should be fine.
+
+Let me finalize the output now. I need to remember the thinking block first.
+
+Actually let me re-read the requirements to make sure I'm following them all:
+
+1. Product Title - max 200 characters ✓
+2. Five Bullet Points - 5 items, each max 200 characters, separated by blank lines ✓
+3. Product Description - max 4000 characters, HTML formatting ✓
+4. Search Terms - max 250 bytes, comma-separated, German ✓
+
+All bullet points need to start with uppercase letter.
+
+Let me also consider the German style - they tend to be more detailed and informative in Amazon.de listings.
+
+For the title, the Amazon.de standard is typically Title Case for the first word and proper nouns, with other words in lowercase. However, many Amazon.de listings use all lowercase for non-proper nouns. Let me use the typical style where the first letter of each significant word is capitalized (Title Case), which is the standard Amazon.de format.
+
+Actually, looking at typical Amazon.de listings, the style is more like: "Brand Produktname Material Eigenschaft Größe" with each major word capitalized. Let me adjust.
+
+Let me finalize my response now.
+
+One more consideration - I should double check that "Rostschutz" (rust protection) is not promotional language. It's a product feature, not promotional, so it should be fine.
+
+Let me write out the final version.
+</think>
+### Product Title
+YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet ohne Boden, Silber Pflanzenbeet für Gemüse Kräuter Blumen, Robust & Rostschutz
+
+### Five Bullet Points
+
+Großzügige Anbaufläche: Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen – ideal für Terrasse, Hof oder Garten.
+
+Langlebig & Rostgeschützt: Das 0,6 mm dicke, verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist wetterfest, formstabil und überzeugt durch eine besonders lange Lebensdauer im Außenbereich.
+
+Sicheres Design: Die gefalteten Innenkanten verhindern Schnittverletzungen beim Bepflanzen oder Pflegen. So genießen Sie und Ihre Familie unbeschwertes, sicheres Gärtnern ohne scharfe Blechkanten.
+
+Optimale Wachstumsbedingungen: Dank offenem Boden wachsen Pflanzenwurzeln tief in den Mutterboden und nehmen Nährstoffe sowie Wasser besonders effizient auf – für gesundes, kräftiges Wachstum.
+
+Einfache Montage: Der durchdachte Bausatz enthält alle nötigen Teile für einen schnellen Aufbau. Schichtweises Befüllen mit Ästen, Laub und Erde fördert Belüftung und Nährstoffversorgung Ihrer Pflanzen.
+
+### Product Description
+
+<b>YUDA HOME FURNITURE – Hochbeet aus Metall für Ihren Garten</b><br><br>
+
+Verwandeln Sie Ihren Außenbereich in eine blühende Oase mit dem großzügigen Hochbeet von YUDA HOME FURNITURE. Mit den Maßen von 232 x 113,5 x 30 cm bietet dieses elegante Gartenbeet in Silber reichlich Platz für Gemüse, Kräuter, Blumen und Zierpflanzen aller Art. Ob auf der Terrasse, im Hof, auf dem Balkon oder im Garten – dieses Hochbeet setzt stilvolle Akzente und ermöglicht Ihnen rückenschonendes Gärtnern auf angenehmer Arbeitshöhe.<br><br>
+
+<b>Produktmerkmale im Überblick:</b>
+<li><b>Robustes Material:</b> 0,6 mm dickes, verzinktes Stahlblech mit zusätzlicher Zink-Aluminium-Beschichtung – wetterfest, rostgeschützt und auf Langlebigkeit ausgelegt.</li>
+<li><b>Sicheres Design:</b> Innere Kanten sind sauber gefaltet, sodass kein Risiko von Schnittverletzungen bei der Gartenarbeit besteht.</li>
+<li><b>Offener Boden:</b> Wurzeln wachsen frei in den Mutterboden, profitieren von natürlichen Nährstoffen und einer verbesserten Wasserversorgung.</li>
+<li><b>Vielseitig einsetzbar:</b> Perfekt geeignet für Garten, Terrasse, Balkon oder Hof – ideal für Hobbygärtner, Familien und Selbstversorger.</li>
+<li><b>Einfache Montage:</b> Praktischer Bausatz mit stabilen Verbindungen, der sich schnell und unkompliziert aufbauen lässt.</li>
+<br>
+
+<b>Optimale Befüllung für gesundes Pflanzenwachstum:</b><br>
+Schichten Sie zunächst grobes Material wie kleine Äste und Zweige als Drainageschicht ein. Darauf folgen organische Abfälle wie Laub, Stroh oder Rasenschnitt, die als natürlicher Dünger dienen. Den Abschluss bildet eine Schicht hochwertige Gartenerde. Dieses bewährte Schichtsystem sorgt für gute Belüftung, gleichmäßige Wärme und eine reichhaltige Nährstoffversorgung Ihrer Pflanzen.<br><br>
+
+<b>Pflegehinweise:</b><br>
+Das verzinkte Hochbeet ist besonders pflegeleicht. Eine gelegentliche Reinigung mit klarem Wasser genügt, um es viele Jahre in einwandfreiem Zustand zu halten. Dank der hochwertigen Beschichtung trotzt es Wind, Regen und Sonneneinstrahlung zuverlässig.<br><br>
+
+<b>Über YUDA HOME FURNITURE:</b><br>
+YUDA HOME FURNITURE steht für durchdachte, langlebige Produkte rund um Haus und Garten. Mit hoher Qualität, funktionalem Design und einem ausgezeichneten Preis-Leistungs-Verhältnis möchten wir Ihr Zuhause schöner und komfortabler gestalten – Saison für Saison.
+
+### Search Terms
+pflanzkasten, garten, terrasse, balkon, outdoor, beet, wetterfest, langlebig, stahl, erhöht, gartengestaltung, gemüseanbau, kräutergarten, blumenbeet, hobbygärtner, eigenanbau, gartenideen, anbaufläche, XXL, patio, balcony, backyard
+--- RAW AI reasoning_content ---
+(none)
+
+--- RAW AI FULL JSON ---
+{
+  "id": "0697fcdd8b0d6c1f09828d8d5497dbb0",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "<think>\nThe user wants me to create an Amazon.de listing in German for a metal raised garden bed. Let me analyze the requirements carefully:\n\n1. **Product Title** (max 200 characters, German)\n- Core keywords: Hochbeet / Pflanzenbeet / Gemüsebeet\n- Material: Metall / Stahlblech / verzinkt\n- Dimensions: 232 x 113.5 x 30 cm\n- Color: Silver\n- Brand/Manufacturer: YUDA HOME FURNITURE\n- No keyword stuffing, no promotional words\n- Title Case (First letter capitalized per Amazon.de format)\n\n2. **Five Bullet Points** (each max 200 characters)\n- Start with uppercase letter\n- Include dimension/spec data\n- Highlight buyer value points\n- No keyword stuffing\n- Blank lines between bullets\n\n3. **Product Description** (max 4000 characters, German)\n- Product overview, features, use cases, usage instructions, brand info\n- HTML formatting\n\n4. **Search Terms** (max 250 bytes, German)\n- Comma-separated\n- No duplicates from title\n- No promotional words\n\nLet me craft this carefully.\n\n**Title:**\n\"YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet ohne Boden, Silber Pflanzenbeet für Gemüse Kräuter Blumen, Robust & Rostschutz\"\nLet me count characters... this should be under 200.\n\nLet me count: \"YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet ohne Boden, Silber Pflanzenbeet für Gemüse Kräuter Blumen, Robust & Rostschutz\"\nY-U-D-A- -H-O-M-E- -F-U-R-N-I-T-U-R-E- -H-o-c-h-b-e-e-t- -M-e-t-a-l-l- 2 3 2 x 1 1 3 , 5 x 3 0- c m ,- -V-e-r-z-i-n-k-t-e-s- -S-t-a-h-l-b-l-e-c-h- -G-a-r-t-e-n-b-e-e-t- -o-h-n-e- -B-o-d-e-n-,- -S-i-l-b-e-r- -P-f-l-a-n-z-e-n-b-e-e-t- -f-ü-r- -G-e-m-ü-s-e- -K-r-ä-u-t-e-r- -B-l-u-m-e-n-,- -R-o-b-u-s-t- -&- -R-o-s-t-s-c-h-u-t-z\n\nThat's around 170-180 characters. Let me verify and count more carefully.\n\nY(1)U(2)D(3)A(4) (5)H(6)O(7)M(8)E(9) (10)F(11)U(12)R(13)N(14)I(15)T(16)U(17)R(18)E(19) (20)H(21)o(22)c(23)h(24)b(25)e(26)e(27)t(28) (29)M(30)e(31)t(32)a(33)l(34)l(35) (36)2(37)3(38)2(39)x(40)1(41)1(42)3(43),(44)5(45)x(46)3(47)0(48) (49)c(50)m(51),(52) (53)V(54)e(55)r(56)z(57)i(58)n(59)k(60)t(61)e(62)s(63) (64)S(65)t(66)a(67)h(68)l(69)b(70)l(71)e(72)c(73)h(74) (75)G(76)a(77)r(78)t(79)e(80)n(81)b(82)e(83)e(84)t(85) (86)o(87)h(88)n(89)e(90) (91)B(92)o(93)d(94)e(95)n(96),(97) (98)S(99)i(100)l(101)b(102)e(103)r(104) (105)P(106)f(107)l(108)a(109)n(110)z(111)e(112)n(113)b(114)e(115)e(116)t(117) (118)f(119)ü(120)r(121) (122)G(123)e(124)m(125)ü(126)s(127)e(128) (129)K(130)r(131)ä(132)u(133)t(134)e(135)r(136) (137)B(138)l(139)u(140)m(141)e(142)n(143),(144) (145)R(146)o(147)b(148)u(149)s(150)t(151) (152)&(153) (154)R(155)o(156)s(157)t(158)s(159)c(160)h(161)u(162)t(163)z(164)\n\n164 characters. Good, under 200.\n\n**Bullet Points:**\n\n1. Großzügige Anbaufläche: Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen. Ideal für Terrasse, Hof oder Garten.\n\n2. Langlebig & Rostgeschützt: Das 0,6 mm dicke, verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist wetterfest, formstabil und überzeugt durch eine besonders lange Lebensdauer im Freien.\n\n3. Sicheres Design: Die gefalteten Innenkanten verhindern Schnittverletzungen beim Bepflanzen oder Pflegen. So genießen Sie und Ihre Familie unbeschwertes, sicheres Gärtnern.\n\n4. Optimale Wachstumsbedingungen: Dank offenem Boden können Pflanzenwurzeln tief in den Mutterboden wachsen und Nährstoffe sowie Wasser optimal aufnehmen – für gesundes, kräftiges Wachstum.\n\n5. Einfache Montage: Der durchdachte Bausatz enthält alle nötigen Teile für eine schnelle, werkzeuglose oder werkzeugarme Montage. Schichtweises Befüllen (Äste, Laub, Erde) maximiert die Nährstoffversorgung.\n\nLet me check character count for each bullet - they should be under 200.\n\nBullet 1: ~180 characters\nBullet 2: ~175 characters\nBullet 3: ~155 characters\nBullet 4: ~180 characters\nBullet 5: ~195 characters\n\nLet me check more carefully:\nBullet 1: \"Großzügige Anbaufläche: Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen. Ideal für Terrasse, Hof oder Garten.\"\nG-r-o-ß-z-ü-g-i-g-e- -A-n-b-a-u-f-l-ä-c-h-e-:- -M-i-t- -M-a-ß-e-n- -v-o-n- -2-3-2- -x- -1-1-3-,-5- -x- -3-0- -c-m- -b-i-e-t-e-t- -d-i-e-s-e-s- -H-o-c-h-b-e-e-t- -r-e-i-c-h-l-i-c-h- -P-l-a-t-z- -f-ü-r- -d-e-n- -g-l-e-i-c-h-z-e-i-t-i-g-e-n- -A-n-b-a-u- -v-o-n- -G-e-m-ü-s-e-,- -K-r-ä-u-t-e-r-n- -u-n-d- -B-l-u-m-e-n-.- -I-d-e-a-l- -f-ü-r- -T-e-r-r-a-s-s-e-,- -H-o-f- -o-d-e-r- -G-a-r-t-e-n-.\n\nThat's about 178 characters. Good.\n\nBullet 2: \"Langlebig & Rostgeschützt: Das 0,6 mm dicke, verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist wetterfest, formstabil und überzeugt durch eine besonders lange Lebensdauer im Freien.\"\nAbout 175 characters. Good.\n\nBullet 3: \"Sicheres Design: Die gefalteten Innenkanten verhindern Schnittverletzungen beim Bepflanzen oder Pflegen. So genießen Sie und Ihre Familie unbeschwertes, sicheres Gärtnern.\"\nAbout 158 characters. Good.\n\nBullet 4: \"Optimale Wachstumsbedingungen: Dank offenem Boden können Pflanzenwurzeln tief in den Mutterboden wachsen und Nährstoffe sowie Wasser optimal aufnehmen – für gesundes, kräftiges Wachstum.\"\nAbout 180 characters. Good.\n\nBullet 5: \"Einfache Montage: Der durchdachte Bausatz enthält alle nötigen Teile für eine schnelle Montage. Schichtweises Befüllen mit Ästen, Laub und Erde fördert Belüftung und Nährstoffversorgung Ihrer Pflanzen.\"\nAbout 180 characters. Good.\n\n**Product Description:**\n\nI'll use HTML formatting with <b>, <li>, <br> tags.\n\n**Search Terms:**\n\nNeed to be under 250 bytes in German.\nLet me think of useful search terms not in the title:\n- pflanzkasten\n- garten\n- terrasse\n- balkon\n- outdoor\n- beet\n- gartengestaltung\n- gemüse anbauen\n- kräutergarten\n- blumenbeet\n- stahl\n- wetterfest\n- langlebig\n- backyard\n- patio\n- balcony\n- erhöht\n- groß\n- XXL\n- anbaufläche\n- gärtnern\n- hobbygärtner\n- eigenanbau\n- gartenideen\n\nBut I need to be careful with the byte limit. German umlauts count as 2 bytes in UTF-8.\n\nLet me try: pflanzkasten, garten, terrasse, balkon, outdoor, beet, wetterfest, langlebig, stahl, erhöht, groß, gartengestaltung, gemüseanbau, kräutergarten, blumenbeet, hobbygärtner, eigenanbau, gartenideen, backyard, patio, balcony, anbaufläche\n\nLet me count bytes (UTF-8):\n- pflanzkasten: 12 bytes\n- garten: 6 bytes\n- terrasse: 8 bytes\n- balkon: 6 bytes\n- outdoor: 7 bytes\n- beet: 4 bytes\n- wetterfest: 10 bytes\n- langlebig: 10 bytes\n- stahl: 5 bytes\n- erhöht: 6 bytes (ä = 2 bytes)\n- groß: 5 bytes (ß = 2 bytes)\n- gartengestaltung: 16 bytes\n- gemüseanbau: 11 bytes (ü = 2 bytes)\n- kräutergarten: 14 bytes (ä = 2 bytes)\n- blumenbeet: 10 bytes\n- hobbygärtner: 13 bytes (ä = 2 bytes)\n- eigenanbau: 10 bytes\n- gartenideen: 11 bytes\n- backyard: 8 bytes\n- patio: 5 bytes\n- balcony: 7 bytes\n- anbaufläche: 11 bytes\n\nTotal approximate: 12+6+8+6+7+4+10+10+5+6+5+16+11+14+10+13+10+11+8+5+7+11 = 195 bytes\nPlus commas and spaces: 21 commas + 21 spaces = 42 bytes\nTotal: ~237 bytes\n\nThat should be under 250 bytes. Let me trim slightly to be safe.\n\nLet me finalize my response now.\n\nActually, let me also double-check the title length more carefully:\n\n\"YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet ohne Boden, Silber Pflanzenbeet für Gemüse Kräuter Blumen, Robust & Rostschutz\"\n\nLet me count again:\nY(1)U(2)D(3)A(4) (5)H(6)O(7)M(8)E(9) (10)F(11)U(12)R(13)N(14)I(15)T(16)U(17)R(18)E(19) (20)\nH(21)o(22)c(23)h(24)b(25)e(26)e(27)t(28) (29)M(30)e(31)t(32)a(33)l(34)l(35) (36)2(37)3(38)2(39)x(40)1(41)1(42)3(43),(44)5(45)x(46)3(47)0(48) (49)c(50)m(51),(52) (53)\nV(54)e(55)r(56)z(57)i(58)n(59)k(60)t(61)e(62)s(63) (6
+
+--- PARSED ---
+title:        'YUDA HOME FURNITURE Hochbeet Metall 232x113,5x30 cm, Verzinktes Stahlblech Gartenbeet ohne Boden, Silber Pflanzenbeet für Gemüse Kräuter Blumen, Robust & Rostschutz'
+bullets:      5 items
+  [1] Großzügige Anbaufläche: Mit Maßen von 232 x 113,5 x 30 cm bietet dieses Hochbeet reichlich Platz für den gleichzeitigen Anbau von Gemüse, Kräutern und Blumen – ideal für Terrasse, Hof oder Garten.
+  [2] Langlebig & Rostgeschützt: Das 0,6 mm dicke, verzinkte Stahlblech mit Zink-Aluminium-Beschichtung ist wetterfest, formstabil und überzeugt durch eine besonders lange Lebensdauer im Außenbereich.
+  [3] Sicheres Design: Die gefalteten Innenkanten verhindern Schnittverletzungen beim Bepflanzen oder Pflegen. So genießen Sie und Ihre Familie unbeschwertes, sicheres Gärtnern ohne scharfe Blechkanten.
+  [4] Optimale Wachstumsbedingungen: Dank offenem Boden wachsen Pflanzenwurzeln tief in den Mutterboden und nehmen Nährstoffe sowie Wasser besonders effizient auf – für gesundes, kräftiges Wachstum.
+  [5] Einfache Montage: Der durchdachte Bausatz enthält alle nötigen Teile für einen schnellen Aufbau. Schichtweises Befüllen mit Ästen, Laub und Erde fördert Belüftung und Nährstoffversorgung Ihrer Pflanzen.
+description:  2358 chars
+search_terms: 'pflanzkasten, garten, terrasse, balkon, outdoor, beet, wetterfest, langlebig, stahl, erhöht, gartengestaltung, gemüseanbau, kräutergarten, blumenbeet, hobbygärtner, eigenanbau, gartenideen, anbaufläche, XXL, patio, balcony, backyard'
+ai_status:    ok
