@@ -91,9 +91,11 @@ export function LeftPanel({
         />
       </div>
 
-      {/* 模板上传 */}
+      {/* 模板上传（可选） */}
       <div style={{ marginBottom: "28px" }}>
-        <div className="section-title">Amazon 模板</div>
+        <div className="section-title">
+          Amazon 模板 <span style={{ fontWeight: 400, fontSize: "11px", color: "#999" }}>（可选）</span>
+        </div>
         <div
           style={{ border: "1px dashed #e0e0e0", padding: "24px", textAlign: "center", cursor: "pointer", background: "#fafafa" }}
           onClick={() => fileRef.current?.click()}
@@ -103,7 +105,7 @@ export function LeftPanel({
           <div style={{ fontSize: "14px", color: "#666" }}>
             {templateFile
               ? `已上传: ${templateFile}`
-              : "点击上传 Amazon 模板文件（.xlsm / .xlsx）\n系统将自动检测目标市场"
+              : "点击上传 Amazon 模板文件（.xlsm / .xlsx）\n系统将自动检测目标市场；未上传也可生成 AI 文案与产品图"
             }
           </div>
         </div>
@@ -123,9 +125,10 @@ export function LeftPanel({
             {steps.map((s, i) => {
               const isError  = s.status === "error";
               const isOk     = s.status === "ok";
+              const isSkipped = s.status === "skipped";
               const isRunning = s.status === "running";
-              const icon     = isError ? "✕" : isOk ? "✓" : isRunning ? "↻" : "○";
-              const iconColor = isError ? "#c62828" : isOk ? "#2e7d32" : isRunning ? "#1976d2" : "#999";
+              const icon     = isError ? "✕" : isOk ? "✓" : isSkipped ? "↷" : isRunning ? "↻" : "○";
+              const iconColor = isError ? "#c62828" : isOk ? "#2e7d32" : isSkipped ? "#9e9e9e" : isRunning ? "#1976d2" : "#999";
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
                   <span
@@ -153,6 +156,9 @@ export function LeftPanel({
                   )}
                   {isOk && s.step === "fill" && typeof s.output === "string" && (
                     <span style={{ color: "#2e7d32", fontSize: "12px", marginLeft: "auto" }}>{s.output}</span>
+                  )}
+                  {isSkipped && s.step === "fill" && (
+                    <span style={{ color: "#9e9e9e", fontSize: "12px", marginLeft: "auto" }}>已跳过</span>
                   )}
                   {isError && (
                     <span style={{ color: "#c62828", fontSize: "12px", marginLeft: "auto" }}>{String(s.message || "")}</span>

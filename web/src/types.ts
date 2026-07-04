@@ -10,6 +10,8 @@ export interface PipelineResult {
   imageUrls: string[];
   image_count: number;
   output_file: string;
+  // 后端第 3 步"填入 Excel"被跳过(用户未上传模板且市场 fallback 文件缺失)时为 true
+  template_skipped?: boolean;
   // AI 文案生成质量状态（B.7 修复新增）
   // - "ok":      4 个字段齐全
   // - "partial": 部分字段为空(标题有了但 bullets 缺失)

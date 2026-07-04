@@ -274,13 +274,32 @@ function CopyEditor({
         />
       </div>
 
+      {/* 未上传模板时的浅绿提示条 */}
+      {result.template_skipped && (
+        <div style={{
+          padding: "12px 14px",
+          background: "#f1f8e9",
+          border: "1px solid #c5e1a5",
+          borderRadius: "4px",
+          fontSize: "13px",
+          color: "#33691e",
+          lineHeight: 1.6,
+        }}>
+          本次未使用 Amazon 模板，AI 文案已生成；如需填写 Amazon 模板，请上传后再运行一次。
+        </div>
+      )}
+
       {/* Excel 输出 */}
       <div style={{ padding: "16px", background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: "4px", fontSize: "13px" }}>
         <div style={{ fontWeight: 500, marginBottom: "6px" }}>输出文件</div>
-        <div style={{ color: "#666" }}>{result.output_file}</div>
-        <div style={{ color: "#999", fontSize: "12px", marginTop: "4px" }}>
-          保存在 F:\AI Projects\GIGAB2B\
+        <div style={{ color: "#666" }}>
+          {result.output_file || (result.template_skipped ? "（本次未生成 .xlsm — 未提供模板）" : "")}
         </div>
+        {result.output_file && (
+          <div style={{ color: "#999", fontSize: "12px", marginTop: "4px" }}>
+            保存在 F:\AI Projects\GIGAB2B\
+          </div>
+        )}
       </div>
     </>
   );

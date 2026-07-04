@@ -1183,6 +1183,12 @@ def run_pipeline():
     if not template_name:
         template_name = MARKET_TEMPLATES.get(market, "PLANTER-de.xlsm")
 
+    # 用户没传模板 AND 该市场 fallback 文件也不在磁盘上 → 第 3 步直接跳过
+    # 如果用户主动传了模板但磁盘上没有,fill_excel 仍会抛错(那是真错误,不该被掩盖)
+    template_skipped = (not data.get("template_filename")) and not os.path.exists(
+        os.path.join(TEMPLATE_DIR, template_name)
+    )
+
     # 必须延迟 stream 初始化到确定有数据要发之后 — 一些 wsgi 服务器会丢弃空响应
     def _gen():
         try:
@@ -1222,19 +1228,25 @@ def run_pipeline():
                 yield _emit({"type": "error", "status": "error", "error": f"AI 文案生成失败: {e}", "steps": steps})
                 return
 
-            # Step 3: 填入 Excel
+            # Step 3: 填入 Excel (skipped cleanly if user uploaded nothing and market fallback is absent)
             yield _emit({"type": "step", "status": "running", "step": "fill", "label": "填入 Excel"})
-            try:
-                out_path = fill_excel(product, ai_result, market, template_name, image_strategy=image_strategy)
-                step_info = {"step": "fill", "status": "ok", "output": os.path.basename(out_path)}
+            out_path = ""
+            if template_skipped:
+                step_info = {"step": "fill", "status": "skipped", "output": "", "label": "填入 Excel（已跳过）"}
                 steps.append(step_info)
                 yield _emit({"type": "step", **step_info})
-            except Exception as e:
-                err = {"step": "fill", "status": "error", "message": str(e)}
-                steps.append(err)
-                yield _emit({"type": "step", **err})
-                yield _emit({"type": "error", "status": "error", "error": f"Excel 填入失败: {e}", "steps": steps})
-                return
+            else:
+                try:
+                    out_path = fill_excel(product, ai_result, market, template_name, image_strategy=image_strategy)
+                    step_info = {"step": "fill", "status": "ok", "output": os.path.basename(out_path)}
+                    steps.append(step_info)
+                    yield _emit({"type": "step", **step_info})
+                except Exception as e:
+                    err = {"step": "fill", "status": "error", "message": str(e)}
+                    steps.append(err)
+                    yield _emit({"type": "step", **err})
+                    yield _emit({"type": "error", "status": "error", "error": f"Excel 填入失败: {e}", "steps": steps})
+                    return
 
             # 终态：把所有 AI 生成的文案 + 产品图片 URL 一起随 done 事件返回
             ai_status = ai_result.get("_ai_status", "ok")
@@ -1258,7 +1270,8 @@ def run_pipeline():
                     "product_name": product.get("productName", ""),
                     "imageUrls": product.get("imageUrls") or [],
                     "image_count": len(product.get("imageUrls") or []),
-                    "output_file": os.path.basename(out_path),
+                    "output_file": os.path.basename(out_path) if out_path else "",
+                    "template_skipped": template_skipped,
                     "mainColor": product.get("attributes", {}).get("Main Color") or product.get("mainColor") or "",
                     "mainMaterial": product.get("mainMaterial", ""),
                     "texture": product.get("texture", ""),
