@@ -27,8 +27,10 @@ outputs/             # AI 生成的图片
 # ── 服务日志 ──────────────────────────────
 flask.err*
 flask.log
+flask.out
 vite.err*
 vite.log
+vite.out
 
 # ── OS / IDE ──────────────────────────────
 .vscode/

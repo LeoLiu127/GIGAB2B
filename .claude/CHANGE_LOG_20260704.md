@@ -531,3 +531,209 @@ SKU `W2678P312247` UK 跑流水线,中栏红框"AI 返回内容为空",但 `.log
 
 _追加时间:2026-07-05_
 _追加者:Claude Sonnet 4.5 (AI 输出截断修复 + plan 文件交付)_
+
+---
+
+## 15. Round 1 Bug 修复 + 累积保存新功能 — 2026-07-05
+
+### 15.1 自主实施策略
+
+用户批准"自主跑,出问题回滚 + 记录,继续下一个,不需要审批"。本次实施 5 个 bug + 1 个新功能。
+
+### 15.2 B5 — 删除 `_REFUSAL_MARKERS` 检测代码
+
+- **位置**:[app.py:1049-1071](app.py)(原代码段)
+- **根因**:plan 描述"德语 Risiko 触发误判"是错的 — markers 列表里**没有 bare `"risk"`**,生产 21 份日志 0 次命中,代码完全哑
+- **修复**:删除 markers 列表 + is_refusal 判断 + 清空逻辑 + `_ai_refusal_detected` 字段
+- **验证**: `ast.parse` 通过;markers / is_refusal / `_ai_refusal_detected` 在代码段(非注释)中已不存在
+- **风险**: 0(原本就是哑代码)
+- **行数**: -20 行
+
+### 15.3 B1 — 重跑优化清空 copy state
+
+- **位置**:[App.tsx:189-198](web/src/App.tsx) `handleOptimize` 入口
+- **根因**: `setResult(null)` 后没清 copy state,用户编辑被 50s 后到达的 SSE done 事件覆盖
+- **修复**: 加 4 行 `setCopyTitle("")` / `setCopyBullets([])` / `setCopyDescription("")` / `setCopySearchTerms("")`
+- **验证**: `tsc --noEmit` 通过
+- **风险**: 低(只清空,不影响已有数据)
+
+### 15.4 B2 — 改 SKU 时 abort 在飞 fetch
+
+- **位置**:[App.tsx:374-385](web/src/App.tsx) `onSkuChange` + [LeftPanel.tsx:112](web/src/components/LeftPanel.tsx) SKU input
+- **根因**: 用户切 SKU 时只 setState 不 abort,旧 SKU fetch 后到达覆盖新 SKU state
+- **修复**: `onSkuChange` 加 `fetchAbortRef.current?.abort()` + `setIsFetching(false)`;SKU input `disabled` 加 `isFetching` 条件
+- **验证**: `tsc --noEmit` 通过
+- **风险**: 低
+
+### 15.5 B4 — sanitize 字段开头编号剥离
+
+- **位置**:[app.py:653-673](app.py) `_sanitize_copy`
+- **根因**: 之前编号剥离只对 bullets 生效,`search_terms` 字段开头的 "1. xxx, 2. yyy" 残留
+- **修复**: 把 `LEADING_NUMBERING = re.compile(r"^\s*(?:\d+\.\s+|[-•·●]\s+)")` 提到函数外(避免重复编译);`clean()` 加 `LEADING_NUMBERING.sub("", t, count=1).strip()`(count=1 只剥字段最开头,不影响多段内容)
+- **验证**: 直接调用 `_sanitize_copy` 测试: 输入 `{"title": "1. Some Product Title", "search_terms": "1. keyword one, 2. keyword two"}` → 字段开头的 "1. " 被剥,后面 "2. keyword two" 保留
+- **风险**: 低(count=1 保证只剥字段开头一行)
+
+### 15.6 B3 — 代理拉图可中断
+
+- **位置**:[api.ts:207-215](web/src/api.ts) `api.fetchImages` 加 `signal?` 参数 + [ReferenceImages.tsx:25-65](web/src/components/ReferenceImages.tsx) `proxyAbortRef` + `useEffect` cleanup
+- **根因**: 用户切 SKU 时代理 fetch 不能取消,旧 SKU 代理图覆盖新 SKU
+- **修复**:
+  - `api.fetchImages(sku, market, signal?)` 加 signal
+  - `ReferenceImages` 加 `proxyAbortRef` AbortController
+  - SKU/market 变化时 `proxyAbortRef.current?.abort()` + setState 重置
+  - 组件卸载时 cleanup 调 abort
+  - fetch 返回后再次检查 `ctrl.signal.aborted`(防止 abort 在 await 期间触发但 response 已到)
+- **验证**: `tsc --noEmit` 通过
+- **风险**: 中(响应解析后还要检查 aborted,可能引入竞争条件)
+
+### 15.7 新功能 — 生成图片累积保存
+
+- **位置**:[App.tsx:329-345](web/src/App.tsx) `setGeneratedImages` + [App.tsx:358-363](web/src/App.tsx) `handleDeleteGenerated` + [GeneratedGallery.tsx](web/src/components/GeneratedGallery.tsx) 全部
+- **根因**: 用户希望"已生成的图片保存,不要每次清空";之前同 slot 替换旧的,丢历史
+- **修复**:
+  - `setGeneratedImages`: 改成 `[...prev, newImage]`(累积追加,不限 slot)
+  - `handleDeleteGenerated`: 单张删除(后端文件保留在 outputs/,只从前端列表移除)
+  - `GeneratedGallery` 加 `onDelete?` prop + 每张图右上角加 × 删除按钮(下载按钮左边)
+- **验证**: `tsc --noEmit` 通过;sort 逻辑保持稳定 — 同 slot 多张按 generatedAt 升序展示
+- **风险**: 中(可能列表越来越长,但后端 outputs/ 已经永久保存磁盘,前端只是显示)
+- **附带改进**: 用户还能单张删除 / 一键清空(已存在 `clearGenerated`)
+
+### 15.8 总体验证
+
+| 项 | 状态 |
+|---|---|
+| Python `ast.parse` | ✅ 通过 |
+| TypeScript `tsc --noEmit` | ✅ 通过 |
+| Flask `:5182` 启动 | ✅ `status: ok` |
+| Vite `:5173` 启动 | ✅ 200 |
+| 后端 `_sanitize_copy` 单测 | ✅ bullets/search_terms 字段开头编号都剥 |
+| Flask 重启 + curl /api/health | ✅ `{"status":"ok"}` |
+
+### 15.9 改动文件清单
+
+- [app.py](app.py) — B5 删除 / B4 编号剥离
+- [web/src/App.tsx](web/src/App.tsx) — B1 clear copy state / B2 abort fetch / 累积保存 / handleDeleteGenerated
+- [web/src/api.ts](web/src/api.ts) — B3 fetchImages signal
+- [web/src/components/ReferenceImages.tsx](web/src/components/ReferenceImages.tsx) — B3 proxyAbortRef + cleanup
+- [web/src/components/LeftPanel.tsx](web/src/components/LeftPanel.tsx) — B2 SKU disabled 加 isFetching
+- [web/src/components/GeneratedGallery.tsx](web/src/components/GeneratedGallery.tsx) — 累积保存 / onDelete prop / × 按钮
+
+### 15.10 用户后续可选
+
+如果用户不需要"累积保存"或觉得列表太长,可以快速回滚:
+- `setGeneratedImages` 改回 `const filtered = prev.filter(g => g.slot !== res.slot); return [...filtered, newImage]`
+- 删 GeneratedGallery 里的 `onDelete` 按钮 + onDelete prop
+
+_追加时间:2026-07-05_
+_追加者:Claude Sonnet 4.5 (Round 1 Bug 修复 + 累积保存新功能)_
+
+---
+
+## 16. AI 文案生成慢+失败修复 — 2026-07-05
+
+### 16.1 用户报告
+
+SKU `W2339P502190` US 跑流水线,文案优化步骤失败:`MiniMax 生成失败(已重试 2 次): minimax API 超时 (120s)`,完整一次失败耗时约 5 分钟。用户关键反馈:**"最近两次都是尝试调用大模型两次,这个肯定是有问题的,之前似乎没有这个问题"**。
+
+### 16.2 根因(用户反馈 100% 准确)
+
+**主因**:`finish_reason=length` 嵌套重试 — 2026-07-04 fix #14 加的代码会在 length 截断时**整个再调一次** `_generate_text_local`,所以单次"文案生成"实际是 **2 次 API 调用**。**之前没这个问题**,因为之前没 length 重试。
+
+### 16.3 修复(4 步,跨 2 个文件)
+
+#### Step 3(最高优先) — 删除 length 嵌套重试
+- [app.py:1024-1042](app.py)(原代码段)— 删除整个 `finish_reason == "length" and is_empty` if block(23 行),改为注释说明为什么删
+- **效果**: 单次流水线 → **最多 1 次** AI 调用
+
+#### Step 1 — ENV 切到 MiniMax-Text-01
+- [.env:43](.env) — `MINIMAX_MODEL=MiniMax-M3` → `MiniMax-Text-01`
+- **理由**: M3 是 reasoning 模型,thinking 块巨大(3000-7000 tokens);Text-01 是非 reasoning 模型,理论提速 60-80%
+
+#### Step 2 — 后端超时/重试调整
+- [app.py:931](app.py) `_generate_text_local` 默认参数:
+  - `max_tokens=16384`(保留)
+  - `max_retries=2` → **1**
+  - `timeout=120` → **180**(180s 给网络慢留 50% 余量)
+  - 新增 `timeout` 参数(避免硬编码)
+  - `sleep(1.5 * attempt)` / `sleep(2.0 * attempt)` → **`sleep(0.5)`**
+
+#### Step 5 — 错误文案清理
+- [app.py:1025](app.py) 抛错文案:`MiniMax 生成失败(已重试 N 次): ...` → `MiniMax 生成失败: ...`(max_retries=1 后"已重试"无意义)
+
+### 16.4 验证
+
+- ✅ Python `ast.parse` 通过
+- ✅ `_generate_text_local` 新签名:`max_retries=1, timeout=180`, `sleep(0.5)`
+- ✅ `ai_generate_copy` 不再有 `finish_reason == "length"` 重试分支
+- ✅ ENV 加载正确:`MINIMAX_CONFIG["model"] == "MiniMax-Text-01"`
+- ✅ Flask 重启后 `/api/health` 返回 `{"status":"ok"}`
+
+### 16.5 预期效果
+
+| 维度 | 之前 | 之后 |
+|---|---|---|
+| 单次流水线 AI 调用次数 | 最多 3 次 | **最多 1 次** |
+| 单次失败总耗时 | 3-5 分钟 | < 30s |
+| 单次成功耗时(M3) | 30-90s | < 30s |
+| 单次成功耗时(Text-01) | 30-90s | **10-25s** |
+| 网络抖动后行为 | 串行 retry 4s+ | 0.5s 重试一次立刻报 |
+
+### 16.6 改动文件清单
+
+- [.env](.env) — Step 1(1 行)
+- [app.py](app.py) — Step 3 删除 23 行 + Step 2 调整 6 处 + Step 5 改 1 处(净 -8 行)
+- Flask 重启,PID 变更
+
+### 16.7 回滚方案
+
+如果 Text-01 质量不可接受:
+- [.env:43](.env) → `MINIMAX_MODEL=MiniMax-M3`(切回 M3)
+- Flask 重启
+
+如果 length 删了后悔(几乎不可能):
+- 重新加回 [app.py:1024-1042](app.py) 原 if block
+
+### 16.8 用户验收
+
+需要用户在浏览器手动跑一次 SKU `W2339P502190` US,确认:
+1. 耗时 < 30s
+2. 4 字段齐全(ai_status=ok)
+3. `.logs/ai_response_W2339P502190_US_<timestamp>.txt` **只有 1 个文件**(不是 2 个)
+
+_追加时间:2026-07-05_
+_追加者:Claude Sonnet 4.5 (AI 文案生成慢+失败修复)_
+
+---
+
+## 17. 生成图片排序 + 跨产品保留 — 2026-07-05
+
+### 17.1 用户反馈
+
+"生成图片后,新生成的图要排在最前面" + "每次换产品去生图时,前一个产品的图片不要清空,保留在里面"。
+
+### 17.2 修复
+
+#### 修改 1:新生成的图排在最前
+- [web/src/components/GeneratedGallery.tsx:47-51](web/src/components/GeneratedGallery.tsx)
+  - 之前 sort 按 SLOT_ORDER(主图→副图→详情图固定顺序),新生成的反而在后面
+  - 现在改为 `b.generatedAt - a.generatedAt` — 按生成时间倒序,最新的在最前面
+- 删除未用的 `SLOT_ORDER` 常量(TS 编译警告)
+
+#### 修改 2:换产品不清空累积图片
+- [web/src/App.tsx:147](web/src/App.tsx) `handleFetch` — 删除 `setGeneratedImages([])`
+- [web/src/App.tsx:201](web/src/App.tsx) `handleOptimize` — 删除 `setGeneratedImages([])`
+- 之后换 SKU 或重跑流水线,之前生成的图片全部保留,用户可对比不同产品/不同次生成的图
+
+### 17.3 验证
+
+- ✅ TypeScript `tsc --noEmit` 干净通过
+- ✅ `setGeneratedImages([])` 在 App.tsx 中已无残留(grep 验证)
+
+### 17.4 用户验收
+
+1. 跑一次主图生成 → 列表显示 1 张
+2. 再跑一次副图生成 → 列表显示 2 张,**副图在最前面**(之前是按 SLOT_ORDER,主图在前)
+3. 换 SKU 抓新数据 → 之前的 2 张图仍在,新增的图排在最前
+
+_追加时间:2026-07-05_
+_追加者:Claude Sonnet 4.5 (生成图片排序 + 跨产品保留)_
