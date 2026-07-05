@@ -204,11 +204,13 @@ export const api = {
     });
   },
 
-  fetchImages(sku: string, market: string) {
+  fetchImages(sku: string, market: string, signal?: AbortSignal) {
+    // 加 signal 支持切换 SKU 时取消(B3 修复 — 旧 SKU 代理图不再覆盖新 SKU state)
     return request<{ success: boolean; sku: string; market: string; images: import("./types").GigaImage[] }>("/fetch-images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sku, market }),
+      signal,
     });
   },
 

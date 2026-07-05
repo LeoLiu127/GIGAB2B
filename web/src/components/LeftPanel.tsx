@@ -109,7 +109,7 @@ export function LeftPanel({
           value={sku}
           onChange={e => onSkuChange(e.target.value)}
           placeholder="例如：W3372P314940"
-          disabled={isRunning}
+          disabled={isRunning || isFetching}
         />
       </div>
 

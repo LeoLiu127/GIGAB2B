@@ -27,25 +27,47 @@ export function ReferenceImages({
   const [fetched, setFetched] = useState(false);
   const [hovered, setHovered] = useState<{ index: number; rect: DOMRect } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // 代理拉图 AbortController — 切换 SKU 或卸载时取消正在飞的请求(B3 修复)
+  const proxyAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setProxyImages({});
     setFetched(false);
+    // SKU/market 切换时取消正在飞的代理 fetch,防止旧数据覆盖新 SKU state
+    proxyAbortRef.current?.abort();
+    proxyAbortRef.current = null;
   }, [sku, market]);
 
+  // 组件卸载时也取消
+  useEffect(() => {
+    return () => {
+      proxyAbortRef.current?.abort();
+      proxyAbortRef.current = null;
+    };
+  }, []);
+
   const fetchProxyImages = async () => {
+    // 取消上一次还在飞的代理请求
+    proxyAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    proxyAbortRef.current = ctrl;
     setFetching(true);
     try {
-      const res = await api.fetchImages(sku, market);
-      if (res.images) {
-        const map: Record<number, string> = {};
-        res.images.forEach((img) => { map[img.index] = img.dataUrl; });
-        setProxyImages(map);
-        setFetched(true);
-      }
+      const res = await api.fetchImages(sku, market, ctrl.signal);
+      // 如果请求期间被取消,res 可能是 undefined / 抛 AbortError
+      if (!res || !res.images) return;
+      const map: Record<number, string> = {};
+      res.images.forEach((img) => { map[img.index] = img.dataUrl; });
+      // 再次检查:如果用户在此期间切了 SKU,不要写回 state
+      if (ctrl.signal.aborted) return;
+      setProxyImages(map);
+      setFetched(true);
     } catch {
-      // silent fail
+      // silent fail (含 AbortError,这是正常的取消信号,不报警)
     } finally {
+      if (proxyAbortRef.current === ctrl) {
+        proxyAbortRef.current = null;
+      }
       setFetching(false);
     }
   };
