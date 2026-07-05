@@ -142,9 +142,9 @@ export default function App() {
     setError(null);
     // 不清空 fetchedProduct:让用户能看到前一次的抓取结果作底
     // 但清掉旧的 result(AI 部分)和 steps(进度),让 UI 干净
+    // generatedImages 不清空:换产品时保留已生成的图片(用户可对比不同产品的图)
     setResult(null);
     setSteps([{ step: "fetch", status: "running" }]);
-    setGeneratedImages([]);
 
     try {
       const res = await api.fetchProduct(sku.trim(), selectedMarket, ctrl.signal);
@@ -190,10 +190,15 @@ export default function App() {
     setIsOptimizing(true);
     setError(null);
     setResult(null);
+    // 清空受控文案副本,防止 SSE done 事件覆盖用户中途编辑(B1 修复)
+    setCopyTitle("");
+    setCopyBullets([]);
+    setCopyDescription("");
+    setCopySearchTerms("");
     // 重置 steps:之前 fetch 的 ok 行不要保留,避免和新的 ai_copy 行重复显示
     // (fetchedProduct 已经在 state 里,compare-block 上半部分继续显示原始侧)
+    // generatedImages 不清空:用户重跑优化时保留之前生成的图片(可对比多次结果)
     setSteps([{ step: "ai_copy", status: "running" }]);
-    setGeneratedImages([]);
 
     try {
       // SSE：每完成一步 onEvent 推送一条 step 事件，进度实时更新
@@ -325,10 +330,11 @@ export default function App() {
 
       if (res.success) {
         setGeneratedImages(prev => {
-          // 同 slot 替换旧的；不同 slot 追加
-          const filtered = prev.filter(g => g.slot !== res.slot);
+          // 累积保存：每次生成的图都追加到数组(用户可以多角度对比同 slot 的多次生成)
+          // 之前是"同 slot 替换旧的",会丢历史;后端 outputs/ 磁盘其实已经永久保存了,
+          // 前端只是不显示而已 — 现在让前端也保留历史
           return [
-            ...filtered,
+            ...prev,
             {
               slot: res.slot,
               image_url: res.image_url,
@@ -349,6 +355,11 @@ export default function App() {
   };
 
   const clearGenerated = () => setGeneratedImages([]);
+
+  // 单张删除 — 后端文件保留在 outputs/(不动磁盘),只从前端列表里移除
+  const handleDeleteGenerated = (img: GeneratedImage) => {
+    setGeneratedImages(prev => prev.filter(g => g !== img));
+  };
 
   return (
     <div style={S.root}>
@@ -374,6 +385,9 @@ export default function App() {
             // 换 SKU 时清空关键词 — 不同产品的关键词不能混(否则 AI 会因为产品/关键词不匹配而拒答)
             setKeywordsList([]);
             setKeywordsError(null);
+            // 取消可能正在飞的抓取,防止旧 SKU 的 fetch 后到达覆盖新 SKU state(B2 修复)
+            fetchAbortRef.current?.abort();
+            setIsFetching(false);
             // fetchedProduct 不清:用户可能只是微调 SKU,保留上次抓取结果作底;handleFetch 自己会覆盖
           }}
           templateFile={templateFile}
@@ -468,7 +482,7 @@ export default function App() {
 
               {/* 下:生成结果 — 占满剩余空间,默认至少 50% 高度,保证图片可见 */}
               <section style={{ flex: "1 1 55%", minHeight: 200, overflowY: "auto" }}>
-                <GeneratedGallery images={generatedImages} onClear={clearGenerated} />
+                <GeneratedGallery images={generatedImages} onClear={clearGenerated} onDelete={handleDeleteGenerated} />
               </section>
             </div>
           ) : (

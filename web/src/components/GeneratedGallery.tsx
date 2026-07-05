@@ -23,14 +23,13 @@ const SLOT_LABEL: Record<string, string> = {
   pt8: "辅图 8",
 };
 
-const SLOT_ORDER = ["main", "sub", "detail", "pt1", "pt2", "pt3", "pt4", "pt5", "pt6", "pt7", "pt8"];
-
 interface GeneratedGalleryProps {
   images: GeneratedImage[];
   onClear: () => void;
+  onDelete?: (img: GeneratedImage) => void;  // 累积保存后允许单张删除(可选)
 }
 
-export function GeneratedGallery({ images, onClear }: GeneratedGalleryProps) {
+export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGalleryProps) {
   const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
   const [hovered, setHovered] = useState<{ key: string; rect: DOMRect; url: string; label: string } | null>(null);
 
@@ -44,11 +43,9 @@ export function GeneratedGallery({ images, onClear }: GeneratedGalleryProps) {
     document.body.removeChild(a);
   };
 
-  const sorted = [...images].sort((a, b) => {
-    const ai = SLOT_ORDER.indexOf(a.slot);
-    const bi = SLOT_ORDER.indexOf(b.slot);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
+  // 排序:新生成的图排在最前(按 generatedAt 倒序);同 slot 内也是新的在前;
+  // 之前按 SLOT_ORDER 排,导致新生成的反而在后面,用户找最新的要扫整个列表
+  const sorted = [...images].sort((a, b) => b.generatedAt - a.generatedAt);
 
   return (
     <div>
@@ -105,6 +102,18 @@ export function GeneratedGallery({ images, onClear }: GeneratedGalleryProps) {
                   color: "#fff", fontSize: "10px", padding: "2px 6px", borderRadius: "2px",
                   fontWeight: 500,
                 }}>{label}</div>
+                {onDelete && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(img); }}
+                    title="删除这张"
+                    style={{
+                      position: "absolute", top: "4px", right: "32px",
+                      background: "rgba(198,40,40,0.85)", color: "#fff", border: "none",
+                      borderRadius: "2px", fontSize: "10px", cursor: "pointer",
+                      padding: "2px 6px", lineHeight: 1,
+                    }}
+                  >×</button>
+                )}
                 <button
                   onClick={() => handleDownload(img)}
                   title="下载"
