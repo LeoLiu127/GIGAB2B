@@ -649,15 +649,20 @@ def _sanitize_copy(parsed: dict) -> dict:
     1) 剥 <b> / <br> 等装饰性 HTML 标签
     2) 把 en-dash / em-dash 统一成 -
     3) 移除已知品牌词
-    4) bullets 元素额外去掉行首的 "•" / "-" / 数字 + "."
+    4) 字段开头额外去掉 "1." / "-" / "•" 等编号(B4 修复:之前只剥 bullets,search_terms 的 "1. xxx, 2. yyy" 残留)
     """
+    # 字段开头的编号标记(只匹配字段最开头一行,不破坏多段内容)
+    LEADING_NUMBERING = re.compile(r"^\s*(?:\d+\.\s+|[-•·●]\s+)")
+
     def clean(text: str) -> str:
         if not text:
             return text
         t = _strip_html_tags(text)
         t = _normalize_dashes(t)
         t = _remove_brand_words(t)
-        return t.strip()
+        # 字段开头的编号也剥掉(B4 修复)
+        t = LEADING_NUMBERING.sub("", t, count=1).strip()
+        return t
 
     out = dict(parsed)
     out["title"]        = clean(parsed.get("title", ""))
@@ -666,8 +671,6 @@ def _sanitize_copy(parsed: dict) -> dict:
     cleaned_bullets = []
     for b in parsed.get("bullets", []) or []:
         s = clean(str(b))
-        # 去掉行首的 "1. " / "- " / "• " / "· " 等编号
-        s = re.sub(r"^\s*(?:\d+\.\s+|[-•·●]\s+)", "", s).strip()
         if s:
             cleaned_bullets.append(s)
     out["bullets"] = cleaned_bullets
@@ -929,8 +932,13 @@ def _extract_ai_text(data: dict) -> str:
 
 
 def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 16384,
-                          max_retries: int = 2) -> dict:
+                          max_retries: int = 1, timeout: int = 180) -> dict:
     """本地调 AI 文案模型（移植自 image-studio/server.cjs）。
+
+    2026-07-05 调整:
+      - timeout 120 → 180 (给网络慢的 M3/Text-01 留 50% 余量)
+      - max_retries 2 → 1 (网络真不行时,1 次失败立即报错;不浪费 2 分钟串行 retry)
+      - sleep(1.5~2.0s) → sleep(0.5) (失败后短等 0.5s 再试)
 
     返回 { ok: bool, content?: str, error?: str, attempts?: int }
     """
@@ -954,14 +962,14 @@ def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 
     last_error = ""
     for attempt in range(1, max_retries + 1):
         try:
-            resp = requests.post(url, headers=headers, json=payload, timeout=120)
+            resp = requests.post(url, headers=headers, json=payload, timeout=timeout)
             if resp.status_code != 200:
                 err_text = (resp.text or "")[:500]
                 last_error = f"{model} API 错误: HTTP {resp.status_code}: {err_text}"
                 if resp.status_code in (429, 500, 502, 503, 504):
-                    # 可重试的状态码:等 1.5s 后重试
+                    # 可重试的状态码:短等 0.5s 后重试
                     import time
-                    time.sleep(1.5 * attempt)
+                    time.sleep(0.5)
                     continue
                 # 不可重试:4xx 业务错误
                 return {"ok": False, "error": last_error, "attempts": attempt}
@@ -970,14 +978,14 @@ def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 
             content = _extract_ai_text(data)
             if content and content.strip():
                 return {"ok": True, "content": content, "raw": data, "attempts": attempt}
-            # 空响应:可能是 reasoning 模型冷启动 / quota 抖动,等一下重试
-            last_error = "AI 返回空内容(reasoning 模型可能延迟返回,稍后重试)"
+            # 空响应:可能是 cold start / quota 抖动,短等 0.5s 后重试
+            last_error = "AI 返回空内容(冷启动或 quota 抖动,稍后重试)"
             if attempt < max_retries:
                 import time
-                time.sleep(2.0 * attempt)
+                time.sleep(0.5)
                 continue
         except requests.exceptions.Timeout:
-            last_error = f"{model} API 超时（120s）"
+            last_error = f"{model} API 超时({timeout}s)"
             if attempt < max_retries:
                 continue
         except Exception as e:
@@ -1014,30 +1022,19 @@ def ai_generate_copy(product: dict, market: str,
     if not gen["ok"]:
         attempts = gen.get("attempts", 1)
         raise RuntimeError(
-            f"MiniMax 生成失败(已重试 {attempts} 次): {gen.get('error', 'unknown')}"
+            f"MiniMax 生成失败: {gen.get('error', 'unknown')}"
         )
 
     # 兼容旧 image-studio 响应形态：包一层 { success, data } 再交给解析器
     wrapped = {"success": True, "data": gen["raw"]}
     parsed = _parse_copy_response(wrapped)
 
-    # 防御:检测到 finish_reason=length(被 max_tokens 裁断)且解析为空 → 重试一次,
-    # 重试时给 AI 一个补充指令:"直接给最终结果,不要再写 thinking 块"
-    raw_choices = (gen.get("raw") or {}).get("choices") or []
-    finish_reason = raw_choices[0].get("finish_reason") if raw_choices else None
-    is_empty = (
-        not (parsed.get("title") or "").strip()
-        and not (parsed.get("bullets") or [])
-        and not (parsed.get("description") or "").strip()
-        and not (parsed.get("search_terms") or "").strip()
-    )
-    if finish_reason == "length" and is_empty:
-        # 追加一句"直接给最终 JSON,不要 thinking"重试
-        retry_prompt = prompt + "\n\n## IMPORTANT (重试)\n上一次因 output 被裁断,请**不要输出任何 thinking 块**,直接用 ```json``` 输出最终 listing 结构。"
-        retry_gen = _generate_text_local(retry_prompt, model="minimax", max_tokens=16384)
-        if retry_gen.get("ok"):
-            wrapped = {"success": True, "data": retry_gen["raw"]}
-            parsed = _parse_copy_response(wrapped)
+    # 注:2026-07-04 fix #14 加的 finish_reason=length 嵌套重试(整个 _generate_text_local 再调一次)
+    # 反而成为慢/失败的根因 — M3 reasoning 模型在 30-90s 输出,length 重试又跑一遍同样慢,
+    # 用户反馈"调用大模型两次,之前没这问题"。删除该嵌套重试:
+    # - 修过 ENV(model) + 超时参数后,length 截断概率已经很低
+    # - 即使再 length,前端 ai_status=empty 立刻报错比"再等 60s 然后还是失败"更友好
+    # - 删了之后单次流水线 → 最多 1 次 AI 调用
 
     # 评估解析结果质量
     title_ok = bool((parsed.get("title") or "").strip())
@@ -1046,35 +1043,16 @@ def ai_generate_copy(product: dict, market: str,
     st_ok = bool((parsed.get("search_terms") or "").strip())
     filled = sum([title_ok, bullets_count > 0, desc_ok, st_ok])
 
-    # 检测 AI "拒答" — 输出元说明而非 listing 文案(常见于 AI 觉得产品/关键词不匹配想"诚实"提醒)
-    _REFUSAL_MARKERS = [
-        "amazon policy violation", "consumer harm", "legal risk", "seo waste",
-        "i cannot knowingly", "i should not proceed", "i won't create",
-        "this is a test of", "would be misleading", "the right thing to do",
-    ]
-    full_text = " ".join([
-        parsed.get("title", ""),
-        parsed.get("description", ""),
-        parsed.get("search_terms", ""),
-        " ".join(parsed.get("bullets", []) or []),
-    ]).lower()
-    is_refusal = any(marker in full_text for marker in _REFUSAL_MARKERS)
-
-    if is_refusal:
-        # 拒答 — 直接标记为 empty 并清空所有字段(避免脏数据进入前端)
-        parsed["_ai_status"] = "empty"
-        parsed["title"] = ""
-        parsed["bullets"] = []
-        parsed["description"] = ""
-        parsed["search_terms"] = ""
-        # 写到日志,方便排查
-        parsed["_ai_refusal_detected"] = True
-    elif filled == 4:
+    if filled == 4:
         parsed["_ai_status"] = "ok"
     elif filled == 0:
         parsed["_ai_status"] = "empty"
     else:
         parsed["_ai_status"] = "partial"
+
+    # 注:之前有 `_REFUSAL_MARKERS` 检测 AI "拒答"输出元说明的逻辑,经验证(2026-07-05 plan 验证 agent)
+    # 该逻辑在生产环境从未真正触发(21 份日志 0 次命中),且描述场景("Risiko" 误判)是错的,
+    # 已删除(由 finish_reason=length 重试逻辑覆盖该场景)。
 
     parsed["_ai_attempts"] = gen.get("attempts", 1)
 
