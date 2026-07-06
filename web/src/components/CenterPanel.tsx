@@ -16,6 +16,9 @@ interface CenterPanelProps {
   onBulletsChange: (v: string[]) => void;
   onDescriptionChange: (v: string) => void;
   onSearchTermsChange: (v: string) => void;
+  // Round2 fix Bug 3:变体共用同一原始标题时显示灰字提示
+  sharedTitle?: boolean;
+  sharedTitleVariantCount?: number;
 }
 
 export function CenterPanel({
@@ -32,6 +35,8 @@ export function CenterPanel({
   onBulletsChange,
   onDescriptionChange,
   onSearchTermsChange,
+  sharedTitle,
+  sharedTitleVariantCount,
 }: CenterPanelProps) {
   return (
     <section style={{ padding: "32px", overflowY: "auto", maxHeight: "calc(100vh - 77px)" }}>
@@ -78,19 +83,36 @@ export function CenterPanel({
       )}
 
       {(result || fetchedProduct) && (
-        <CopyEditor
-          result={result}
-          fetchedProduct={fetchedProduct}
-          isOptimizing={isOptimizing}
-          title={title}
-          bullets={bullets}
-          description={description}
-          searchTerms={searchTerms}
-          onTitleChange={onTitleChange}
-          onBulletsChange={onBulletsChange}
-          onDescriptionChange={onDescriptionChange}
-          onSearchTermsChange={onSearchTermsChange}
-        />
+        <>
+          {/* Round2 fix Bug 3:listing 多变体 + 共用同一原始标题 → 灰字提示 */}
+          {sharedTitle && sharedTitleVariantCount && sharedTitleVariantCount > 1 && (
+            <div style={{
+              margin: "0 0 12px",
+              padding: "8px 12px",
+              background: "#fafafa",
+              border: "1px dashed #d0d0d0",
+              borderRadius: "4px",
+              fontSize: "11px",
+              color: "#888",
+              lineHeight: 1.6,
+            }}>
+              此 listing 共 {sharedTitleVariantCount} 个变体,GIGA 共用同一原始标题;在下方「优化后」框可按变体覆写
+            </div>
+          )}
+          <CopyEditor
+            result={result}
+            fetchedProduct={fetchedProduct}
+            isOptimizing={isOptimizing}
+            title={title}
+            bullets={bullets}
+            description={description}
+            searchTerms={searchTerms}
+            onTitleChange={onTitleChange}
+            onBulletsChange={onBulletsChange}
+            onDescriptionChange={onDescriptionChange}
+            onSearchTermsChange={onSearchTermsChange}
+          />
+        </>
       )}
     </section>
   );
@@ -174,11 +196,13 @@ function CopyEditor({
   const showRetryHint = result != null && aiAttempts > 1;
 
   // v5:原始文案来源 — 优先 result(全流水线回传),其次 fetchedProduct(仅抓取时)
+  // Round2 fix Bug 4:用 fetchedProduct 优先 — result 来自最早 fetch 的 SKU,
+  // 切 variant 后是陈旧数据;只有当 fetchedProduct 没有原始字段时才回退到 result
   const originalTitle =
-    (result?.original_title ?? "") ||
-    (fetchedProduct?.product_name ?? "");
+    (fetchedProduct?.product_name ?? "") ||
+    (result?.original_title ?? "");
   const originalBulletsArr =
-    result?.original_bullets ?? fetchedProduct?.original_bullets ?? [];
+    fetchedProduct?.original_bullets ?? result?.original_bullets ?? [];
   const originalBulletsText = originalBulletsArr.length > 0
     ? "• " + originalBulletsArr.join("\n• ")
     : "";
@@ -254,6 +278,7 @@ function CopyEditor({
         )}
 
         {/* 抓取图片渲染已迁移到第三栏 — 中栏只承担文案编辑 */}
+
         {/* 字段 1: 产品标题 — 原始有内容 */}
         <CompareField
           name="产品标题"
@@ -321,7 +346,7 @@ function CopyEditor({
         />
       </div>
 
-      {/* 未上传模板时的浅绿提示条 */}
+      {/* 未上传模板 / 未支持平台 时的浅绿提示条 */}
       {result?.template_skipped && (
         <div style={{
           padding: "12px 14px",
@@ -333,7 +358,9 @@ function CopyEditor({
           lineHeight: 1.6,
           marginBottom: "20px",
         }}>
-          本次未使用 Amazon 模板，AI 文案已生成；如需填写 Amazon 模板，请上传后再运行一次。
+          {result.platform && result.platform !== "amazon"
+            ? `本次未填写模板：平台 ${result.platform} 暂未上线模板填写功能；AI 文案已生成。`
+            : "本次未使用 Amazon 模板，AI 文案已生成；如需填写 Amazon 模板，请上传后再运行一次。"}
         </div>
       )}
       {result && (

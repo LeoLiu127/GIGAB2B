@@ -18,6 +18,7 @@ import hashlib
 import random
 import string
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 加载 .env（giga_config 会加载，这里提前加载确保 keys 可用）
 try:
@@ -313,6 +314,218 @@ def giga_fetch_product(sku: str, market: str) -> dict:
     if not items:
         raise RuntimeError(f"GIGA API 返回空数据。HTTP={resp.status_code}, body={str(data)[:200]}")
     return items[0]
+
+
+def giga_fetch_products_bulk(skus: list, market: str) -> list:
+    """【新】批量 SKU 取数 — 与 giga_fetch_product 同一签名/限流,
+    唯一区别:返回 items 数组本身（不取 [0]）。截断到 200（GIGA 上限）。
+
+    注：GIGA 的 detailInfo/v1 接口对未加入收藏夹 / 无库存的 SKU 会返回 code=B20003
+    并跳过它,所以 response.data 长度可能小于 request.skus 长度 — 这是正常的。
+    调用方应按 sku 字段做 by_sku 映射,跳过缺失项即可。
+    """
+    if not skus:
+        return []
+    cid, sec = _get_giga_creds(market)
+    ts = int(time.time() * 1000)
+    nonce_val = _nonce()
+    uri = "/b2b-overseas-api/v1/buyer/product/detailInfo/v1"
+    sign = _sign(cid, sec, ts, nonce_val, uri)
+    try:
+        resp = requests.post(
+            f"{GIGA_BASE_URL}{uri}",
+            json={"skus": list(skus)[:200]},   # GIGA 上限 200,保险裁切
+            headers={
+                "Content-Type": "application/json",
+                "client-id": cid,
+                "timestamp": str(ts),
+                "nonce": nonce_val,
+                "sign": sign,
+            },
+            timeout=30,
+        )
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"GIGA API 请求失败: {e}")
+
+    if resp.status_code != 200:
+        raise RuntimeError(f"GIGA API 返回错误状态码 {resp.status_code}: {resp.text[:200]}")
+
+    try:
+        data = resp.json()
+    except ValueError:
+        raise RuntimeError(f"GIGA API 返回非 JSON: HTTP {resp.status_code} {resp.text[:200]}")
+
+    # GIGA 顶层 code 可能是 200(成功)或业务错误码(如 B20003 = 部分 SKU 不可查)
+    # 部分不可查时 data 仍可能含部分 item,这里宽松处理:data 是列表就返回
+    # 但要过滤掉 None / 空 dict(GIGA 在 B20003 时会返回 null 占位)
+    items = data.get("data") or []
+    if not isinstance(items, list):
+        return []
+    return [it for it in items if it and isinstance(it, dict) and it.get("sku")]
+
+
+def _assemble_variant_view(item: dict, is_main: bool) -> dict:
+    """把 GIGA 原始 item 装成统一 variant view 形态(供 listing 接口和内部统一使用)。"""
+    attrs = item.get("attributes") or {}
+    color = item.get("mainColor", "") or attrs.get("Main Color", "")
+    size = attrs.get("Size", "")
+    if not size:
+        size = f"{item.get('assembledLength','?')} x {item.get('assembledWidth','?')} x {item.get('assembledHeight','?')} cm"
+
+    if is_main:
+        label = "主SKU"
+    else:
+        parts = []
+        if color:
+            parts.append(f"颜色: {color}")
+        if size:
+            parts.append(f"尺寸: {size}")
+        label = " · ".join(parts) or (item.get("productName", "")[:30] or item.get("sku", ""))
+
+    return {
+        "sku": item.get("sku", ""),
+        "product_name": item.get("productName", "") or "",
+        "imageUrls": item.get("imageUrls") or [],
+        "image_count": len(item.get("imageUrls") or []),
+        "original_bullets": (item.get("characteristics") or [])[:5],
+        "mainColor": color,
+        "mainMaterial": item.get("mainMaterial", "") or attrs.get("Main Material", "") or attrs.get("Material", ""),
+        "texture": item.get("texture", "") or attrs.get("Texture", ""),
+        "size": size,
+        "attributes": attrs,
+        "is_main": is_main,
+        "label": label,
+    }
+
+
+def giga_fetch_listing(parent_sku: str, market: str, include_variants: bool = True) -> dict:
+    """【新】按 listing 拉取 — 返回主 SKU + 同 listing 全部变体。
+
+    Returns:
+    {
+      "parent_sku": "W3372P314940",
+      "market":     "DE_TAX",
+      "main":       {...原始 GIGA item...},
+      "variants":   [{..._assemble_variant_view...}, ...],   # 不含主 SKU
+      "combo_flag": False,
+      "combo_info": [...],
+      "warning":    None | "...",   # 批量失败或部分截断时填
+    }
+
+    变体发现顺序:
+      A. main.associateProductList (关联产品 SKU 集合) — 主路径
+      B. main.comboInfo[].sku      — combo 子品(若 comboFlag=True)
+
+    容错:
+      - 批量调用失败 → 返回 warning + 空 variants(不让整个请求 500)
+      - 单个 sibling SKU 不可查 → 静默跳过(log warning),不影响其它变体
+      - 截断到 199 siblings + 1 parent = 200(GIGA 上限)
+    """
+    # 1. 先单独取主 SKU(走原函数,签名兼容)
+    main_item = giga_fetch_product(parent_sku, market)
+
+    if not include_variants:
+        return {
+            "parent_sku": parent_sku,
+            "market": market,
+            "main": main_item,
+            "variants": [],
+            "combo_flag": bool(main_item.get("comboFlag", False)),
+            "combo_info": main_item.get("comboInfo") or [],
+            "warning": None,
+        }
+
+    # 2. 收集兄弟 SKU 来源
+    sibling_skus = []
+    assoc = main_item.get("associateProductList") or []
+    if isinstance(assoc, list):
+        sibling_skus.extend([s for s in assoc if isinstance(s, str) and s and s != parent_sku])
+
+    if main_item.get("comboFlag"):
+        for c in (main_item.get("comboInfo") or []):
+            sub_sku = c.get("sku") if isinstance(c, dict) else None
+            if sub_sku and sub_sku != parent_sku:
+                sibling_skus.append(sub_sku)
+
+    # 3. 去重、保持顺序、截断到 199 个 sibling(留 1 个给 parent,GIGA 上限 200)
+    seen = {parent_sku}
+    siblings = []
+    truncated = False
+    for s in sibling_skus:
+        if s not in seen:
+            seen.add(s)
+            siblings.append(s)
+            if len(siblings) >= 199:
+                truncated = True
+                break
+
+    warning = None
+    variants = []
+
+    if not siblings:
+        return {
+            "parent_sku": parent_sku,
+            "market": market,
+            "main": main_item,
+            "variants": [],
+            "combo_flag": bool(main_item.get("comboFlag", False)),
+            "combo_info": main_item.get("comboInfo") or [],
+            "warning": None,
+        }
+
+    # 4. 一次性批量取(1 + N) 个 SKU
+    all_skus = [parent_sku] + siblings
+    try:
+        items = giga_fetch_products_bulk(all_skus, market)
+    except Exception as e:
+        warning = f"bulk fetch failed: {e}"
+        print(f"[warn] giga_fetch_listing bulk 失败 ({e}), 降级返回单 SKU")
+        return {
+            "parent_sku": parent_sku,
+            "market": market,
+            "main": main_item,
+            "variants": [],
+            "combo_flag": bool(main_item.get("comboFlag", False)),
+            "combo_info": main_item.get("comboInfo") or [],
+            "warning": warning,
+        }
+
+    by_sku = {it.get("sku"): it for it in items if it.get("sku")}
+
+    # 5. 装配 variants(只装 sibling,不含主 SKU)
+    # 跳过 GIGA B20003 的 stub:productName 空 + 无图 + 无 attributes
+    skipped = []
+    for sib in siblings:
+        item = by_sku.get(sib)
+        if not item:
+            skipped.append(sib)
+            continue
+        is_stub = (
+            not (item.get("productName") or "").strip()
+            and not (item.get("imageUrls") or [])
+            and not (item.get("attributes") or {})
+        )
+        if is_stub:
+            skipped.append(sib)
+            continue
+        variants.append(_assemble_variant_view(item, is_main=False))
+
+    if skipped:
+        # 部分兄弟不可查(GIGA B20003) — 不影响显示,只在 warning 字段透出
+        print(f"[info] giga_fetch_listing 跳过 {len(skipped)} 个不可查 sibling: {skipped[:5]}{'...' if len(skipped) > 5 else ''}")
+
+    if truncated:
+        warning = f"listing 变体超过 199 个,已截断到 {len(variants)} 个变体"
+
+    return {
+        "parent_sku": parent_sku,
+        "market": market,
+        "main": main_item,
+        "variants": variants,
+        "combo_flag": bool(main_item.get("comboFlag", False)),
+        "combo_info": main_item.get("comboInfo") or [],
+        "warning": warning,
+    }
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -1094,40 +1307,8 @@ def ai_generate_copy(product: dict, market: str,
 
 TEMPLATE_DIR = os.path.dirname(__file__)
 
-MARKET_KEYWORDS = [
-    ("DE_TAX",     ["de", "german", "deutsch"]),
-    ("DE_TAXFREE", ["de-taxfree", "taxfree"]),
-    ("FR",         ["fr", "french", "franc"]),
-    ("US",         ["us", "america", "usa"]),
-    ("UK",         ["uk", "british", "england"]),
-]
-
-MARKET_TEMPLATES = {
-    "DE_TAX":     "PLANTER-de.xlsm",
-    "DE_TAXFREE": "PLANTER-de.xlsm",
-    "UK":         "PLANTER-uk.xlsm",
-    "US":         "PLANTER-us.xlsm",
-    "FR":         "PLANTER-fr.xlsm",
-}
-
-
-COL_MAP = {
-    "sku": 1, "product_type": 2, "sku2": 3, "product_name": 7,
-    "mpn": 20, "manufacturer": 21, "main_image": 24,
-    "bullet1": 41, "bullet2": 42, "bullet3": 43, "bullet4": 44, "bullet5": 45,
-    "search_terms": 46,
-    "style": 52, "material": 53, "item_count": 58, "color": 60,
-    "length": 104, "length_unit": 105, "height": 106, "height_unit": 107,
-    "width": 108, "width_unit": 109,
-    "weight": 115, "weight_unit": 116,
-    "country": 219,
-    "pkg_length": 175, "pkg_length_unit": 176,
-    "pkg_width": 177, "pkg_width_unit": 178,
-    "pkg_height": 179, "pkg_height_unit": 180,
-    "pkg_weight": 181, "pkg_weight_unit": 182,
-    "pdf": 271,
-    "description": 40,
-}
+# 模板 / 市场配置（已下沉到 templates_catalog.py；此处只保留 view 以兼容历史 import 路径）
+from templates_catalog import MARKET_KEYWORDS, MARKET_TEMPLATES  # noqa: F401
 
 
 def _safe_float(val, default=0.0):
@@ -1155,18 +1336,38 @@ def _detect_market_from_template(filepath: str) -> str | None:
     return None
 
 
-def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, row: int = 7, image_strategy: str = "use_giga", image_overrides: dict | None = None) -> str:
-    """将产品数据 + AI 优化写入 Excel，返回输出文件路径。
+def _resolve_template(market: str, template_name: str | None = None) -> tuple:
+    """解析当前请求应当使用的模板描述符 + 模板文件路径。
 
-    image_overrides: { "main": "/outputs/xxx.jpg", "pt1": "/outputs/yyy.jpg", ... }
-                    缺失的槽位用 GIGA 原图。
+    返回 (TemplateDescriptor, template_path) 元组。
+    找不到模板文件抛 FileNotFoundError —— 这与历史行为一致（让调用方走 template_skipped 兜底）。
     """
-    template_path = os.path.join(TEMPLATE_DIR, template_name)
+    from templates_catalog import (
+        get_descriptor as _get_desc,
+        template_file_for_market,
+        AMAZON_PLANTER,
+    )
+
+    # 当前仅 amazon/planter，已注册。后续若加非亚马逊平台，按 platform 分支即可。
+    descriptor = _get_desc(platform="amazon", category="PLANTER", market=market) or AMAZON_PLANTER
+
+    file_name = template_name or template_file_for_market(market) or "PLANTER-de.xlsm"
+    template_path = os.path.join(TEMPLATE_DIR, file_name)
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"模板文件不存在: {template_path}")
+    return descriptor, template_path
 
-    wb = openpyxl.load_workbook(template_path, keep_vba=True)
-    ws = wb["Vorlage"]
+
+def _write_excel_row(ws, descriptor, product: dict, ai_result: dict, market: str, image_strategy: str, image_overrides: dict | None) -> None:
+    """按 descriptor 把一行数据写入 ws。
+
+    本函数原样保留 [f.app.py] fill_excel 的写入语义（包括包材算法、image override 槽位、
+    search_terms fallback、5 条关键卖点 lang 切换、image_strategy 注释等）。
+    """
+    from templates_catalog import packaging_for
+
+    cmap = descriptor.col_map
+    row = descriptor.data_row
 
     def w(col: int, val):
         ws.cell(row=row, column=col, value=val)
@@ -1175,8 +1376,9 @@ def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, 
     color = attrs.get("Main Color") or product.get("mainColor") or product.get("colorMap") or ""
     imgs  = product.get("imageUrls") or []
 
-    # 槽位顺序：main, pt1..pt8
-    slot_names = ["main", "pt1", "pt2", "pt3", "pt4", "pt5", "pt6", "pt7", "pt8"]
+    # 槽位顺序：main, pt1..ptN-1（slot_count 由 descriptor 决定）
+    slot_count = descriptor.image_slot_count
+    slot_names = ["main"] + [f"pt{i}" for i in range(1, slot_count)]
     overrides = image_overrides or {}
     slot_urls: list[str] = []
     for i, name in enumerate(slot_names):
@@ -1187,111 +1389,101 @@ def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, 
         else:
             slot_urls.append("")
 
-    w(COL_MAP["sku"],             product.get("sku", ""))
-    w(COL_MAP["product_type"],   "PLANTER")
-    w(COL_MAP["sku2"],           "full_update")
-    w(COL_MAP["product_name"],   ai_result.get("title") or product.get("productName", ""))
-    w(COL_MAP["mpn"],            product.get("mpn", ""))
-    w(COL_MAP["manufacturer"],   "YUDA HOME FURNITURE")
+    # 顶部 SKU/产品类型/sku2/product_name/mpn/manufacturer
+    w(cmap["sku"],            product.get("sku", ""))
+    w(cmap["product_type"],   descriptor.fixed_values["product_type"])
+    w(cmap["sku2"],           descriptor.fixed_values["sku2"])
+    w(cmap["product_name"],   ai_result.get("title") or product.get("productName", ""))
+    w(cmap["mpn"],            product.get("mpn", ""))
+    w(cmap["manufacturer"],   descriptor.fixed_values["manufacturer"])
 
+    # 图片：main + 后续 slot
     if slot_urls and slot_urls[0]:
-        w(COL_MAP["main_image"], slot_urls[0])
-    for i, url in enumerate(slot_urls[1:9], start=25):
+        w(cmap["main_image"], slot_urls[0])
+    pt_start_col = descriptor.image_slot_start + 1  # main 已在列 image_slot_start
+    for offset, url in enumerate(slot_urls[1:slot_count]):
         if url:
-            w(i, url)
+            w(pt_start_col + offset, url)
 
+    # Bullets（5 条，列号由 descriptor.bullet_cols 决定）
     bullets = ai_result.get("bullets") or product.get("characteristics", [])[:5]
-    w(COL_MAP["bullet1"], bullets[0] if len(bullets) > 0 else "")
-    w(COL_MAP["bullet2"], bullets[1] if len(bullets) > 1 else "")
-    w(COL_MAP["bullet3"], bullets[2] if len(bullets) > 2 else "")
-    w(COL_MAP["bullet4"], bullets[3] if len(bullets) > 3 else "")
-    w(COL_MAP["bullet5"], bullets[4] if len(bullets) > 4 else "")
+    for idx, col in enumerate(descriptor.bullet_cols):
+        w(col, bullets[idx] if idx < len(bullets) else "")
 
+    # Search terms + 三语种 fallback
     st = (ai_result.get("search_terms") or "").strip()
     if not st:
         mat = product.get("mainMaterial", "")
-        kw_map = {
-            "DE": ["Hochbeet Metall", "Pflanzenbeet", "Gartenbeet", "Gemüsebeet", "Kräuterbeet", "Rostfrei", "Blumenbeet", mat, color],
-            "EN": ["raised garden bed", "metal planter", "garden bed", "flower pot", "galvanized steel", "outdoor planter", mat, color],
-            "FR": ["jardiiniere metal", "bac a fleurs", "lit surleve", "potager", "acier galvanise", "jardin", mat, color],
-        }
         market_lang = MARKET_NAMES.get(market, ("Amazon", "EN"))[1]
-        fallback = " ".join([k for k in kw_map.get(market_lang, kw_map["EN"]) if k])
+        base_words = list(descriptor.search_terms_fallback_by_lang.get(market_lang) or
+                          descriptor.search_terms_fallback_by_lang.get("EN", []))
+        fallback = " ".join([k for k in (base_words + [mat, color]) if k])
         st = fallback
-    w(COL_MAP["search_terms"], st)
+    w(cmap["search_terms"], st)
 
-    w(COL_MAP["description"], ai_result.get("description") or "")
+    # Description
+    w(cmap["description"], ai_result.get("description") or "")
 
-    _special_attrs_de = [
-        "Robustes Stahlblech mit Zink-Aluminium Beschichtung",
-        "Wetterfest und Rostschutz",
-        "Einfache Montage, Bausatz ohne Boden",
-        "Offenes Design für freies Wurzelwachstum",
-        "Ideal für Gemüse, Kräuter und Blumen",
-    ]
-    special_attrs = {
-        "DE_TAX": _special_attrs_de,
-        "DE_TAXFREE": _special_attrs_de,
-        "UK": [
-            "Robust galvanized steel with zinc-aluminium coating",
-            "Weatherproof and rust-resistant",
-            "Easy assembly, base-less kit",
-            "Open base design for free root growth",
-            "Ideal for vegetables, herbs, and flowers",
-        ],
-        "US": [
-            "Heavy-duty galvanized steel with zinc-aluminium coating",
-            "Weatherproof and rust-resistant",
-            "Easy assembly, base-less kit",
-            "Open base design for free root growth",
-            "Ideal for vegetables, herbs, and flowers",
-        ],
-        "FR": [
-            "Acier galvanise robuste avec revetement zinc-aluminium",
-            "Resistant aux intemperies et a la rouille",
-            "Montage facile, kit sans fond",
-            "Conception a fond ouvert pour une croissance libre des racines",
-            "Ideal pour legumes, herbes et fleurs",
-        ],
-    }.get(market, _special_attrs_de)
-    for i, attr in enumerate(special_attrs, start=47):
-        w(i, attr)
+    # Special attributes 5 条（按 market 取）
+    special_attrs = descriptor.special_attrs_by_market.get(
+        market,
+        descriptor.special_attrs_by_market["DE_TAX"],
+    )
+    for idx, col in enumerate(descriptor.special_attr_cols):
+        w(col, special_attrs[idx] if idx < len(special_attrs) else "")
 
-    w(COL_MAP["style"],    attrs.get("Product Style", "Casual,Classic,Farmhouse"))
-    w(COL_MAP["material"], product.get("mainMaterial", "Metal"))
-    w(COL_MAP["color"],    color)
-    w(COL_MAP["item_count"], 1)
+    # 常规属性
+    w(cmap["style"],      attrs.get("Product Style", "Casual,Classic,Farmhouse"))
+    w(cmap["material"],   product.get("mainMaterial", "Metal"))
+    w(cmap["color"],      color)
+    w(cmap["item_count"], 1)
 
+    # 尺寸 + 重量
     length = _safe_float(product.get("assembledLength"))
     width  = _safe_float(product.get("assembledWidth"))
     height = _safe_float(product.get("assembledHeight"))
-    w(COL_MAP["length"],  length);  w(COL_MAP["length_unit"],  "cm")
-    w(COL_MAP["height"], height);  w(COL_MAP["height_unit"],  "cm")
-    w(COL_MAP["width"],   width);  w(COL_MAP["width_unit"],   "cm")
+    w(cmap["length"], length);  w(cmap["length_unit"], "cm")
+    w(cmap["height"], height);  w(cmap["height_unit"], "cm")
+    w(cmap["width"],  width);   w(cmap["width_unit"],  "cm")
 
     weight = _safe_float(product.get("weightKg"))
-    w(COL_MAP["weight"], weight); w(COL_MAP["weight_unit"], "kg")
+    w(cmap["weight"], weight);  w(cmap["weight_unit"], "kg")
 
-    w(COL_MAP["country"], product.get("placeOfOrigin", "China"))
+    # Country（保持历史默认值 "China"）
+    w(cmap["country"], product.get("placeOfOrigin") or descriptor.fixed_values.get("country", "China"))
 
-    pkg_l = round(116 / 2, 1)
-    pkg_w = round(30  / 2, 1)
-    pkg_h = round(5.5 * 4, 1)
-    pkg_wt = round(weight / 2, 1)
-    w(COL_MAP["pkg_length"],  pkg_l); w(COL_MAP["pkg_length_unit"],  "cm")
-    w(COL_MAP["pkg_width"],   pkg_w); w(COL_MAP["pkg_width_unit"],   "cm")
-    w(COL_MAP["pkg_height"],  pkg_h); w(COL_MAP["pkg_height_unit"],  "cm")
-    w(COL_MAP["pkg_weight"], pkg_wt); w(COL_MAP["pkg_weight_unit"], "kg")
+    # 包材（按品类 descriptor 决定算法；权重参与计算）
+    pkg_l, pkg_w, pkg_h, pkg_wt = packaging_for(descriptor.category, weight)
+    w(cmap["pkg_length"], pkg_l); w(cmap["pkg_length_unit"], "cm")
+    w(cmap["pkg_width"],  pkg_w); w(cmap["pkg_width_unit"],  "cm")
+    w(cmap["pkg_height"], pkg_h); w(cmap["pkg_height_unit"], "cm")
+    w(cmap["pkg_weight"], pkg_wt); w(cmap["pkg_weight_unit"], "kg")
 
+    # PDF 附件
     file_urls = product.get("fileUrls") or []
     if file_urls:
-        w(COL_MAP["pdf"], file_urls[0])
+        w(cmap["pdf"], file_urls[0])
 
+    # image_strategy 注释
     if image_strategy != "use_giga":
-        ws.cell(row=row, column=24).comment = openpyxl.comments.Comment(
+        ws.cell(row=row, column=cmap["main_image"]).comment = openpyxl.comments.Comment(
             f"图片策略: {image_strategy} | AI 生成图片请在 image-studio 中下载后上传到 Seller Central",
             "GIGAB2B",
         )
+
+
+def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, row: int = 7, image_strategy: str = "use_giga", image_overrides: dict | None = None) -> str:
+    """将产品数据 + AI 优化写入 Excel，返回输出文件路径。
+
+    本期重构为三段式：resolve → write_row → save。
+    image_overrides: { "main": "/outputs/xxx.jpg", "pt1": "/outputs/yyy.jpg", ... }
+                    缺失的槽位用 GIGA 原图。
+    """
+    descriptor, template_path = _resolve_template(market, template_name)
+    wb = openpyxl.load_workbook(template_path, keep_vba=True)
+    ws = wb[descriptor.sheet_name]
+
+    _write_excel_row(ws, descriptor, product, ai_result, market, image_strategy, image_overrides)
 
     out_name = f"{product.get('sku','output')}-{market}.xlsm"
     out_path = os.path.join(TEMPLATE_DIR, out_name)
@@ -1476,6 +1668,17 @@ def list_markets():
     return jsonify(result)
 
 
+@app.route("/api/platforms", methods=["GET"])
+def list_platforms():
+    """列出已支持 / 占位中的平台，用于前端下拉选择。
+
+    返回 { platform_name: supported } —— supported=true 表示 fill 已实现,
+    false 表示仅占位(前端显示「敬请期待」,后端走 template_skipped 兜底)。
+    """
+    from templates_catalog import PLATFORM_STATUS, is_platform_supported
+    return jsonify({p: is_platform_supported(p) for p in PLATFORM_STATUS.keys()})
+
+
 @app.route("/api/detect-market", methods=["POST"])
 def detect_market():
     """从 SKU / 模板文件名 / 产品数据自动检测市场。"""
@@ -1510,6 +1713,15 @@ def run_pipeline():
     market = data.get("market", "DE_TAX")
     template_name = data.get("template_filename", "")
     image_strategy = data.get("image_strategy", "use_giga")
+    # 平台标识(amazon 已实现；walmart/wayfair 仅占位,未支持则强制 template_skipped)
+    from templates_catalog import is_platform_supported
+    platform = (data.get("platform") or "amazon").strip().lower() or "amazon"
+    if not is_platform_supported(platform):
+        # 未支持平台:无论用户是否上传模板,都跳过第 3 步
+        template_name = ""  # 强制走 skipped 路径
+        force_template_skipped = True
+    else:
+        force_template_skipped = False
     # 优化输入(v4 新增,前后端都不传时按空处理,不影响老调用方)
     prompt_extra = (data.get("prompt_extra") or "").strip()
     raw_keywords = data.get("keywords") or []
@@ -1528,8 +1740,9 @@ def run_pipeline():
 
     # 用户没传模板 AND 该市场 fallback 文件也不在磁盘上 → 第 3 步直接跳过
     # 如果用户主动传了模板但磁盘上没有,fill_excel 仍会抛错(那是真错误,不该被掩盖)
-    template_skipped = (not data.get("template_filename")) and not os.path.exists(
-        os.path.join(TEMPLATE_DIR, template_name)
+    template_skipped = force_template_skipped or (
+        (not data.get("template_filename"))
+        and not os.path.exists(os.path.join(TEMPLATE_DIR, template_name))
     )
 
     # 必须延迟 stream 初始化到确定有数据要发之后 — 一些 wsgi 服务器会丢弃空响应
@@ -1620,6 +1833,7 @@ def run_pipeline():
                     "image_count": len(product.get("imageUrls") or []),
                     "output_file": os.path.basename(out_path) if out_path else "",
                     "template_skipped": template_skipped,
+                    "platform": platform,
                     "mainColor": product.get("attributes", {}).get("Main Color") or product.get("mainColor") or "",
                     "mainMaterial": product.get("mainMaterial", ""),
                     "texture": product.get("texture", ""),
@@ -1904,9 +2118,96 @@ def fetch_product():
     })
 
 
+@app.route("/api/fetch-listing", methods=["POST"])
+def fetch_listing():
+    """抓取一个 listing 的全部变体 — 「抓取数据」按钮的增强版。
+
+    请求体:
+    {
+        "sku":     "W3372P314940",       # 必填,任一 listing 内 SKU
+        "market":  "DE_TAX",            # 默认 DE_TAX
+        "include_variants": true         # 默认 true;false 时退化为 /api/fetch-product
+    }
+
+    返回 (顶层字段与 FetchedProduct 同形,向后兼容;另含 listing 扩展):
+    {
+        "success":        true,
+        "parent_sku":     "W3372P314940",
+        "market":         "DE_TAX",
+        "variant_count":  3,                  # variants[] 长度(含主 SKU)
+        "active_variant": {...},             # 默认 = variants[0](主 SKU),让 CenterPanel 无需改
+        "variants": [
+            {"sku": "W3372P314940", "is_main": true,  "label": "主SKU",       ...},
+            {"sku": "W3372P314936", "is_main": false, "label": "颜色: Black",  ...},
+            ...
+        ],
+        # 顶层向后兼容字段(等于 active_variant 内容,让前端原 FetchedProduct 消费路径仍工作)
+        "sku":             "W3372P314940",
+        "product_name":    "...",
+        "imageUrls":       [...],
+        "image_count":     9,
+        "original_bullets":[...],
+        "mainColor":       "...",
+        "mainMaterial":    "...",
+        "texture":         "...",
+        "size":            "...",
+        "attributes":      {...},
+        # listing 扩展
+        "combo_flag":      false,
+        "warning":         null | "...",
+    }
+    """
+    data = request.json or {}
+    sku = (data.get("sku") or "").strip()
+    market = data.get("market", "DE_TAX")
+    include_variants = bool(data.get("include_variants", True))
+
+    if not sku:
+        return jsonify({"error": "SKU 不能为空"}), 400
+
+    try:
+        listing = giga_fetch_listing(sku, market, include_variants=include_variants)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    main = listing["main"]
+    # variants_view = [主 SKU, ...兄弟变体]
+    variants_view = [_assemble_variant_view(main, is_main=True)]
+    for v in listing.get("variants") or []:
+        # v 已经是 _assemble_variant_view 输出;但为了保持原始 main 用 _assemble_variant_view 重装一次确保一致
+        # 这里直接复用 v (它已经是正确形态)
+        variants_view.append(v)
+
+    active = variants_view[0]
+    image_urls = active.get("imageUrls") or []
+
+    return jsonify({
+        "success":         True,
+        "parent_sku":      listing["parent_sku"],
+        "market":          market,
+        "variant_count":   len(variants_view),
+        "active_variant":  active,
+        "variants":        variants_view,
+        # 顶层向后兼容字段(等于 active_variant 内容)
+        "sku":             active["sku"],
+        "product_name":    active["product_name"],
+        "imageUrls":       image_urls,
+        "image_count":     len(image_urls),
+        "original_bullets":active["original_bullets"],
+        "mainColor":       active.get("mainColor", "") or "",
+        "mainMaterial":    active.get("mainMaterial", "") or "",
+        "texture":         active.get("texture", "") or "",
+        "size":            active.get("size", "") or "",
+        "attributes":      active.get("attributes") or {},
+        # listing 扩展
+        "combo_flag":      listing.get("combo_flag", False),
+        "warning":         listing.get("warning"),
+    })
+
+
 @app.route("/api/fetch-images", methods=["POST"])
 def fetch_images():
-    """获取 GIGA 产品图片（proxy 代理，返回 data URL）"""
+    """获取 GIGA 产品图片(proxy 代理,返回 data URL)— 9 张并发下载 (Round2 fix Bug 2)"""
     data = request.json or {}
     sku = (data.get("sku") or "").strip()
     market = data.get("market", "DE_TAX")
@@ -1919,22 +2220,48 @@ def fetch_images():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-    raw_urls = product.get("imageUrls") or []
-    result = []
-    for i, url in enumerate(raw_urls[:9]):
+    raw_urls = (product.get("imageUrls") or [])[:9]
+    results: list[dict | None] = [None] * len(raw_urls)
+
+    def fetch_one(i: int, url: str) -> tuple[int, dict]:
         proxied = _proxy_image(url)
-        result.append({
+        return i, {
             "index": i,
             "originalUrl": url,
             "dataUrl": proxied or url,
-            "label": f"图片 {i + 1}" if i > 0 else "主图",
-        })
+            "label": "主图" if i == 0 else f"图片 {i + 1}",
+        }
+
+    # max_workers = min(len(raw_urls), 9) — 9 张最多 9 worker,避免过度开线程
+    with ThreadPoolExecutor(max_workers=max(1, min(len(raw_urls), 9))) as ex:
+        futures = [ex.submit(fetch_one, i, url) for i, url in enumerate(raw_urls)]
+        for fut in as_completed(futures):
+            try:
+                i, payload = fut.result(timeout=35)  # 单张兜底 35s
+                results[i] = payload
+            except Exception:
+                # 单张失败不阻塞整体;占位 None 后面过滤掉
+                continue
+
+    # 任何一张失败的也补一个空槽(index + originalUrl),前端不至于 undefined
+    images = []
+    for i, url in enumerate(raw_urls):
+        if results[i] is not None:
+            images.append(results[i])
+        else:
+            images.append({
+                "index": i,
+                "originalUrl": url,
+                "dataUrl": url,
+                "label": "主图" if i == 0 else f"图片 {i + 1}",
+                "failed": True,
+            })
 
     return jsonify({
         "success": True,
         "sku": sku,
         "market": market,
-        "images": result,
+        "images": images,
     })
 
 

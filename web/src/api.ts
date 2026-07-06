@@ -107,6 +107,14 @@ export const api = {
     return request<Record<string, { name: string; lang: string; has_creds: boolean }>>("/markets", { signal: opts?.signal });
   },
 
+  /**
+   * 获取平台注册表(amazon / walmart / wayfair)。
+   * 返回 { platform_name: supported } — false 的平台只展示在 UI 占位,后端走 template_skipped。
+   */
+  listPlatforms(opts?: { signal?: AbortSignal }) {
+    return request<Record<string, boolean>>("/platforms", { signal: opts?.signal });
+  },
+
   detectMarket(body: { template_filename?: string; sku?: string }) {
     return request<{ market: string; name: string; lang: string; source: string }>("/detect-market", {
       method: "POST",
@@ -145,7 +153,7 @@ export const api = {
     imageStrategy: string = "use_giga",
     onEvent?: (e: Record<string, unknown>) => void,
     externalSignal?: AbortSignal,
-    extra?: { prompt_extra?: string; keywords?: string[] },
+    extra?: { prompt_extra?: string; keywords?: string[]; platform?: string },
   ) {
     return request<{
       type: "done";
@@ -162,6 +170,7 @@ export const api = {
         image_strategy: imageStrategy,
         prompt_extra: extra?.prompt_extra ?? "",
         keywords: extra?.keywords ?? [],
+        platform: extra?.platform ?? "amazon",
       }),
       // 流式：AI 文案单步可到 50s+，给 5 分钟兜底，远大于实际可能耗时
       timeout: 300_000,
@@ -222,6 +231,27 @@ export const api = {
       body: JSON.stringify({ sku, market }),
       timeout: 30_000,
       signal,
+    });
+  },
+
+  fetchListing(
+    sku: string,
+    market: string,
+    opts?: { includeVariants?: boolean; signal?: AbortSignal }
+  ) {
+    // 「抓取数据」按钮的增强版:同时拉取同 Listing 全部变体(颜色 / 尺寸)
+    // 后端 /api/fetch-listing 返回 ListingFetchedProduct(含 variants[] + active_variant)
+    // active_variant 字段与原 FetchedProduct 同形,CenterPanel / ReferenceImages 不需要改
+    return request<import("./types").ListingFetchedProduct>("/fetch-listing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sku,
+        market,
+        include_variants: opts?.includeVariants ?? true,
+      }),
+      timeout: 30_000,
+      signal: opts?.signal,
     });
   },
 };

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "./api";
-import type { PipelineResult, ServerStatus, MarketInfo, FetchedProduct } from "./types";
+import type { PipelineResult, ServerStatus, MarketInfo, FetchedProduct, ListingFetchedProduct, VariantView } from "./types";
 import { Header } from "./components/Header";
 import { LeftPanel } from "./components/LeftPanel";
 import { CenterPanel } from "./components/CenterPanel";
@@ -41,6 +41,18 @@ export default function App() {
   const [isFetching, setIsFetching] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
 
+  // v6:listing 多 variant 支持 — 整 listing 拉数 + 用户选 variant
+  const [listing, setListing] = useState<ListingFetchedProduct | null>(null);
+  const [activeVariantSku, setActiveVariantSku] = useState<string>("");
+  const [includeVariants, setIncludeVariants] = useState<boolean>(true);
+
+  // Round2 fix Bug 3:派生"是否共用同一标题" — listing 多 variant 且所有 product_name 相同时为 true
+  const listingVariants = listing?.variants ?? [];
+  const allVariantNamesEqual =
+    listingVariants.length > 1 &&
+    listingVariants.every(v => v.product_name === listingVariants[0].product_name);
+  const sharedTitleCount = listingVariants.length;
+
   // AI 生图状态
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [uploadedDataUrls, setUploadedDataUrls] = useState<string[]>([]);
@@ -63,6 +75,12 @@ export default function App() {
   const [keywordsError, setKeywordsError] = useState<string | null>(null);
   const [keywordsBusy, setKeywordsBusy] = useState(false);
 
+  // 平台选择(amazon 已上线；walmart / wayfair 仅占位,前端硬编码可见集合以保持冷启动体验)
+  const [platform, setPlatform] = useState("amazon");
+  const [supportedPlatforms, setSupportedPlatforms] = useState<Record<string, boolean>>({
+    amazon: true, walmart: false, wayfair: false,
+  });
+
   // 流水线 AbortController：用于切换市场/重跑时取消正在进行的 SSE（致命 F-6 修复）
   const pipelineAbortRef = useRef<AbortController | null>(null);
   // 抓取数据按钮的 AbortController（与 AI 流式分两套，避免互相干扰）
@@ -75,6 +93,10 @@ export default function App() {
     const ctrl = new AbortController();
     api.getStatus({ signal: ctrl.signal }).then(setServerStatus).catch(() => {});
     api.listMarkets({ signal: ctrl.signal }).then(setMarkets).catch(() => {});
+    // 拉取平台状态(决定 LeftPanel 哪些平台可选/可填表)
+    api.listPlatforms({ signal: ctrl.signal })
+      .then((m) => setSupportedPlatforms(m))
+      .catch(() => { /* 失败则保留默认全 false(只在调试工具中提示) */ });
     // 组件卸载时:取消所有进行中的请求 + 标记未挂载
     return () => {
       mountedRef.current = false;
@@ -92,6 +114,9 @@ export default function App() {
     setSelectedIndices(new Set());
     // 切市场时清空抓取结果,避免上一 SKU 的原始残留
     setFetchedProduct(null);
+    // v6:切市场时清空 listing 状态,避免跨市场残留 variant
+    setListing(null);
+    setActiveVariantSku("");
   };
 
   const handleTemplateUpload = async (file: File) => {
@@ -146,14 +171,109 @@ export default function App() {
     setResult(null);
     setSteps([{ step: "fetch", status: "running" }]);
 
+    // v6:每次新抓取都清掉旧 listing 与 activeVariant — 不能让旧 SKU 的 variants 残留
+    setListing(null);
+    setActiveVariantSku("");
+
     try {
-      const res = await api.fetchProduct(sku.trim(), selectedMarket, ctrl.signal);
+      // v6:主路径走 fetchListing(同时拉整 listing 的变体);失败时降级到 fetchProduct(单 SKU)
+      let res: ListingFetchedProduct;
+      try {
+        res = await api.fetchListing(sku.trim(), selectedMarket, {
+          includeVariants,
+          signal: ctrl.signal,
+        });
+      } catch (listingErr) {
+        if (ctrl.signal.aborted) throw listingErr; // 用户主动取消,不降级
+        // 降级:回退到老接口,确保即使 listing 接口有问题仍能单 SKU 工作
+        if (mountedRef.current) {
+          console.warn("[fetch] fetchListing 失败,降级到 fetchProduct:", listingErr);
+          const fallback = await api.fetchProduct(sku.trim(), selectedMarket, ctrl.signal);
+          if (!mountedRef.current || ctrl.signal.aborted) return;
+          // 把 fallback 包装成 ListingFetchedProduct(variants 只含主 SKU)
+          const listingFallback: ListingFetchedProduct = {
+            success: true,
+            parent_sku: fallback.sku,
+            market: fallback.market,
+            variant_count: 1,
+            variants: [{
+              sku: fallback.sku,
+              product_name: fallback.product_name,
+              imageUrls: fallback.imageUrls,
+              image_count: fallback.image_count,
+              original_bullets: fallback.original_bullets,
+              mainColor: fallback.mainColor,
+              mainMaterial: fallback.mainMaterial,
+              texture: fallback.texture,
+              size: fallback.size,
+              attributes: fallback.attributes,
+              is_main: true,
+              label: "主SKU",
+            }],
+            active_variant: {
+              sku: fallback.sku,
+              product_name: fallback.product_name,
+              imageUrls: fallback.imageUrls,
+              image_count: fallback.image_count,
+              original_bullets: fallback.original_bullets,
+              mainColor: fallback.mainColor,
+              mainMaterial: fallback.mainMaterial,
+              texture: fallback.texture,
+              size: fallback.size,
+              attributes: fallback.attributes,
+              is_main: true,
+              label: "主SKU",
+            },
+            sku: fallback.sku,
+            product_name: fallback.product_name,
+            imageUrls: fallback.imageUrls,
+            image_count: fallback.image_count,
+            original_bullets: fallback.original_bullets,
+            mainColor: fallback.mainColor,
+            mainMaterial: fallback.mainMaterial,
+            texture: fallback.texture,
+            size: fallback.size,
+            attributes: fallback.attributes,
+            combo_flag: false,
+            warning: `listing 接口失败,降级为单 SKU: ${listingErr instanceof Error ? listingErr.message : String(listingErr)}`,
+          };
+          setListing(listingFallback);
+          setActiveVariantSku(fallback.sku);
+          setFetchedProduct(fallback);
+          setSteps((prev) => prev.map(s =>
+            s.step === "fetch" && s.status === "running"
+              ? { ...s, status: "ok", product_name: (fallback.product_name || "").slice(0, 80), variant_count: 1 }
+              : s
+          ));
+          return;
+        }
+        throw listingErr;
+      }
+
       if (!mountedRef.current || ctrl.signal.aborted) return;
-      setFetchedProduct(res);
+      setListing(res);
+      setActiveVariantSku(res.active_variant.sku);
+
+      // 把 active_variant 扁平化为 FetchedProduct(向后兼容 — CenterPanel/ReferenceImages 不用改)
+      const v = res.active_variant;
+      setFetchedProduct({
+        success: true,
+        sku: v.sku,
+        market: res.market,
+        product_name: v.product_name,
+        original_bullets: v.original_bullets,
+        imageUrls: v.imageUrls,
+        image_count: v.image_count,
+        attributes: v.attributes,
+        mainColor: v.mainColor,
+        mainMaterial: v.mainMaterial,
+        texture: v.texture,
+        size: v.size,
+      });
       // 把 running 步骤标记为 ok
       setSteps((prev) => prev.map(s =>
         s.step === "fetch" && s.status === "running"
-          ? { ...s, status: "ok", product_name: (res.product_name || "").slice(0, 80) }
+          ? { ...s, status: "ok", product_name: (res.product_name || "").slice(0, 80), variant_count: res.variant_count }
           : s
       ));
     } catch (e) {
@@ -172,6 +292,41 @@ export default function App() {
       if (mountedRef.current) setIsFetching(false);
       if (fetchAbortRef.current === ctrl) fetchAbortRef.current = null;
     }
+  };
+
+  // v6 + Round2:用户切换 variant — 同步 fetchedProduct 让 CenterPanel/ReferenceImages 立刻看到新 variant 的内容
+  // Round2 fix:清掉旧 variant 的勾选/上传/受控文案副本,默认勾 [0] 让"生成"按钮立即可点
+  const handleVariantSelect = (v: VariantView) => {
+    if (!listing) return;
+    setActiveVariantSku(v.sku);
+    setFetchedProduct({
+      success: true,
+      sku: v.sku,
+      market: listing.market,
+      product_name: v.product_name,
+      original_bullets: v.original_bullets,
+      imageUrls: v.imageUrls,
+      image_count: v.image_count,
+      attributes: v.attributes,
+      mainColor: v.mainColor,
+      mainMaterial: v.mainMaterial,
+      texture: v.texture,
+      size: v.size,
+    });
+    // 换 variant 后旧的 AI 文案不再适用,清掉避免误导
+    setResult(null);
+    setSteps([]);
+    setError(null);
+    // 清掉旧 variant 的勾选 / 上传 / 受控文案副本 — 避免残留导致误用
+    setSelectedIndices(new Set());
+    setUploadedDataUrls([]);
+    setCopyTitle("");
+    setCopyBullets([]);
+    setCopyDescription("");
+    setCopySearchTerms("");
+    // 默认勾选首图 — 让"生成"按钮立即可点,用户切完 chip 无需再手动勾
+    // (canGenerate 里有 imageUrls.length > 0 的兜底,空图时按钮仍会 disabled)
+    setSelectedIndices(new Set([0]));
   };
 
   const handleOptimize = async () => {
@@ -221,7 +376,7 @@ export default function App() {
           }
         },
         ctrl.signal,
-        { prompt_extra: copyPromptExtra, keywords: keywordsList },
+        { prompt_extra: copyPromptExtra, keywords: keywordsList, platform },
       );
       // res 是 done 事件
       // 收尾：把最后一条 running 标 ok（放到 finally 里也行,但此处更直观）
@@ -274,10 +429,32 @@ export default function App() {
     });
   };
 
+  // Round2 fix Bug 1:生成阶段数据源 — 有 AI result 时用 result;没跑过 AI 但有抓取数据时,
+  // 用 fetchedProduct 在内存里桥接一个 stub PipelineResult。这样切 variant 后无需先跑 AI 就能生成图。
+  const generateSource: PipelineResult | null = result ?? (fetchedProduct ? {
+    sku: fetchedProduct.sku,
+    market: fetchedProduct.market,
+    market_name: fetchedProduct.market,
+    ai_title: "", ai_bullets: [], ai_description: "", ai_search_terms: "",
+    product_name: fetchedProduct.product_name,
+    imageUrls: fetchedProduct.imageUrls,
+    image_count: fetchedProduct.image_count,
+    output_file: "",  // stub 阶段还没 Excel 输出
+    attributes: fetchedProduct.attributes,
+    mainColor: fetchedProduct.mainColor,
+    mainMaterial: fetchedProduct.mainMaterial,
+    texture: fetchedProduct.texture,
+    size: fetchedProduct.size,
+    original_title: fetchedProduct.product_name,
+    original_bullets: fetchedProduct.original_bullets,
+    listing_parent_sku: listing?.parent_sku,
+    listing_variant_label: listing?.variants.find(x => x.sku === fetchedProduct.sku)?.label,
+  } : null);
+
   const selectAllRef = () => {
-    if (!result) return;
+    if (!generateSource) return;
     const all = new Set<number>();
-    (result.imageUrls || []).slice(0, 9).forEach((_, i) => all.add(i));
+    (generateSource.imageUrls || []).slice(0, 9).forEach((_, i) => all.add(i));
     setSelectedIndices(all);
   };
 
@@ -287,35 +464,51 @@ export default function App() {
     setUploadedDataUrls(prev => [...prev, dataUrl]);
   };
 
-  const canGenerate = !!result && (selectedIndices.size > 0 || uploadedDataUrls.length > 0);
+  // Round2 fix Bug 1:canGenerate 改用 generateSource 桥接,允许"已抓取未优化"也能点生成
+  // imageUrls.length > 0 兜底:避免空图时 selectedIndices=[0] 假装可点
+  const canGenerate =
+    !!generateSource &&
+    (generateSource.imageUrls?.length ?? 0) > 0 &&
+    (selectedIndices.size > 0 || uploadedDataUrls.length > 0);
 
   const handleGenerate = async () => {
-    if (!result || !canGenerate) return;
+    if (!generateSource || !canGenerate) return;
     setGenerating(true);
     setGenError(null);
     try {
+      // Round2 fix Bug 5:防御性修复 — 显式从 fetchedProduct 取最新 imageUrls/sku/color 等,
+      // 不完全依赖 generateSource stub。理论上 result ?? stub(fetchedProduct) 应该正确,
+      // 但 stub 是新对象字面量,如果 React 在切 variant 后状态没及时同步,可能引用旧值
+      const activeSku = result?.sku || fetchedProduct?.sku || "";
+      const activeImageUrls = result?.imageUrls || fetchedProduct?.imageUrls || [];
+      const activeProductName = result?.product_name || fetchedProduct?.product_name || "";
+      const activeMainColor = result?.mainColor || fetchedProduct?.mainColor || "";
+      const activeMainMaterial = result?.mainMaterial || fetchedProduct?.mainMaterial || "";
+      const activeTexture = result?.texture || fetchedProduct?.texture || "";
+      const activeSize = result?.size || fetchedProduct?.size || "";
+      const activeAttrs = result?.attributes || fetchedProduct?.attributes || {};
+
       const reference_images: Array<
         { source: "giga"; index: number; url: string } | { source: "upload"; data_url: string }
       > = [];
       const sortedSelected = Array.from(selectedIndices).sort((a, b) => a - b);
       sortedSelected.forEach(i => {
-        const url = (result.imageUrls || [])[i];
+        const url = activeImageUrls[i];
         if (url) reference_images.push({ source: "giga", index: i, url });
       });
       uploadedDataUrls.forEach(du => reference_images.push({ source: "upload", data_url: du }));
 
-      const attrs = result.attributes || {};
       const product = {
-        productName: result.product_name || "",
-        mainColor: result.mainColor || attrs["Main Color"] || attrs["Color"] || "",
-        mainMaterial: result.mainMaterial || attrs["Material"] || "",
-        texture: result.texture || attrs["Texture"] || "",
-        size: result.size || attrs["Size"] || attrs["Dimensions"] || "",
+        productName: activeProductName,
+        mainColor: activeMainColor || activeAttrs["Main Color"] || activeAttrs["Color"] || "",
+        mainMaterial: activeMainMaterial || activeAttrs["Main Material"] || activeAttrs["Material"] || "",
+        texture: activeTexture || activeAttrs["Texture"] || "",
+        size: activeSize || activeAttrs["Size"] || activeAttrs["Dimensions"] || "",
       };
 
       const res = await api.generateImage({
         slot: imageType,
-        sku: result.sku,
+        sku: activeSku,
         size,
         prompt_extra: promptExtra,
         reference_images,
@@ -330,18 +523,21 @@ export default function App() {
 
       if (res.success) {
         setGeneratedImages(prev => {
-          // 累积保存：每次生成的图都追加到数组(用户可以多角度对比同 slot 的多次生成)
-          // 之前是"同 slot 替换旧的",会丢历史;后端 outputs/ 磁盘其实已经永久保存了,
-          // 前端只是不显示而已 — 现在让前端也保留历史
+          // 累积保存：每次生成的图**新生成的排在最前**(便于用户一眼看出最近一次的结果)
+          // + 记录生成时的 sku/variant label(用于切 variant 后区分历史图属于哪个 SKU)
+          // 之前是"追加到末尾",用户切 variant 后看不清哪个是最近生成的(以为是旧 variant 的图)
           return [
-            ...prev,
             {
               slot: res.slot,
               image_url: res.image_url,
               filename: res.filename,
               size: res.size,
               generatedAt: Date.now(),
+              // Round2 fix Bug 5:记录生成时的 sku 和 variant label,让用户区分历史图
+              sku: activeSku,
+              variantLabel: listing?.variants.find(v => v.sku === activeSku)?.label,
             },
+            ...prev,
           ];
         });
       } else {
@@ -389,6 +585,9 @@ export default function App() {
             fetchAbortRef.current?.abort();
             setIsFetching(false);
             // fetchedProduct 不清:用户可能只是微调 SKU,保留上次抓取结果作底;handleFetch 自己会覆盖
+            // v6:换 SKU 时清空 listing(上一个 listing 的 variants 不应残留)
+            setListing(null);
+            setActiveVariantSku("");
           }}
           templateFile={templateFile}
           onTemplateUpload={handleTemplateUpload}
@@ -407,6 +606,17 @@ export default function App() {
           keywordsError={keywordsError}
           onKeywordsUpload={handleKeywordsUpload}
           onClearKeywords={() => { setKeywordsList([]); setKeywordsError(null); }}
+          // v6:listing 多 variant 支持
+          listingVariants={listing?.variants ?? []}
+          activeVariantSku={activeVariantSku}
+          onVariantSelect={handleVariantSelect}
+          includeVariants={includeVariants}
+          onIncludeVariantsChange={setIncludeVariants}
+          listingWarning={listing?.warning ?? null}
+          // 平台选择
+          platform={platform}
+          onPlatformChange={setPlatform}
+          supportedPlatforms={supportedPlatforms}
         />
         <CenterPanel
           result={result}
@@ -422,6 +632,9 @@ export default function App() {
           onBulletsChange={setCopyBullets}
           onDescriptionChange={setCopyDescription}
           onSearchTermsChange={setCopySearchTerms}
+          // Round2 fix Bug 3:共用标题 UX 提示
+          sharedTitle={allVariantNamesEqual}
+          sharedTitleVariantCount={sharedTitleCount}
         />
         <aside style={S.colRight}>
           {(result || fetchedProduct) ? (
@@ -429,9 +642,12 @@ export default function App() {
               {/* 上:参考图 — 最多占 45% 高度,超出可滚动,确保下方生成结果区始终有空间 */}
               <section style={{ ...S.colRightSection, flex: "1 1 45%", minHeight: 0, overflowY: "auto" }}>
                 <ReferenceImages
-                  sku={result?.sku || fetchedProduct?.sku || ""}
+                  // Round2 fix Bug 4:用 fetchedProduct 而不是 result — result 来自 run-pipeline,
+                  // 是用户最早输入的 SKU(可能是 Silver)的优化结果,切 variant 后是陈旧数据;
+                  // fetchedProduct 反映当前选中的 variant,切换 chip 时实时更新
+                  sku={fetchedProduct?.sku || result?.sku || ""}
                   market={selectedMarket}
-                  imageUrls={result?.imageUrls || fetchedProduct?.imageUrls || []}
+                  imageUrls={fetchedProduct?.imageUrls || result?.imageUrls || []}
                   selectedIndices={selectedIndices}
                   onToggle={toggleRef}
                   onUploadedAdd={addUploaded}

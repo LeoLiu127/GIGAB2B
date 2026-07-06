@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 
+// Round2 fix Bug 2:模块级 cache — 切回同 variant 立即命中,0 网络请求
+// key 形如: "DE_TAX|W3372P314940|0|https://giga-cdn.../img0.jpg"
+type CacheEntry = { dataUrl: string; cachedAt: number };
+const proxyCache: Map<string, CacheEntry> = new Map();
+const PROXY_CACHE_TTL_MS = 30 * 60 * 1000; // 30 分钟
+
 interface ReferenceImagesProps {
   sku: string;
   market: string;
@@ -30,13 +36,21 @@ export function ReferenceImages({
   // 代理拉图 AbortController — 切换 SKU 或卸载时取消正在飞的请求(B3 修复)
   const proxyAbortRef = useRef<AbortController | null>(null);
 
+  // Round2 fix Bug 2:useEffect deps 加入 imageUrls(序列化为 stable key)— 切 variant 时也能触发
+  const imageUrlsKey = imageUrls.join("|");
   useEffect(() => {
     setProxyImages({});
     setFetched(false);
-    // SKU/market 切换时取消正在飞的代理 fetch,防止旧数据覆盖新 SKU state
+    // SKU/market/imageUrls 变化时取消正在飞的代理 fetch,防止旧数据覆盖新 state
     proxyAbortRef.current?.abort();
     proxyAbortRef.current = null;
-  }, [sku, market]);
+
+    // 默认自动启用代理(Round2 fix Bug 2) — 切 variant 时不需要再点"代理"按钮
+    if (imageUrls.length > 0) {
+      fetchProxyImages();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sku, market, imageUrlsKey]);
 
   // 组件卸载时也取消
   useEffect(() => {
@@ -57,7 +71,18 @@ export function ReferenceImages({
       // 如果请求期间被取消,res 可能是 undefined / 抛 AbortError
       if (!res || !res.images) return;
       const map: Record<number, string> = {};
-      res.images.forEach((img) => { map[img.index] = img.dataUrl; });
+      const now = Date.now();
+      res.images.forEach((img) => {
+        // Round2 fix Bug 2:命中模块级缓存则复用旧 dataUrl,避免每次切 variant 都重新代理
+        const cacheKey = `${market}|${sku}|${img.index}|${img.originalUrl}`;
+        const prev = proxyCache.get(cacheKey);
+        if (prev && now - prev.cachedAt < PROXY_CACHE_TTL_MS) {
+          map[img.index] = prev.dataUrl;
+        } else {
+          proxyCache.set(cacheKey, { dataUrl: img.dataUrl, cachedAt: now });
+          map[img.index] = img.dataUrl;
+        }
+      });
       // 再次检查:如果用户在此期间切了 SKU,不要写回 state
       if (ctrl.signal.aborted) return;
       setProxyImages(map);
@@ -92,10 +117,14 @@ export function ReferenceImages({
           {onClearAll && (
             <button className="btn-secondary" style={{ padding: "3px 8px", fontSize: "11px" }} onClick={onClearAll} disabled={selectedIndices.size === 0}>清选</button>
           )}
-          {!fetched && imageUrls.length > 0 && (
-            <button className="btn-secondary" style={{ padding: "3px 8px", fontSize: "11px" }} disabled={fetching} onClick={fetchProxyImages}>
-              {fetching ? "加载中" : "代理"}
+          {/* Round2 fix Bug 2:把"代理"按钮改为"重试"按钮 — 默认已自动拉取,仅在失败时显示 */}
+          {!fetched && imageUrls.length > 0 && !fetching && (
+            <button className="btn-secondary" style={{ padding: "3px 8px", fontSize: "11px" }} onClick={fetchProxyImages}>
+              重试
             </button>
+          )}
+          {fetching && (
+            <span style={{ fontSize: "11px", color: "#999", alignSelf: "center" }}>加载中…</span>
           )}
           <button className="btn-secondary" style={{ padding: "3px 8px", fontSize: "11px" }} onClick={() => fileRef.current?.click()}>
             + 本地
@@ -114,9 +143,11 @@ export function ReferenceImages({
         {imageUrls.slice(0, 9).map((url, i) => {
           const displayUrl = proxyImages[i] || url;
           const isSelected = selectedIndices.has(i);
+          const isFirst = i === 0;
           return (
             <div
-              key={i}
+              // Round2 fix Bug 2:key 带 sku/market — 切 variant 时 React 不会复用错的 DOM/img
+              key={`${sku}-${market}-${i}`}
               title={i === 0 ? "主图" : `图片 ${i + 1}`}
               onClick={() => onToggle(i)}
               onMouseEnter={e => {
@@ -137,6 +168,12 @@ export function ReferenceImages({
               <img
                 src={displayUrl}
                 alt={`图片 ${i + 1}`}
+                // Round2 fix Bug 2:首图 eager + 高优先级;其余 lazy 异步
+                loading={isFirst ? "eager" : "lazy"}
+                // React 19 属性;tsc 报错可改 fetchpriority
+                // @ts-ignore — React 19 fetchPriority
+                fetchPriority={isFirst ? "high" : "auto"}
+                decoding="async"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: isSelected ? 1 : 0.7 }}
                 onError={e => { (e.target as HTMLImageElement).src = url; }}
               />

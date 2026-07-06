@@ -7,6 +7,9 @@ export interface GeneratedImage {
   filename: string;
   sceneParams?: { scene_type: string; background: string; lighting: string; angle: string };
   generatedAt: number;
+  // Round2 fix Bug 5:记录生成时的 sku + variant label,让切 variant 后用户能区分历史图
+  sku?: string;
+  variantLabel?: string;
 }
 
 const SLOT_LABEL: Record<string, string> = {
@@ -102,6 +105,21 @@ export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGallery
                   color: "#fff", fontSize: "10px", padding: "2px 6px", borderRadius: "2px",
                   fontWeight: 500,
                 }}>{label}</div>
+                {/* Round2 fix Bug 5:每张图显示它属于哪个 variant,便于切 variant 后区分历史图 */}
+                {(img.sku || img.variantLabel) && (
+                  <div
+                    title={img.sku ? `基于 ${img.sku} 生成` : ""}
+                    style={{
+                      position: "absolute", bottom: "4px", left: "4px",
+                      background: "rgba(0,0,0,0.7)", color: "#fff",
+                      fontSize: "9px", padding: "1px 5px", borderRadius: "2px",
+                      maxWidth: "calc(100% - 8px)", overflow: "hidden",
+                      textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}
+                  >
+                    {img.variantLabel || img.sku}
+                  </div>
+                )}
                 {onDelete && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(img); }}

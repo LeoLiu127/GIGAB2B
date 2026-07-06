@@ -36,6 +36,10 @@ _load_env()
 # ──────────────────────────────────────────────
 # 市场配置表（仅包含元数据，凭证从 .env / 环境变量读取）
 # ──────────────────────────────────────────────
+# 已知差异：本表只含 4 个市场（缺 FR），而 app.py:MARKET_KEYS 含 5 个（含 FR）。
+# 这两份表有意保持独立——giga_config 用于 scripts/probe_listing_variants.py 与
+# test_giga_connection.py（外部脚本，不依赖 Flask），app.MARKET_KEYS 用于 HTTP 路由。
+# 模板适配相关配置请读 templates_catalog.py，不要在这里加。
 _MARKET_KEYS = {
     "US":        ("GIGA_US_CLIENT_ID",        "GIGA_US_CLIENT_SECRET"),
     "DE_TAX":    ("GIGA_DE_TAX_CLIENT_ID",    "GIGA_DE_TAX_CLIENT_SECRET"),

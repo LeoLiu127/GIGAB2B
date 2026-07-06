@@ -1,5 +1,6 @@
 import { useRef } from "react";
-import type { MarketInfo, FetchedProduct } from "../types";
+import type { MarketInfo, FetchedProduct, VariantView } from "../types";
+import { VariantsList } from "./VariantsList";
 
 interface LeftPanelProps {
   selectedMarket: string;
@@ -15,6 +16,11 @@ interface LeftPanelProps {
   isFetching: boolean;
   isOptimizing: boolean;
   isRunning: boolean;
+  // 平台选择（amazon 已实现；walmart / wayfair 仅占位，走 template_skipped）
+  platform: string;
+  onPlatformChange: (p: string) => void;
+  // 平台是否已实际实现（控制"提示"文案；amazon=true，其他平台=false）
+  supportedPlatforms: Record<string, boolean>;
   fetchedProduct: FetchedProduct | null;
   steps: Array<{ step: string; status: string; [k: string]: unknown }>;
   error: string | null;
@@ -26,6 +32,13 @@ interface LeftPanelProps {
   keywordsError: string | null;
   onKeywordsUpload: (f: File) => void;
   onClearKeywords: () => void;
+  // v6:listing 多 variant 支持
+  listingVariants: VariantView[];
+  activeVariantSku: string;
+  onVariantSelect: (v: VariantView) => void;
+  includeVariants: boolean;
+  onIncludeVariantsChange: (v: boolean) => void;
+  listingWarning?: string | null;
 }
 
 export function LeftPanel({
@@ -51,9 +64,22 @@ export function LeftPanel({
   keywordsError,
   onKeywordsUpload,
   onClearKeywords,
+  listingVariants,
+  activeVariantSku,
+  onVariantSelect,
+  includeVariants,
+  onIncludeVariantsChange,
+  listingWarning,
+  platform,
+  onPlatformChange,
+  supportedPlatforms,
 }: LeftPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const kwFileRef = useRef<HTMLInputElement>(null);
+
+  // 平台下拉顺序：已实现优先（amazon），其余按字母序跟在后面
+  const PLATFORM_ORDER = ["amazon", "walmart", "wayfair"] as const;
+  const platformList = PLATFORM_ORDER.filter(p => p in supportedPlatforms);
 
   const stepLabels: Record<string, string> = {
     fetch: "1. GIGA 取数",
@@ -111,23 +137,89 @@ export function LeftPanel({
           placeholder="例如：W3372P314940"
           disabled={isRunning || isFetching}
         />
+        {/* v6:抓取同 Listing 全部变体 开关 */}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            marginTop: "8px",
+            fontSize: "12px",
+            color: "#666",
+            cursor: isRunning || isFetching ? "not-allowed" : "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={includeVariants}
+            onChange={e => onIncludeVariantsChange(e.target.checked)}
+            disabled={isRunning || isFetching}
+            style={{ cursor: "inherit" }}
+          />
+          抓取同 Listing 全部变体（颜色 / 尺寸）
+        </label>
+      </div>
+
+      {/* v6:同 Listing 变体 chip 列表 — 抓取完成后显示 */}
+      {listingVariants.length > 1 && (
+        <div style={{ marginBottom: "28px" }}>
+          <div className="section-title">
+            同 Listing 变体 ({listingVariants.length})
+          </div>
+          <VariantsList
+            variants={listingVariants}
+            activeSku={activeVariantSku}
+            onSelect={onVariantSelect}
+            warning={listingWarning}
+          />
+          <div style={{ marginTop: "6px", fontSize: "11px", color: "#999" }}>
+            点击 chip 切换;「文案优化」只针对当前选中变体跑 AI
+          </div>
+        </div>
+      )}
+
+      {/* 平台选择 — amazon 已实现；walmart / wayfair 仅占位 */}
+      <div style={{ marginBottom: "16px" }}>
+        <div className="section-title">
+          平台 <span style={{ fontWeight: 400, fontSize: "11px", color: "#999" }}>（amazon 已上线）</span>
+        </div>
+        <select
+          className="input"
+          value={platform}
+          onChange={e => onPlatformChange(e.target.value)}
+          disabled={platformList.length === 0 || isRunning || isFetching}
+          style={{ cursor: "pointer" }}
+        >
+          {platformList.map(p => (
+            <option key={p} value={p} disabled={!supportedPlatforms[p]}>
+              {p}{!supportedPlatforms[p] ? "（敬请期待）" : ""}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* 模板上传（可选） */}
       <div style={{ marginBottom: "28px" }}>
         <div className="section-title">
-          Amazon 模板 <span style={{ fontWeight: 400, fontSize: "11px", color: "#999" }}>（可选）</span>
+          {platform === "amazon" ? "Amazon" : platform} 模板 <span style={{ fontWeight: 400, fontSize: "11px", color: "#999" }}>（可选）</span>
         </div>
         <div
-          style={{ border: "1px dashed #e0e0e0", padding: "12px", textAlign: "center", cursor: "pointer", background: "#fafafa", fontSize: "13px", color: "#666" }}
-          onClick={() => fileRef.current?.click()}
+          style={{
+            border: "1px dashed #e0e0e0",
+            padding: "12px",
+            textAlign: "center",
+            cursor: supportedPlatforms[platform] ? "pointer" : "not-allowed",
+            background: supportedPlatforms[platform] ? "#fafafa" : "#f0f0f0",
+            fontSize: "13px",
+            color: supportedPlatforms[platform] ? "#666" : "#999",
+          }}
+          onClick={() => supportedPlatforms[platform] && fileRef.current?.click()}
         >
           <input ref={fileRef} type="file" accept=".xlsm,.xlsx" style={{ display: "none" }}
             onChange={e => { if (e.target.files?.[0]) onTemplateUpload(e.target.files[0]); }} />
-          {templateFile
-            ? `已上传: ${templateFile}`
-            : "点击上传 .xlsm / .xlsx 模板（可选）"
-          }
+          {supportedPlatforms[platform]
+            ? (templateFile ? `已上传: ${templateFile}` : "点击上传 .xlsm / .xlsx 模板（可选）")
+            : "该平台尚不支持模板填写（敬请期待）"}
         </div>
       </div>
 
