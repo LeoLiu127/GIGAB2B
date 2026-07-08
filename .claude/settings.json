@@ -20,7 +20,13 @@
       "Bash(curl -s -o /dev/null -w \"5173: %{http_code}\\\\n\" http://localhost:5173)",
       "WebFetch(domain:localhost)",
       "Bash(awk -F= '{print $1, \"=\", length\\($2\\), \"字\"}')",
-      "Bash(curl -s http://localhost:5182/api/markets)"
+      "Bash(curl -s http://localhost:5182/api/markets)",
+      "Bash(echo \"=== 服务器上的 git log \\(看 server 上的代码版本\\) ===\" *)",
+      "Read(//opt/GIGAB2B/web/src/**)",
+      "Bash(pm2 logs *)",
+      "Bash(echo \"=== 1. 看桌面暂存目录是否还空 ===\" *)",
+      "Read(//c/Users/Admin/Desktop/**)",
+      "Read(//c/Users/Admin/Desktop//**)"
     ]
   }
 }

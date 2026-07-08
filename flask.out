@@ -1,9 +1,0 @@
-127.0.0.1 - - [05/Jul/2026 00:32:16] "GET /api/health HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jul/2026 00:36:37] "GET /api/server-status HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jul/2026 00:36:37] "GET /api/markets HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jul/2026 00:36:37] "GET /api/server-status HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jul/2026 00:36:37] "GET /api/markets HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jul/2026 00:36:44] "POST /api/fetch-product HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jul/2026 00:36:50] "POST /api/run-pipeline HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jul/2026 00:41:10] "POST /api/generate-image HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jul/2026 00:41:10] "GET /outputs/W2339P502190/sub_20260705-004110.jpg HTTP/1.1" 200 -

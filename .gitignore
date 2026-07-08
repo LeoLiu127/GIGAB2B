@@ -18,19 +18,23 @@ web/vite.err.log
 web/vite.log
 
 # ── 运行时产物(自动生成,不入库)─────────────
-outputs/             # AI 生成的图片
-.logs/               # AI 调试快照
+# 注:目录规则同时配 **/ 和直接名,避免 dotfile 目录在某些 git 版本下被绕过
+**/outputs/             # AI 生成的图片
+outputs/
+**/.logs/               # AI 调试快照
+.logs/
 # 注:项目自带的 PLANTER-{de,uk,us,fr}.xlsm 模板是项目资产,保留入库
 #     但运行时输出的 <SKU>-<MARKET>.xlsm 是产物,不入库
 #     (用 git rm --cached 把已入库的产物文件清掉)
 
 # ── 服务日志 ──────────────────────────────
-flask.err*
+# 注:用 **/ 前缀覆盖所有子目录(web/ 等)
+**/flask.err*
 flask.log
-flask.out
-vite.err*
+**/flask.out
+**/vite.err*
 vite.log
-vite.out
+**/vite.out
 
 # ── OS / IDE ──────────────────────────────
 .vscode/

@@ -39,6 +39,9 @@ interface LeftPanelProps {
   includeVariants: boolean;
   onIncludeVariantsChange: (v: boolean) => void;
   listingWarning?: string | null;
+  // 2026-07-08 streaming SSE:实时显示服务端推送的 AI 文本流 + 累计字符数
+  aiCopyChunkText: string;
+  aiCopyChunkLen: number;
 }
 
 export function LeftPanel({
@@ -70,6 +73,9 @@ export function LeftPanel({
   includeVariants,
   onIncludeVariantsChange,
   listingWarning,
+  // 2026-07-08 streaming
+  aiCopyChunkText,
+  aiCopyChunkLen,
   platform,
   onPlatformChange,
   supportedPlatforms,
@@ -274,6 +280,31 @@ export function LeftPanel({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* 2026-07-08 streaming SSE 实时 AI 文本 — 仅在 AI 正在生成且收到至少 1 个 chunk 时显示 */}
+      {isOptimizing && aiCopyChunkLen > 0 && (
+        <div
+          style={{
+            marginBottom: "20px",
+            padding: "10px 12px",
+            background: "#f5f9ff",
+            border: "1px solid #d0e3ff",
+            borderRadius: "6px",
+            fontSize: "12px",
+            color: "#1976d2",
+            lineHeight: 1.5,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            maxHeight: "180px",
+            overflowY: "auto",
+          }}
+        >
+          <div style={{ fontWeight: 500, marginBottom: "4px" }}>
+            AI 已生成 {aiCopyChunkLen} 字符…
+          </div>
+          <div style={{ color: "#555" }}>{aiCopyChunkText.slice(-200)}</div>
         </div>
       )}
 

@@ -197,6 +197,9 @@ export const api = {
       search_terms?: string;
     };
   }) {
+    // 360s 兜底：3-5 张参考图 + 普通 prompt 实测 30s–4min，
+    // 比后端 300s 多 60s buffer，用于代理下载 + 落盘开销。
+    // 历史：200000 → 360000 (2026-07-08 修 200s 提前超时问题)
     return request<{
       success: boolean;
       slot: string;
@@ -209,7 +212,7 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(opts),
-      timeout: 200_000,
+      timeout: 360_000,
     });
   },
 

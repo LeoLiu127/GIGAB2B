@@ -19,6 +19,7 @@ import random
 import string
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Callable
 
 # 加载 .env（giga_config 会加载，这里提前加载确保 keys 可用）
 try:
@@ -135,7 +136,7 @@ def _generate_image_local(prompt: str, reference_b64: list[str], size: str, imag
                 "Authorization": f"Bearer {LAOZHANG_CONFIG['api_key']}",
             },
             json=body,
-            timeout=180,
+            timeout=300,
         )
 
         if resp.status_code != 200:
@@ -144,7 +145,7 @@ def _generate_image_local(prompt: str, reference_b64: list[str], size: str, imag
 
         return {"ok": True, "data": resp.json()}
     except requests.exceptions.Timeout:
-        return {"ok": False, "error": "laozhang API 超时（180s）"}
+        return {"ok": False, "error": "laozhang API 超时（300s）"}
     except Exception as e:
         return {"ok": False, "error": f"laozhang 调用异常: {e}"}
 
@@ -659,12 +660,14 @@ Format: word1, word2, word3 ...
 
     has_user_kw = bool(keywords)
     if has_user_kw:
-        # 防御:最多 30 个关键词,单个 40 字符(已经在 _parse_keywords_text 里截断,这里再保险一次)
-        safe_kw = [str(k).strip()[:40] for k in (keywords or []) if str(k).strip()][:30]
+        # 2026-07-08:上限 30 → 15。
+        # 历史:实测 W3372 DE prompt_tokens 锁在 1849(全部归因于 keywords 注入)。
+        # 30 个 × ~40 字符 ≈ 1200 字符 ≈ 350-400 token,占 prompt 20% 以上;
+        # 减半省 ~200 token,2-4s 节省;15 个也足够填满 Amazon 250-byte search_terms + title 嵌入
+        safe_kw = [str(k).strip()[:40] for k in (keywords or []) if str(k).strip()][:15]
         kw_lines = "\n".join(f"- {k}" for k in safe_kw)
         kw_count = len(safe_kw)
-        # 分档:≤10 个 → 全部用于 search_terms / title 自然嵌入;10-30 个 → search_terms 用前 20,title 只取前 3-5
-        # 避免硬塞全部 30 个让文案读起来像机器人
+        # 分档:≤10 个 → 全部用于 search_terms / title 自然嵌入;10-15 个 → search_terms 用前 10,title 只取前 3-5
         if kw_count <= 10:
             kw_priority_hint = f"这 {kw_count} 个关键词都很重要,应当自然融入标题、五点描述和 Search Terms"
         elif kw_count <= 20:
@@ -1108,6 +1111,9 @@ def _dump_ai_response(sku: str, market: str, raw: dict, parsed: dict) -> None:
             ai_st = parsed.get("_ai_status", "")
             if ai_st:
                 f.write(f"ai_status:    {ai_st}\n")
+            reason = parsed.get("_refusal_reason", "")
+            if reason:
+                f.write(f"_refusal_reason: {reason}\n")
     except Exception as e:
         print(f"[dump_ai_response] 写入日志失败: {e}")
 
@@ -1144,14 +1150,128 @@ def _extract_ai_text(data: dict) -> str:
         return ""
 
 
+def _stream_ai_text_local(
+    prompt: str,
+    model: str = "minimax",
+    max_tokens: int = 2048,
+    timeout: int = 300,
+):
+    """流式版 AI 文案生成(2026-07-08 新增)。
+    每次收到一个上游 chunk 就 yield {type:'chunk', delta, accumulated_len},
+    最终 yield {type:'result', result:{ok, content, raw, attempts}}。
+    raw 形态与非流式版完全一致 — _parse_copy_response / 拒答检测 / _dump_ai_response 不用改。
+
+    abort 兜底:try/finally: resp.close() — 客户端断开时 Flask 关掉 _gen() generator
+    会触发 GeneratorExit,这里 finally 块立即释放 TCP 连接。
+    """
+    cfg = MINIMAX_CONFIG if model == "minimax" else None
+    if cfg is None:
+        yield {"type": "result", "result": {"ok": False, "error": f"不支持的 model: {model}"}}
+        return
+    if not cfg["api_key"]:
+        yield {"type": "result", "result": {"ok": False, "error": f"{model} API key 未配置"}}
+        return
+
+    url = f"{cfg['api_url']}/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {cfg['api_key']}",
+    }
+    payload = {
+        "model": cfg["model"],
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": max_tokens,
+        "stream": True,  # ← 关键:开启 SSE 流式响应
+    }
+    accumulated: list[str] = []
+    finish_reason = "stop"
+
+    try:
+        resp = requests.post(url, headers=headers, json=payload,
+                             timeout=timeout, stream=True)
+        if resp.status_code != 200:
+            err = (resp.text or "")[:500]
+            yield {"type": "result",
+                   "result": {"ok": False, "error": f"{model} API 错误: HTTP {resp.status_code}: {err}"}}
+            return
+        try:
+            for raw_line in resp.iter_lines(decode_unicode=True):
+                if not raw_line:
+                    continue
+                line = raw_line.strip()
+                if not line.startswith("data:"):
+                    continue
+                payload_str = line[5:].strip()
+                if payload_str == "[DONE]":
+                    break
+                try:
+                    obj = json.loads(payload_str)
+                except (ValueError, json.JSONDecodeError):
+                    continue
+                # 提取 delta
+                choices = obj.get("choices") or []
+                if not choices:
+                    continue
+                choice = choices[0]
+                delta = choice.get("delta") or {}
+                content_piece = delta.get("content") or ""
+                if content_piece:
+                    accumulated.append(content_piece)
+                    yield {
+                        "type": "chunk",
+                        "delta": content_piece,
+                        "accumulated_len": sum(len(s) for s in accumulated),
+                    }
+                # finish_reason 只在最后一个 chunk 出现(有时)
+                fr = choice.get("finish_reason")
+                if fr:
+                    finish_reason = fr
+        finally:
+            try:
+                resp.close()
+            except Exception:
+                pass
+
+        full_content = "".join(accumulated)
+        # 构造与非流式版同形的 raw 字典,下游 _parse_copy_response / 拒答检测 / _dump_ai_response 不动
+        raw = {
+            "choices": [{
+                "finish_reason": finish_reason,
+                "index": 0,
+                "message": {"role": "assistant", "content": full_content, "name": "MiniMax AI"},
+            }],
+            "model": cfg["model"],
+            "object": "chat.completion",
+            "usage": {"prompt_tokens": 0, "completion_tokens": len(full_content) // 4, "total_tokens": 0},
+        }
+        if not full_content.strip():
+            yield {"type": "result",
+                   "result": {"ok": False, "error": "AI 返回空内容", "raw": raw}}
+            return
+        yield {"type": "result",
+               "result": {"ok": True, "content": full_content, "raw": raw, "attempts": 1}}
+    except requests.exceptions.Timeout:
+        yield {"type": "result",
+               "result": {"ok": False, "error": f"{model} API 超时({timeout}s)"}}
+    except GeneratorExit:
+        # Flask 关闭 SSE generator 时会触发;静默退出即可(已经 resp.close)
+        return
+    except Exception as e:
+        yield {"type": "result",
+               "result": {"ok": False, "error": f"{model} 调用异常: {e}"}}
+
+
 def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 16384,
-                          max_retries: int = 1, timeout: int = 180) -> dict:
+                          max_retries: int = 2, timeout: int = 300) -> dict:
     """本地调 AI 文案模型（移植自 image-studio/server.cjs）。
 
-    2026-07-05 调整:
-      - timeout 120 → 180 (给网络慢的 M3/Text-01 留 50% 余量)
-      - max_retries 2 → 1 (网络真不行时,1 次失败立即报错;不浪费 2 分钟串行 retry)
-      - sleep(1.5~2.0s) → sleep(0.5) (失败后短等 0.5s 再试)
+    2026-07-08 调整:
+      - timeout 180 → 300:用户截图 W3372P314940 实测 M3 reasoning 配合 ~1800 token prompt 在负载高峰
+        单次请求 200s+,180s 频繁超时;300s 给满 4 分钟+M3 真实完工区间
+      - max_retries 1 → 2:一次瞬态失败不致命,给第二次机会;中间 sleep 0.5s 几乎无感
+        (历史曾用 2,后来为"不浪费 2 分钟 retry"改为 1;现再恢复因为 180s 太容易触发)
+    历史记录:
+      2026-07-05: timeout 120 → 180,max_retries 2 → 1,sleep 1.5~2.0s → 0.5
 
     返回 { ok: bool, content?: str, error?: str, attempts?: int }
     """
@@ -1173,16 +1293,29 @@ def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 
     }
 
     last_error = ""
+    # 2026-07-08:可重试白名单 + 指数退避
+    # - 429 / 5xx / 529(overloaded_error)都重试;overloaded 通常持续 5-30s,0.5s 等太短
+    # - 指数退避:attempt=1→1s, 2→2s, 3→4s;max_retries=3 时总额外等待 1+2+4=7s
+    # - 把 import 提到 for 外避免每轮重 import
+    import time as _time
+    RETRY_STATUS = {408, 409, 425, 429, 500, 502, 503, 504, 529}
+
+    def _backoff(attempt: int) -> float:
+        return float(2 ** (attempt - 1))  # 1, 2, 4
+
     for attempt in range(1, max_retries + 1):
         try:
             resp = requests.post(url, headers=headers, json=payload, timeout=timeout)
             if resp.status_code != 200:
                 err_text = (resp.text or "")[:500]
                 last_error = f"{model} API 错误: HTTP {resp.status_code}: {err_text}"
-                if resp.status_code in (429, 500, 502, 503, 504):
-                    # 可重试的状态码:短等 0.5s 后重试
-                    import time
-                    time.sleep(0.5)
+                if resp.status_code in RETRY_STATUS:
+                    # 可重试的状态码:指数退避后重试
+                    if attempt >= max_retries:
+                        last_error = f"{model} API {resp.status_code} (重试 {max_retries} 次仍失败)"
+                        break
+                    wait = _backoff(attempt)
+                    _time.sleep(wait)
                     continue
                 # 不可重试:4xx 业务错误
                 return {"ok": False, "error": last_error, "attempts": attempt}
@@ -1194,12 +1327,13 @@ def _generate_text_local(prompt: str, model: str = "minimax", max_tokens: int = 
             # 空响应:可能是 cold start / quota 抖动,短等 0.5s 后重试
             last_error = "AI 返回空内容(冷启动或 quota 抖动,稍后重试)"
             if attempt < max_retries:
-                import time
-                time.sleep(0.5)
+                _time.sleep(_backoff(attempt))
                 continue
         except requests.exceptions.Timeout:
-            last_error = f"{model} API 超时({timeout}s)"
+            last_error = f"{model} API 超时({timeout}s)"  # 默认 300s,见 _generate_text_local 顶部注释
             if attempt < max_retries:
+                # 超时也走退避(给上游一点喘气)
+                _time.sleep(_backoff(attempt))
                 continue
         except Exception as e:
             last_error = f"{model} 调用异常: {e}"
@@ -1222,6 +1356,9 @@ def ai_generate_copy(product: dict, market: str,
       - "ok":      内容齐全
       - "partial": 解析后部分字段为空(例如 bullets 缺失但 title 在)
       - "empty":   AI 返回了内容但解析后全部为空(基本等于失败)
+
+    2026-07-08 改动:本函数走非流式路径(单次返回);run_pipeline SSE 走
+    _stream_ai_text_local + 共享 _parse_ai_response 解析;两路径下游逻辑零分叉。
     """
     if not MINIMAX_CONFIG["api_key"]:
         raise RuntimeError(
@@ -1231,23 +1368,31 @@ def ai_generate_copy(product: dict, market: str,
     prompt = _build_copy_prompt(product, market,
                                  prompt_extra=prompt_extra,
                                  keywords=keywords)
-    gen = _generate_text_local(prompt, model="minimax")
+    # 2026-07-08:显式 timeout=300 — M3 reasoning + ~1800 token prompt 实测可跑 200s+,
+    # 走默认参数不够;显式传参防被后人改回 180s 复现问题
+    # 2026-07-08:max_tokens 2048(默认 16384 太浪费)— 实测平均 completion ~1180, max ~1970;
+    # 16K 预留把 KV-cache 撑大 8-14×,估降 8-15s/次首 token 延迟
+    # max_retries 3(原 2)+ 指数退避 1s/2s/4s = 7s 总额外等待,挡 529/5xx 高峰
+    gen = _generate_text_local(prompt, model="minimax", timeout=300,
+                               max_retries=3, max_tokens=2048)
     if not gen["ok"]:
         attempts = gen.get("attempts", 1)
         raise RuntimeError(
             f"MiniMax 生成失败: {gen.get('error', 'unknown')}"
         )
+    return _parse_ai_response(gen, product, market, keywords)
 
-    # 兼容旧 image-studio 响应形态：包一层 { success, data } 再交给解析器
+
+def _parse_ai_response(gen: dict, product: dict, market: str,
+                       keywords: list | None = None) -> dict:
+    """2026-07-08 抽取:从 gen(raw AI 响应)解析出最终 dict,合并到 ai_generate_copy 共享逻辑。
+
+    流程:_parse_copy_response → _ai_status 评估 → 拒答检测 → 关键词兜底 search_terms → _dump_ai_response。
+    流式(_stream_ai_text_local 收完) 与非流式(_generate_text_local) 都走这里,逻辑零分叉。
+    """
+    # 兼容旧 image-studio 响应形态:包一层 { success, data } 再交给解析器
     wrapped = {"success": True, "data": gen["raw"]}
     parsed = _parse_copy_response(wrapped)
-
-    # 注:2026-07-04 fix #14 加的 finish_reason=length 嵌套重试(整个 _generate_text_local 再调一次)
-    # 反而成为慢/失败的根因 — M3 reasoning 模型在 30-90s 输出,length 重试又跑一遍同样慢,
-    # 用户反馈"调用大模型两次,之前没这问题"。删除该嵌套重试:
-    # - 修过 ENV(model) + 超时参数后,length 截断概率已经很低
-    # - 即使再 length,前端 ai_status=empty 立刻报错比"再等 60s 然后还是失败"更友好
-    # - 删了之后单次流水线 → 最多 1 次 AI 调用
 
     # 评估解析结果质量
     title_ok = bool((parsed.get("title") or "").strip())
@@ -1263,34 +1408,54 @@ def ai_generate_copy(product: dict, market: str,
     else:
         parsed["_ai_status"] = "partial"
 
-    # 注:之前有 `_REFUSAL_MARKERS` 检测 AI "拒答"输出元说明的逻辑,经验证(2026-07-05 plan 验证 agent)
-    # 该逻辑在生产环境从未真正触发(21 份日志 0 次命中),且描述场景("Risiko" 误判)是错的,
-    # 已删除(由 finish_reason=length 重试逻辑覆盖该场景)。
+    # 拒答检测(2026-07-08 修复 — 之前被删除但生产已命中)
+    content = (gen.get("raw", {}).get("choices") or [{}])[0].get("message", {}).get("content", "") or ""
+    content_stripped = _strip_think_blocks(content)
+    has_title_heading = bool(re.search(r"(?im)^#{1,3}\s+(?:Product\s*Title|Produkttitel|Titre\s+du\s+produit|产品标题|商品标题)\b", content_stripped))
+    has_bullet_heading = bool(re.search(r"(?im)^#{1,3}\s+(?:Five\s+Bullet\s+Points|Bullet\s+Points|Fünf\s+Kernpunkte|Points\s+Clés|五点描述|五点要点)\b", content_stripped))
+    refusal_markers = [
+        "Verstößt gegen", "Amazon-Richtlinie", "Listing-Suppression", "Listing Suppression",
+        "A-Z-Garantie", "A-Z Garantie", "Kontosperrung", "widersprüchlich", "keine ehrliche Lösung",
+        "violates Amazon", "violate Amazon guideline", "account suspension", "account deactivation",
+        "A-to-Z Guarantee", "contradictory requirements", "cannot be solved", "inconsistent listing",
+        "cannot fulfill this request",
+    ]
+    matched_markers = [m for m in refusal_markers if m.lower() in content_stripped.lower()]
+    is_refusal = (
+        (not has_title_heading or not has_bullet_heading)
+        and len(matched_markers) >= 3
+        and len(content_stripped) < 1200
+    )
+    if is_refusal:
+        parsed = {
+            "title": "",
+            "bullets": [],
+            "description": "",
+            "search_terms": "",
+            "_ai_status": "empty",
+            "_refusal_reason": f"matched {len(matched_markers)} markers; first={matched_markers[0]!r}",
+        }
+        parsed["_ai_attempts"] = gen.get("attempts", 1)
+        _dump_ai_response(product.get("sku", "unknown"), market, gen["raw"], parsed)
+        return parsed
 
     parsed["_ai_attempts"] = gen.get("attempts", 1)
 
-    # 兜底:用户关键词强制必含进 search_terms(即使 AI 漏了,后端也补上)
-    # 但 250 字节硬塞会导致截断 + 词序乱,所以采用**预算分配**策略:
-    #   - AI 生成的 search_terms 保留(已经是过滤/精选的)
-    #   - 用户关键词按列表顺序追加(前面的优先),直到剩余字节预算用完
-    #   - 预算不足的关键词**直接丢弃**,而不是半词截断(避免多字节字符切坏)
+    # 关键词兜底进 search_terms
     if keywords:
         raw = (parsed.get("search_terms") or "").strip()
         existing = set(raw.lower().split())
-        # 关键词不区分大小写去重,保留用户传入的形态
         missing = [k for k in keywords if k.lower().strip() not in existing]
         if missing:
-            # 字节预算 = 250 - 当前 raw 长度 - 分隔符长度(空格)
             raw_bytes = len(raw.encode("utf-8")) if raw else 0
             budget = 250 - raw_bytes - (1 if raw else 0)
             accepted = []
             used = 0
             for kw in missing:
                 kw_bytes = len(kw.encode("utf-8"))
-                # 至少需要:已有用量 + 分隔符 + 当前关键词(若不为第 1 个)
                 sep = 1 if (raw or accepted) else 0
                 if used + sep + kw_bytes > budget:
-                    break  # 预算用完,后面的关键词全部丢弃
+                    break
                 accepted.append(kw)
                 used += kw_bytes
             if accepted:
@@ -1732,6 +1897,14 @@ def run_pipeline():
         # 把每一步推到响应体，格式与之前一次返回的 steps[] 保持一致（status=running 表示进行中）
         return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
+    # 2026-07-08:客户端断开检测闭包(供 _gen 每次 yield 后检查,实现"切市场/重跑立即停"语义)
+    # request.is_disconnected 在 Flask 2.0+ 可用;旧版本 fallback False(等价于不检查,行为退化到原状)
+    def _is_disc() -> bool:
+        try:
+            return bool(request.is_disconnected)
+        except Exception:
+            return False
+
     if not sku:
         return jsonify({"error": "SKU 不能为空"}), 400
 
@@ -1764,12 +1937,38 @@ def run_pipeline():
                 yield _emit({"type": "error", "status": "error", "error": f"GIGA 取数失败: {e}", "steps": steps})
                 return
 
-            # Step 2: AI 文案优化
+            # Step 2: AI 文案优化(2026-07-08 改 streaming — 边收上游 chunk 边 yield ai_copy_chunk 事件)
             yield _emit({"type": "step", "status": "running", "step": "ai_copy", "label": "AI 文案生成"})
             try:
-                ai_result = ai_generate_copy(product, market,
+                # 先构建 prompt(原 ai_generate_copy 内部会构建;为支持 streaming 拆出)
+                _prompt = _build_copy_prompt(product, market,
                                              prompt_extra=prompt_extra,
                                              keywords=keywords if keywords else None)
+                _streamed = {"result": None}
+                for _evt in _stream_ai_text_local(_prompt, model="minimax",
+                                                  max_tokens=2048, timeout=300):
+                    # abort 兜底:客户端断开时,提前结束整个 _gen
+                    if _is_disc():
+                        return
+                    if _evt["type"] == "chunk":
+                        yield _emit({
+                            "type": "ai_copy_chunk",
+                            "step": "ai_copy",
+                            "delta": _evt["delta"],
+                            "accumulated_len": _evt["accumulated_len"],
+                        })
+                    else:  # "result"
+                        _streamed["result"] = _evt["result"]
+                # 客户端再次检测(防止 AI 阶段全跑完后用户已切走)
+                if _is_disc():
+                    return
+                _gen = _streamed["result"]
+                if not _gen or not _gen.get("ok"):
+                    err_msg = (_gen or {}).get("error", "AI 生成无响应")
+                    raise RuntimeError(f"MiniMax 生成失败: {err_msg}")
+                # 解析 + 拒答检测 + 关键词兜底 + dump — 共享 _parse_ai_response,与非流式路径一致
+                ai_result = _parse_ai_response(_gen, product, market,
+                                               keywords if keywords else None)
                 step_info = {
                     "step": "ai_copy",
                     "status": "ok",
@@ -1809,6 +2008,9 @@ def run_pipeline():
             # 终态：把所有 AI 生成的文案 + 产品图片 URL 一起随 done 事件返回
             ai_status = ai_result.get("_ai_status", "ok")
             ai_attempts = ai_result.get("_ai_attempts", 1)
+            # 2026-07-08:发出 done 之前再检查一次 — 用户可能在 fill 步骤中途切走
+            if _is_disc():
+                return
             yield _emit({
                 "type": "done",
                 "status": "ok" if ai_status != "empty" else "warning",

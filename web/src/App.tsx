@@ -69,6 +69,11 @@ export default function App() {
   const [copyDescription, setCopyDescription] = useState("");
   const [copySearchTerms, setCopySearchTerms] = useState("");
 
+  // 2026-07-08 streaming SSE 实时回显:服务端 ai_copy_chunk 事件累积到这两个 state
+  // aiCopyChunkText 仅保留末尾 500 字符(防长篇 OOM),aiCopyChunkLen 是服务端报的累计字符数
+  const [aiCopyChunkText, setAiCopyChunkText] = useState("");
+  const [aiCopyChunkLen, setAiCopyChunkLen] = useState(0);
+
   // 优化输入(v4 新增,提交 run-pipeline 时带上)
   const [copyPromptExtra, setCopyPromptExtra] = useState("");
   const [keywordsList, setKeywordsList] = useState<string[]>([]);
@@ -106,17 +111,38 @@ export default function App() {
     };
   }, []);
 
-  const handleMarketChange = (m: string) => {
-    setSelectedMarket(m);
+  // 2026-07-08 修复:切市场 / 切 SKU 时彻底清空所有产品相关 state,
+  // 避免旧 SKU 的 copy / prompt / 选图 / 上传 / 生成结果渗透到新 SKU 的 AI prompt 里
+  // (典型症状:用户用 A SKU 跑完流水线 + 生图,换 B SKU 直接点"生成" —
+  // 老 A 的 copyTitle/Bullets 还在 memory,被作为新 B 的生图 prompt 上下文发给 laozhang,
+  //  引发 laozhang 在不匹配的语义上长时间推理直到被 200s 墙挡住)。
+  // 故意保留:generatedImages / keywordsList — 这两个被设计成"换产品时复用以便对比"(见 handleFetch 注释)
+  const clearAllProductState = () => {
     setResult(null);
     setSteps([]);
     setError(null);
-    setSelectedIndices(new Set());
-    // 切市场时清空抓取结果,避免上一 SKU 的原始残留
     setFetchedProduct(null);
-    // v6:切市场时清空 listing 状态,避免跨市场残留 variant
     setListing(null);
     setActiveVariantSku("");
+    setCopyTitle("");
+    setCopyBullets([]);
+    setCopyDescription("");
+    setCopySearchTerms("");
+    setCopyPromptExtra("");
+    setSelectedIndices(new Set());
+    setUploadedDataUrls([]);
+    setPromptExtra("");
+    setGenError(null);
+    setAiCopyChunkText("");
+    setAiCopyChunkLen(0);
+    // 取消进行中的请求,防止旧 SKU 的 fetch/pipeline 后到达覆盖新 SKU state(B2/F-6)
+    fetchAbortRef.current?.abort();
+    pipelineAbortRef.current?.abort();
+  };
+
+  const handleMarketChange = (m: string) => {
+    setSelectedMarket(m);
+    clearAllProductState();
   };
 
   const handleTemplateUpload = async (file: File) => {
@@ -350,6 +376,9 @@ export default function App() {
     setCopyBullets([]);
     setCopyDescription("");
     setCopySearchTerms("");
+    // 清空 streaming 实时文本(2026-07-08)
+    setAiCopyChunkText("");
+    setAiCopyChunkLen(0);
     // 重置 steps:之前 fetch 的 ok 行不要保留,避免和新的 ai_copy 行重复显示
     // (fetchedProduct 已经在 state 里,compare-block 上半部分继续显示原始侧)
     // generatedImages 不清空:用户重跑优化时保留之前生成的图片(可对比多次结果)
@@ -365,6 +394,14 @@ export default function App() {
         (evt) => {
           // 已被取消就不更新 UI,避免 ghost update
           if (!mountedRef.current || ctrl.signal.aborted) return;
+          // 2026-07-08 streaming:服务端每个 AI token chunk 推一条 ai_copy_chunk 事件
+          // 累积末尾 500 字符(防长篇 OOM),字符数走服务端报的值
+          if (evt.type === "ai_copy_chunk") {
+            const { delta, accumulated_len } = evt as { delta: string; accumulated_len: number };
+            setAiCopyChunkText((prev) => (prev + delta).slice(-500));
+            setAiCopyChunkLen(accumulated_len);
+            return;
+          }
           // 实时把已完成步骤累加到 steps（同名 step 替换,不重复追加 — 修 "1.GIGA 取数 出现两次" 等 bug）
           if (evt.type === "step") {
             const incoming = evt as { step: string; status: string; [k: string]: unknown };
@@ -416,6 +453,7 @@ export default function App() {
       if (mountedRef.current) {
         setIsRunning(false);
         setIsOptimizing(false);
+        // streaming 文本保留以方便用户查看最后一段输出;切 SKU/市场时由 clearAllProductState 清
       }
       if (pipelineAbortRef.current === ctrl) pipelineAbortRef.current = null;
     }
@@ -574,20 +612,15 @@ export default function App() {
           markets={markets}
           sku={sku}
           onSkuChange={v => {
+            // 2026-07-08 修复:切 SKU 用 clearAllProductState() 集中清理所有产品相关 state
+            // (用户反馈"切 SKU 必须彻底清除旧 SKU 痕迹")
+            // 注:keywordsList 走独立清理(它跨 SKU 复用是错的)
+            // generatedImages 故意保留(详见 clearAllProductState 注释)
             setSku(v);
-            setResult(null);
-            setSteps([]);
-            setError(null);
-            // 换 SKU 时清空关键词 — 不同产品的关键词不能混(否则 AI 会因为产品/关键词不匹配而拒答)
             setKeywordsList([]);
             setKeywordsError(null);
-            // 取消可能正在飞的抓取,防止旧 SKU 的 fetch 后到达覆盖新 SKU state(B2 修复)
-            fetchAbortRef.current?.abort();
             setIsFetching(false);
-            // fetchedProduct 不清:用户可能只是微调 SKU,保留上次抓取结果作底;handleFetch 自己会覆盖
-            // v6:换 SKU 时清空 listing(上一个 listing 的 variants 不应残留)
-            setListing(null);
-            setActiveVariantSku("");
+            clearAllProductState();
           }}
           templateFile={templateFile}
           onTemplateUpload={handleTemplateUpload}
@@ -606,6 +639,9 @@ export default function App() {
           keywordsError={keywordsError}
           onKeywordsUpload={handleKeywordsUpload}
           onClearKeywords={() => { setKeywordsList([]); setKeywordsError(null); }}
+          // 2026-07-08 streaming SSE 实时文本 + 字符数
+          aiCopyChunkText={aiCopyChunkText}
+          aiCopyChunkLen={aiCopyChunkLen}
           // v6:listing 多 variant 支持
           listingVariants={listing?.variants ?? []}
           activeVariantSku={activeVariantSku}
