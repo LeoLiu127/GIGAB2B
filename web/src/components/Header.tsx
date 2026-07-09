@@ -61,21 +61,18 @@ export function Header({ status }: HeaderProps) {
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: "8px", fontSize: "12px", color: "#999" }}>
-                凭证路径：F:\AI Projects\GIGAB2B\.env
-              </div>
             </div>
 
             <div style={{ marginBottom: "20px" }}>
               <div style={{ fontWeight: 500, marginBottom: "8px" }}>大模型配置</div>
               <div style={{ fontSize: "13px", color: "#666" }}>
-                文案优化大模型: {minimaxOk ? "已配置" : "请在 .env 中设置 MINIMAX_API_KEY"}<br/>
-                生图大模型: {laozhangOk ? "已配置" : "请在 .env 中设置 LAOZHANG_API_KEY"}
+                文案优化大模型: {minimaxOk ? "已配置" : "请在服务器 .env 中设置 MINIMAX_API_KEY"}<br/>
+                生图大模型: {laozhangOk ? "已配置" : "请在服务器 .env 中设置 LAOZHANG_API_KEY"}
               </div>
             </div>
 
             <div style={{ fontSize: "12px", color: "#999", padding: "12px", background: "#f9f9f9", border: "1px solid #eee", borderRadius: "4px" }}>
-              提示：API Keys 存储在 .env 文件中，由 Flask 后端读取，不暴露给浏览器。
+              提示：API Keys 仅存放在服务器本地 .env 文件（git 忽略，永不进仓库），由 Flask 后端读取，不暴露给浏览器。
             </div>
 
             <button className="btn-secondary" style={{ marginTop: "24px", width: "100%" }} onClick={() => setShowModal(false)}>
