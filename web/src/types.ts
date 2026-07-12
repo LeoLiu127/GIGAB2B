@@ -9,7 +9,13 @@ export interface PipelineResult {
   product_name: string;
   imageUrls: string[];
   image_count: number;
+  mainImageUrl?: string;
+  mainImageUrls?: string[];
+  detailImageUrls?: string[];
+  main_image_count?: number;
+  detail_image_count?: number;
   output_file: string;
+  output_url?: string;
   // 后端第 3 步"填入 Excel"被跳过(用户未上传模板且市场 fallback 文件缺失)时为 true
   template_skipped?: boolean;
   // 平台标识（amazon / walmart / wayfair）
@@ -49,6 +55,11 @@ export interface FetchedProduct {
   original_bullets: string[];
   imageUrls: string[];
   image_count: number;
+  mainImageUrl?: string;
+  mainImageUrls?: string[];
+  detailImageUrls?: string[];
+  main_image_count?: number;
+  detail_image_count?: number;
   attributes?: Record<string, string>;
   mainColor?: string;
   mainMaterial?: string;
@@ -65,6 +76,11 @@ export interface VariantView {
   product_name: string;
   imageUrls: string[];
   image_count: number;
+  mainImageUrl?: string;
+  mainImageUrls?: string[];
+  detailImageUrls?: string[];
+  main_image_count?: number;
+  detail_image_count?: number;
   original_bullets: string[];
   mainColor?: string;
   mainMaterial?: string;
@@ -95,6 +111,11 @@ export interface ListingFetchedProduct {
   product_name: string;
   imageUrls: string[];
   image_count: number;
+  mainImageUrl?: string;
+  mainImageUrls?: string[];
+  detailImageUrls?: string[];
+  main_image_count?: number;
+  detail_image_count?: number;
   original_bullets: string[];
   mainColor?: string;
   mainMaterial?: string;
@@ -111,6 +132,10 @@ export interface GigaImage {
   originalUrl: string;
   dataUrl: string;
   label?: string;
+  group?: "main" | "detail";
+  width?: number | null;
+  height?: number | null;
+  aspectRatio?: number | null;
   failed?: boolean;
 }
 

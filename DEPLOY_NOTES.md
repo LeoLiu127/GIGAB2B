@@ -44,7 +44,7 @@
 │   └─ PM2 God Daemon (PID 930, /root/.pm2)         │
 │       ├─ gigab2b-backend  (PID 13729)              │
 │       │   venv/bin/python app.py                   │
-│       │   监听 0.0.0.0:5182                        │
+│       │   监听 127.0.0.1:5182                      │
 │       └─ gigab2b-frontend (PID 13730)              │
 │           npx vite preview                         │
 │           监听 0.0.0.0:5173                        │
@@ -55,7 +55,7 @@
 
 - **进程由 root 用户的 PM2 托管**(`/root/.pm2/dump.pm2` 存配置)
 - **应用名以 `gigab2b-` 开头**(`gigab2b-backend` / `gigab2b-frontend`)
-- **端口直连 0.0.0.0**(无 Nginx,依赖阿里云防火墙做访问控制)
+- **后端只监听 127.0.0.1**，外部访问必须经过前端代理或 Nginx；当前开发阶段默认绕过应用层登录，恢复访问保护时设置 `GIGAB2B_AUTH_ENABLED=1` 和固定密码
 - **systemd 开机自启**:`pm2-admin.service`(由 `pm2 startup` 生成)
 
 ---
@@ -75,9 +75,9 @@
 
 **症状**:`PermissionError: [Errno 13] Permission denied: '/opt/GIGAB2B/.env'`
 **原因**:`.env` 是 root 创建的,权限 `-rw-------`,admin 用户读不到。
-**解决**:`sudo chmod 644 .env`(只读权限,不让其他用户写)
+**解决**:让运行账户持有 `.env`，并执行 `sudo chmod 600 .env`
 **教训**:
-- 用 PM2 跑 Python 项目时,如果 PM2 用的用户不是 .env 拥有者,要先 `chmod 644`
+- 用 PM2 跑 Python 项目时，应让 PM2 运行用户成为 `.env` 所有者并保持 `chmod 600`
 - 或者**直接把项目目录 chown 给运行用户**:`sudo chown -R admin:admin /opt/项目名`
 
 ### 坑 3:PM2 启动 Python 的语法错了
@@ -192,7 +192,8 @@ cd 新项目名
 # (参考 GIGAB2B/HANDOFF.md 的 base64 拆分方案)
 
 # 上传后
-sudo chmod 644 .env   # 让运行用户能读
+sudo chown admin:admin .env
+chmod 600 .env
 ```
 
 ### 3. 装依赖
@@ -282,7 +283,7 @@ sudo kill -9 <占端口的PID>
 
 # 3. 90% 是 .env 权限不对
 ls -la .env
-sudo chmod 644 .env
+sudo chown admin:admin .env && chmod 600 .env
 ```
 
 ### Q3:服务不停重启(restart 次数疯涨)?

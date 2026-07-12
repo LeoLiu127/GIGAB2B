@@ -21,7 +21,7 @@
 | 工具 | 版本 | 说明 |
 |---|---|---|
 | **Python** | 3.11+ | [下载](https://python.org),安装时勾选 "Add to PATH" |
-| **Node.js** | 18.18+ | [下载 LTS](https://nodejs.org) |
+| **Node.js** | 20+ | [下载 LTS](https://nodejs.org) |
 | **Git for Windows** | 任意 | 自带 bash / curl,推荐用 Git Bash 运行命令 |
 
 ---
@@ -35,7 +35,7 @@ cd GIGAB2B
 
 # 2. 配置 API Key(向仓库所有者索要密码,另一个渠道发)
 notepad .env
-# 填入 7 个 Key:5 个 GIGA 凭证 + LAOZHANG_API_KEY + MINIMAX_API_KEY
+# 填入 5 组 GIGA ID/Secret 和 2 个 AI Key；需要恢复 Web 登录时再启用认证并设置访问密码
 # 参考 .env.example 模板
 
 # 3. 装 Python 依赖
@@ -64,6 +64,8 @@ powershell -ExecutionPolicy Bypass -File .\start.ps1
 | `GIGA_<MARKET>_CLIENT_SECRET` | 同上 |
 | `LAOZHANG_API_KEY` | laozhang.ai |
 | `MINIMAX_API_KEY` | MiniMax 平台 |
+| `GIGAB2B_AUTH_ENABLED` | `1` 时启用 Web 登录；开发阶段默认 `0`（绕过登录） |
+| `GIGAB2B_ACCESS_PASSWORD` | 启用 Web 登录后使用的密码，建议至少 20 位随机字符 |
 
 5 个市场变量:`GIGA_US_CLIENT_ID`、`GIGA_DE_TAX_CLIENT_ID`、`GIGA_DE_TAXFREE_CLIENT_ID`、`GIGA_UK_CLIENT_ID`、`GIGA_FR_CLIENT_ID`(每个都配 `_SECRET`)。
 
@@ -85,6 +87,8 @@ powershell -ExecutionPolicy Bypass -File .\start.ps1
 3. 检查前端 `node_modules`,缺失则 `npm install`
 4. 后台启动 Flask + Vite
 5. 等端口就绪,做 health check
+
+后端默认只监听 `127.0.0.1`。开发阶段默认绕过登录；后续需要恢复访问保护时，在 `.env` 将 `GIGAB2B_AUTH_ENABLED=1`，并设置固定强密码 `GIGAB2B_ACCESS_PASSWORD`。
 
 ### 手动启动(开发用)
 
@@ -145,8 +149,9 @@ GIGAB2B/
 | `/api/server-status` | GET | 详细状态(provider 配置 + 各市场凭证) |
 | `/api/markets` | GET | 列出 5 个市场 |
 | `/api/detect-market` | POST | 从 SKU/模板自动检测市场 |
-| `/api/upload-template` | POST | 上传 Amazon 模板 |
+| `/api/upload-template` | POST | 验证并隔离存储 Amazon 模板 |
 | **`/api/run-pipeline`** | POST | **核心流水线**:GIGA → AI → Excel(SSE 流式) |
+| `/api/downloads/<file>` | GET | 登录后下载生成的 Excel |
 | `/api/generate-image` | POST | AI 生图 |
 | `/api/fetch-images` | POST | 代理下载 GIGA 图片 |
 

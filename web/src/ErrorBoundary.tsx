@@ -47,7 +47,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "#fafafa",
+            background: "var(--theme-page-bg)",
             fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
             padding: "20px",
           }}
@@ -55,29 +55,29 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <div
             style={{
               maxWidth: "640px",
-              background: "#fff",
-              border: "1px solid #ffcdd2",
+              background: "var(--theme-surface)",
+              border: "1px solid var(--theme-danger-border)",
               borderRadius: "8px",
               padding: "32px",
               boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
             }}
           >
             <div style={{ fontSize: "32px", marginBottom: "8px" }}>⚠️</div>
-            <h1 style={{ fontSize: "20px", fontWeight: 600, margin: "0 0 8px", color: "#c62828" }}>
+            <h1 style={{ fontSize: "20px", fontWeight: 600, margin: "0 0 8px", color: "var(--theme-danger-text)" }}>
               应用遇到了一个错误
             </h1>
-            <p style={{ fontSize: "14px", color: "#666", margin: "0 0 20px" }}>
+            <p style={{ fontSize: "14px", color: "var(--theme-text-secondary)", margin: "0 0 20px" }}>
               页面渲染时发生异常。你可以重置组件状态后继续,或刷新页面。
             </p>
             <div
               style={{
-                background: "#fff5f5",
-                border: "1px solid #ffcdd2",
+                background: "var(--theme-danger-bg)",
+                border: "1px solid var(--theme-danger-border)",
                 borderRadius: "4px",
                 padding: "12px",
                 marginBottom: "20px",
                 fontSize: "12px",
-                color: "#c62828",
+                color: "var(--theme-danger-text)",
                 fontFamily: "monospace",
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
@@ -92,8 +92,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 onClick={this.handleReset}
                 style={{
                   padding: "8px 16px",
-                  background: "#1976d2",
-                  color: "#fff",
+                  background: "var(--theme-action-bg)",
+                  color: "var(--theme-action-fg)",
                   border: "none",
                   borderRadius: "4px",
                   cursor: "pointer",
@@ -106,9 +106,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 onClick={this.handleReload}
                 style={{
                   padding: "8px 16px",
-                  background: "#fff",
-                  color: "#333",
-                  border: "1px solid #ccc",
+                  background: "var(--theme-surface)",
+                  color: "var(--theme-text-primary)",
+                  border: "1px solid var(--theme-border)",
                   borderRadius: "4px",
                   cursor: "pointer",
                   fontSize: "13px",

@@ -1,5 +1,6 @@
 # ── 敏感凭证(绝不入库)─────────────────────
 .env
+.env.bak*
 secrets/.env
 
 # ── Python ────────────────────────────────
@@ -14,6 +15,7 @@ build/
 # ── Node / Vite ──────────────────────────
 web/node_modules/
 web/dist/
+.npm-cache/
 web/vite.err.log
 web/vite.log
 
@@ -21,6 +23,7 @@ web/vite.log
 # 注:目录规则同时配 **/ 和直接名,避免 dotfile 目录在某些 git 版本下被绕过
 **/outputs/             # AI 生成的图片
 outputs/
+.runtime/
 **/.logs/               # AI 调试快照
 .logs/
 # 注:项目自带的 PLANTER-{de,uk,us,fr}.xlsm 模板是项目资产,保留入库

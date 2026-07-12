@@ -37,21 +37,21 @@ export function VariantsList({ variants, activeSku, onSelect, warning }: Variant
           };
           const activeStyle: React.CSSProperties = isActive
             ? {
-                background: "#e3f2fd",
-                borderColor: "#1976d2",
-                color: "#1976d2",
+                background: "var(--theme-info-bg)",
+                borderColor: "var(--theme-link)",
+                color: "var(--theme-link)",
                 fontWeight: 600,
               }
             : v.is_main
             ? {
-                background: "#fff8e1",
-                borderColor: "#f9a825",
-                color: "#f57f17",
+                background: "var(--theme-warning-bg)",
+                borderColor: "var(--theme-warning-border)",
+                color: "var(--theme-warning-text)",
               }
             : {
-                background: "#fafafa",
-                borderColor: "#e0e0e0",
-                color: "#555",
+                background: "var(--theme-surface-soft)",
+                borderColor: "var(--theme-border)",
+                color: "var(--theme-text-secondary)",
               };
           return (
             <span
@@ -60,11 +60,11 @@ export function VariantsList({ variants, activeSku, onSelect, warning }: Variant
               style={{ ...baseStyle, ...activeStyle }}
               onClick={() => !isActive && onSelect(v)}
               onMouseEnter={e => {
-                if (!isActive) e.currentTarget.style.borderColor = "#999";
+                if (!isActive) e.currentTarget.style.borderColor = "var(--theme-text-muted)";
               }}
               onMouseLeave={e => {
                 if (!isActive)
-                  e.currentTarget.style.borderColor = v.is_main ? "#f9a825" : "#e0e0e0";
+                  e.currentTarget.style.borderColor = v.is_main ? "var(--theme-warning-border)" : "var(--theme-border)";
               }}
             >
               {v.is_main && <span style={{ fontSize: "10px" }}>★</span>}
@@ -83,7 +83,7 @@ export function VariantsList({ variants, activeSku, onSelect, warning }: Variant
         })}
       </div>
       {warning && (
-        <div style={{ marginTop: "6px", fontSize: "11px", color: "#c62828", lineHeight: 1.5 }}>
+        <div style={{ marginTop: "6px", fontSize: "11px", color: "var(--theme-danger-text)", lineHeight: 1.5 }}>
           ⚠ {warning}
         </div>
       )}

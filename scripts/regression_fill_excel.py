@@ -160,7 +160,9 @@ def test_one_market(market: str, fill_module_path: str | None = None) -> None:
         # 把 app.TEMPLATE_DIR 临时指向 tmpdir 以避免污染工作树
         import app as app_mod
         original_template_dir = app_mod.TEMPLATE_DIR
+        original_output_dir = app_mod.EXCEL_OUTPUT_DIR
         app_mod.TEMPLATE_DIR = tmpdir
+        app_mod.EXCEL_OUTPUT_DIR = tmpdir
         try:
             out_path = app_mod.fill_excel(
                 MOCK_PRODUCT, MOCK_AI, market,
@@ -170,6 +172,7 @@ def test_one_market(market: str, fill_module_path: str | None = None) -> None:
             )
         finally:
             app_mod.TEMPLATE_DIR = original_template_dir
+            app_mod.EXCEL_OUTPUT_DIR = original_output_dir
 
         # 加载输出,读 Vorlage row=7
         wb = openpyxl.load_workbook(out_path, keep_vba=True)

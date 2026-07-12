@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { canGenerateFromReferences, REFERENCE_IMAGE_LIMITS, resolveOptimizeSku, resolveStartupView, templateAfterMarketChange } from "./workflow";
 import { api } from "./api";
 import type { PipelineResult, ServerStatus, MarketInfo, FetchedProduct, ListingFetchedProduct, VariantView } from "./types";
 import { Header } from "./components/Header";
@@ -7,12 +8,13 @@ import { CenterPanel } from "./components/CenterPanel";
 import { ReferenceImages } from "./components/ReferenceImages";
 import { PromptForm, type ImageType } from "./components/PromptForm";
 import { GeneratedGallery, type GeneratedImage } from "./components/GeneratedGallery";
+import { readStoredTheme, THEME_TOKENS, writeStoredTheme, type ThemeId } from "./theme";
 
 const S = {
-  root: { minHeight: "100vh", background: "#ffffff" } as React.CSSProperties,
+  root: { minHeight: "100vh", background: "var(--theme-page-bg)", color: "var(--theme-text-primary)" } as React.CSSProperties,
   header: {
     padding: "28px 48px",
-    borderBottom: "1px solid #eee",
+    borderBottom: "1px solid var(--theme-border-soft)",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
@@ -21,11 +23,16 @@ const S = {
   // 原型规定三栏:320px 固定 + 中/右等分剩余 (1fr 1fr)
   main: { display: "grid", gridTemplateColumns: "320px 1fr 1fr", minHeight: "calc(100vh - 77px)" } as React.CSSProperties,
   // 右栏:整体不滚动,内部 3 段各自管自己。生成按钮 + 图片类型 + 尺寸必须直接可见,不被滚动条遮挡
-  colRight: { padding: "20px", borderLeft: "1px solid #eee", height: "calc(100vh - 77px)", display: "flex", flexDirection: "column", overflow: "hidden" } as React.CSSProperties,
-  colRightSection: { paddingBottom: "16px", borderBottom: "1px solid #f0f0f0" } as React.CSSProperties,
+  colRight: { padding: "20px", borderLeft: "1px solid var(--theme-border-soft)", height: "calc(100vh - 77px)", display: "flex", flexDirection: "column", overflow: "hidden" } as React.CSSProperties,
+  colRightSection: { paddingBottom: "16px", borderBottom: "1px solid var(--theme-border-soft)" } as React.CSSProperties,
 };
 
 export default function App() {
+  const [authState, setAuthState] = useState<{ required: boolean; authenticated: boolean } | null>(null);
+  const [accessPassword, setAccessPassword] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [theme, setTheme] = useState<ThemeId>(() => readStoredTheme());
   const [markets, setMarkets] = useState<Record<string, MarketInfo>>({});
   const [selectedMarket, setSelectedMarket] = useState("DE_TAX");
   const [sku, setSku] = useState("");
@@ -93,15 +100,27 @@ export default function App() {
   const mountedRef = useRef(true);
 
   useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    Object.entries(THEME_TOKENS[theme]).forEach(([name, value]) => root.style.setProperty(name, value));
+    writeStoredTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
     mountedRef.current = true;
     // 启动时拉取状态
     const ctrl = new AbortController();
-    api.getStatus({ signal: ctrl.signal }).then(setServerStatus).catch(() => {});
-    api.listMarkets({ signal: ctrl.signal }).then(setMarkets).catch(() => {});
-    // 拉取平台状态(决定 LeftPanel 哪些平台可选/可填表)
-    api.listPlatforms({ signal: ctrl.signal })
-      .then((m) => setSupportedPlatforms(m))
-      .catch(() => { /* 失败则保留默认全 false(只在调试工具中提示) */ });
+    api.getAuthStatus({ signal: ctrl.signal }).then((auth) => {
+      setAuthState(auth);
+      if (!auth.authenticated) return;
+      api.getStatus({ signal: ctrl.signal }).then(setServerStatus).catch(() => {});
+      api.listMarkets({ signal: ctrl.signal }).then(setMarkets).catch(() => {});
+      api.listPlatforms({ signal: ctrl.signal })
+        .then((m) => setSupportedPlatforms(m))
+        .catch(() => { /* 失败则保留默认全 false */ });
+    }).catch((e) => {
+      if (!ctrl.signal.aborted) setAuthError(String(e));
+    });
     // 组件卸载时:取消所有进行中的请求 + 标记未挂载
     return () => {
       mountedRef.current = false;
@@ -110,6 +129,20 @@ export default function App() {
       ctrl.abort();
     };
   }, []);
+
+  const handleLogin = async () => {
+    if (!accessPassword || authBusy) return;
+    setAuthBusy(true);
+    setAuthError(null);
+    try {
+      await api.login(accessPassword);
+      window.location.reload();
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
 
   // 2026-07-08 修复:切市场 / 切 SKU 时彻底清空所有产品相关 state,
   // 避免旧 SKU 的 copy / prompt / 选图 / 上传 / 生成结果渗透到新 SKU 的 AI prompt 里
@@ -141,6 +174,7 @@ export default function App() {
   };
 
   const handleMarketChange = (m: string) => {
+    setTemplateFile(prev => templateAfterMarketChange(prev, selectedMarket, m));
     setSelectedMarket(m);
     clearAllProductState();
   };
@@ -148,10 +182,11 @@ export default function App() {
   const handleTemplateUpload = async (file: File) => {
     try {
       const res = await api.uploadTemplate(file);
-      setTemplateFile(res.filename);
-      if (res.detected_market) {
+      if (res.detected_market && res.detected_market !== selectedMarket) {
+        clearAllProductState();
         setSelectedMarket(res.detected_market);
       }
+      setTemplateFile(res.filename);
     } catch (e) {
       setError(String(e));
     }
@@ -227,6 +262,11 @@ export default function App() {
               product_name: fallback.product_name,
               imageUrls: fallback.imageUrls,
               image_count: fallback.image_count,
+              mainImageUrl: fallback.mainImageUrl,
+              mainImageUrls: fallback.mainImageUrls,
+              detailImageUrls: fallback.detailImageUrls,
+              main_image_count: fallback.main_image_count,
+              detail_image_count: fallback.detail_image_count,
               original_bullets: fallback.original_bullets,
               mainColor: fallback.mainColor,
               mainMaterial: fallback.mainMaterial,
@@ -241,6 +281,11 @@ export default function App() {
               product_name: fallback.product_name,
               imageUrls: fallback.imageUrls,
               image_count: fallback.image_count,
+              mainImageUrl: fallback.mainImageUrl,
+              mainImageUrls: fallback.mainImageUrls,
+              detailImageUrls: fallback.detailImageUrls,
+              main_image_count: fallback.main_image_count,
+              detail_image_count: fallback.detail_image_count,
               original_bullets: fallback.original_bullets,
               mainColor: fallback.mainColor,
               mainMaterial: fallback.mainMaterial,
@@ -254,6 +299,11 @@ export default function App() {
             product_name: fallback.product_name,
             imageUrls: fallback.imageUrls,
             image_count: fallback.image_count,
+            mainImageUrl: fallback.mainImageUrl,
+            mainImageUrls: fallback.mainImageUrls,
+            detailImageUrls: fallback.detailImageUrls,
+            main_image_count: fallback.main_image_count,
+            detail_image_count: fallback.detail_image_count,
             original_bullets: fallback.original_bullets,
             mainColor: fallback.mainColor,
             mainMaterial: fallback.mainMaterial,
@@ -290,6 +340,11 @@ export default function App() {
         original_bullets: v.original_bullets,
         imageUrls: v.imageUrls,
         image_count: v.image_count,
+        mainImageUrl: v.mainImageUrl,
+        mainImageUrls: v.mainImageUrls,
+        detailImageUrls: v.detailImageUrls,
+        main_image_count: v.main_image_count,
+        detail_image_count: v.detail_image_count,
         attributes: v.attributes,
         mainColor: v.mainColor,
         mainMaterial: v.mainMaterial,
@@ -333,6 +388,11 @@ export default function App() {
       original_bullets: v.original_bullets,
       imageUrls: v.imageUrls,
       image_count: v.image_count,
+      mainImageUrl: v.mainImageUrl,
+      mainImageUrls: v.mainImageUrls,
+      detailImageUrls: v.detailImageUrls,
+      main_image_count: v.main_image_count,
+      detail_image_count: v.detail_image_count,
       attributes: v.attributes,
       mainColor: v.mainColor,
       mainMaterial: v.mainMaterial,
@@ -386,8 +446,9 @@ export default function App() {
 
     try {
       // SSE：每完成一步 onEvent 推送一条 step 事件，进度实时更新
+      const optimizeSku = resolveOptimizeSku(sku, fetchedProduct);
       const res = await api.runPipeline(
-        sku.trim(),
+        optimizeSku,
         selectedMarket,
         templateFile || undefined,
         "use_giga",
@@ -477,6 +538,11 @@ export default function App() {
     product_name: fetchedProduct.product_name,
     imageUrls: fetchedProduct.imageUrls,
     image_count: fetchedProduct.image_count,
+    mainImageUrl: fetchedProduct.mainImageUrl,
+    mainImageUrls: fetchedProduct.mainImageUrls,
+    detailImageUrls: fetchedProduct.detailImageUrls,
+    main_image_count: fetchedProduct.main_image_count,
+    detail_image_count: fetchedProduct.detail_image_count,
     output_file: "",  // stub 阶段还没 Excel 输出
     attributes: fetchedProduct.attributes,
     mainColor: fetchedProduct.mainColor,
@@ -489,10 +555,12 @@ export default function App() {
     listing_variant_label: listing?.variants.find(x => x.sku === fetchedProduct.sku)?.label,
   } : null);
 
-  const selectAllRef = () => {
+  const selectAllRef = (visibleIndices?: number[]) => {
     if (!generateSource) return;
-    const all = new Set<number>();
-    (generateSource.imageUrls || []).slice(0, 9).forEach((_, i) => all.add(i));
+    const indices = visibleIndices ?? (generateSource.imageUrls || [])
+      .slice(0, REFERENCE_IMAGE_LIMITS.total)
+      .map((_, i) => i);
+    const all = new Set<number>(indices.slice(0, REFERENCE_IMAGE_LIMITS.total));
     setSelectedIndices(all);
   };
 
@@ -506,8 +574,11 @@ export default function App() {
   // imageUrls.length > 0 兜底:避免空图时 selectedIndices=[0] 假装可点
   const canGenerate =
     !!generateSource &&
-    (generateSource.imageUrls?.length ?? 0) > 0 &&
-    (selectedIndices.size > 0 || uploadedDataUrls.length > 0);
+    canGenerateFromReferences(
+      generateSource.imageUrls ?? [],
+      selectedIndices.size,
+      uploadedDataUrls.length,
+    );
 
   const handleGenerate = async () => {
     if (!generateSource || !canGenerate) return;
@@ -547,6 +618,7 @@ export default function App() {
       const res = await api.generateImage({
         slot: imageType,
         sku: activeSku,
+        market: selectedMarket,
         size,
         prompt_extra: promptExtra,
         reference_images,
@@ -568,6 +640,7 @@ export default function App() {
             {
               slot: res.slot,
               image_url: res.image_url,
+              public_url: res.public_url,
               filename: res.filename,
               size: res.size,
               generatedAt: Date.now(),
@@ -595,14 +668,66 @@ export default function App() {
     setGeneratedImages(prev => prev.filter(g => g !== img));
   };
 
+  const startupView = resolveStartupView(authState, authError);
+
+  if (startupView === "loading" || startupView === "offline") {
+    return (
+      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f6f7f9", padding: 24 }}>
+        <div style={{ width: "100%", maxWidth: 380, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: 32, boxShadow: "0 12px 32px rgba(0,0,0,.08)" }}>
+          <h1 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 600 }}>
+            {startupView === "loading" ? "正在连接 GIGAB2B" : "GIGAB2B 后端未连接"}
+          </h1>
+          <p style={{ margin: "0 0 16px", color: "#777", fontSize: 13 }}>
+            {startupView === "loading" ? "正在读取本地服务状态…" : "请先启动本地后端服务，然后重新连接。"}
+          </p>
+          {startupView === "offline" && (
+            <>
+              <div style={{ color: "var(--theme-danger-text)", fontSize: 12 }}>{authError}</div>
+              <button className="btn-primary" type="button" onClick={() => window.location.reload()} style={{ width: "100%", marginTop: 16 }}>
+                重新连接
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (startupView === "login") {
+    return (
+      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f6f7f9", padding: 24 }}>
+        <form
+          onSubmit={(event) => { event.preventDefault(); void handleLogin(); }}
+          style={{ width: "100%", maxWidth: 380, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: 32, boxShadow: "0 12px 32px rgba(0,0,0,.08)" }}
+        >
+          <h1 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 600 }}>GIGAB2B 登录</h1>
+          <p style={{ margin: "0 0 24px", color: "#777", fontSize: 13 }}>请输入服务器配置的访问密码</p>
+          <input
+            className="input"
+            type="password"
+            autoComplete="current-password"
+            value={accessPassword}
+            onChange={event => setAccessPassword(event.target.value)}
+            placeholder="访问密码"
+            autoFocus
+          />
+          {authError && <div style={{ marginTop: 10, color: "var(--theme-danger-text)", fontSize: 12 }}>{authError}</div>}
+          <button className="btn-primary" type="submit" disabled={!accessPassword || authBusy} style={{ width: "100%", marginTop: 16 }}>
+            {authBusy ? "登录中…" : "登录"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div style={S.root}>
       <header style={S.header}>
         <div style={S.headerTitle}>
-          <span style={{ fontSize: "22px", fontWeight: 300, color: "#333" }}>Listing Creator &amp; Optimizer</span>
-          <span style={{ fontSize: "14px", fontWeight: 400, color: "#999" }}>for GIGAB2B</span>
+          <span style={{ fontSize: "22px", fontWeight: 300, color: "var(--theme-text-primary)" }}>Listing Creator &amp; Optimizer</span>
+          <span style={{ fontSize: "14px", fontWeight: 400, color: "var(--theme-text-muted)" }}>for GIGAB2B</span>
         </div>
-        <Header status={serverStatus} />
+        <Header status={serverStatus} theme={theme} onThemeChange={setTheme} />
       </header>
 
       <main style={S.main}>
@@ -684,6 +809,8 @@ export default function App() {
                   sku={fetchedProduct?.sku || result?.sku || ""}
                   market={selectedMarket}
                   imageUrls={fetchedProduct?.imageUrls || result?.imageUrls || []}
+                  mainImageCount={fetchedProduct?.main_image_count ?? result?.main_image_count}
+                  detailImageCount={fetchedProduct?.detail_image_count ?? result?.detail_image_count}
                   selectedIndices={selectedIndices}
                   onToggle={toggleRef}
                   onUploadedAdd={addUploaded}
@@ -692,15 +819,15 @@ export default function App() {
                 />
 
                 {uploadedDataUrls.length > 0 && (
-                  <div style={{ marginBottom: "8px", padding: "8px", background: "#f0f7ff", border: "1px solid #cfe2ff", borderRadius: "4px" }}>
-                    <div style={{ fontSize: "11px", color: "#1565c0", marginBottom: "6px" }}>本地上传 ({uploadedDataUrls.length})</div>
+                  <div style={{ marginBottom: "8px", padding: "8px", background: "var(--theme-info-bg)", border: "1px solid var(--theme-info-border)", borderRadius: "4px" }}>
+                    <div style={{ fontSize: "11px", color: "var(--theme-info-text)", marginBottom: "6px" }}>本地上传 ({uploadedDataUrls.length})</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px" }}>
                       {uploadedDataUrls.map((du, i) => (
                         <div key={i} style={{ position: "relative", aspectRatio: "1/1", overflow: "hidden", borderRadius: "3px" }}>
                           <img src={du} alt={`uploaded ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                          <button
+                    <button
                             onClick={() => setUploadedDataUrls(prev => prev.filter((_, j) => j !== i))}
-                            style={{ position: "absolute", top: "2px", right: "2px", background: "rgba(198,40,40,0.85)", color: "#fff", border: "none", borderRadius: "2px", fontSize: "10px", cursor: "pointer", padding: "0 4px" }}
+                    style={{ position: "absolute", top: "2px", right: "2px", background: "var(--theme-danger-text)", color: "#fff", border: "none", borderRadius: "2px", fontSize: "10px", cursor: "pointer", padding: "0 4px" }}
                           >×</button>
                         </div>
                       ))}
@@ -726,7 +853,7 @@ export default function App() {
                 />
 
                 {genError && (
-                  <div style={{ marginTop: "8px", padding: "10px 12px", background: "#ffebee", border: "1px solid #ffcdd2", borderRadius: "4px", fontSize: "12px", color: "#c62828" }}>
+                  <div style={{ marginTop: "8px", padding: "10px 12px", background: "var(--theme-danger-bg)", border: "1px solid var(--theme-danger-border)", borderRadius: "4px", fontSize: "12px", color: "var(--theme-danger-text)" }}>
                     ✕ {genError}
                   </div>
                 )}
@@ -738,7 +865,7 @@ export default function App() {
               </section>
             </div>
           ) : (
-            <div style={{ fontSize: "12px", color: "#999", padding: "12px", background: "#fafafa", border: "1px dashed #e0e0e0", borderRadius: "4px", textAlign: "center" }}>
+            <div style={{ fontSize: "12px", color: "var(--theme-text-muted)", padding: "12px", background: "var(--theme-surface-soft)", border: "1px dashed var(--theme-border)", borderRadius: "4px", textAlign: "center" }}>
               请先抓取产品数据
             </div>
           )}

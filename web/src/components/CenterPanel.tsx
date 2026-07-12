@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { PipelineResult, FetchedProduct } from "../types";
+import { normalizeBulletLine } from "../workflow";
 
 interface CenterPanelProps {
   result: PipelineResult | null;
@@ -41,7 +42,7 @@ export function CenterPanel({
   return (
     <section style={{ padding: "32px", overflowY: "auto", maxHeight: "calc(100vh - 77px)" }}>
       {!result && !fetchedProduct && !isRunning && !isFetching && !isOptimizing && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", color: "#ccc" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", color: "var(--theme-text-muted)" }}>
           <div style={{ fontSize: "48px", marginBottom: "16px" }}>
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
               <rect x="8" y="12" width="48" height="40" rx="3" stroke="currentColor" strokeWidth="2"/>
@@ -59,11 +60,11 @@ export function CenterPanel({
       {(isFetching || isOptimizing) && (result || fetchedProduct) && (
         <div style={{
           padding: "10px 14px",
-          background: "#e3f2fd",
-          border: "1px solid #bbdefb",
+          background: "var(--theme-info-bg)",
+          border: "1px solid var(--theme-info-border)",
           borderRadius: "4px",
           fontSize: "13px",
-          color: "#1565c0",
+          color: "var(--theme-info-text)",
           marginBottom: "16px",
           display: "flex",
           alignItems: "center",
@@ -76,7 +77,7 @@ export function CenterPanel({
 
       {/* 没有 fetchedProduct/result 时的全屏 loading(原始空态) */}
       {(isFetching || isOptimizing) && !result && !fetchedProduct && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", color: "#999" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", color: "var(--theme-text-muted)" }}>
           <div style={{ fontSize: "48px", marginBottom: "12px", animation: "pulse 1.5s infinite" }}>⏳</div>
           <div style={{ fontSize: "16px" }}>{isFetching ? "正在从 GIGA 抓取数据…" : "AI 正在优化文案…"}</div>
         </div>
@@ -89,11 +90,11 @@ export function CenterPanel({
             <div style={{
               margin: "0 0 12px",
               padding: "8px 12px",
-              background: "#fafafa",
-              border: "1px dashed #d0d0d0",
+              background: "var(--theme-surface-soft)",
+              border: "1px dashed var(--theme-border)",
               borderRadius: "4px",
               fontSize: "11px",
-              color: "#888",
+              color: "var(--theme-text-secondary)",
               lineHeight: 1.6,
             }}>
               此 listing 共 {sharedTitleVariantCount} 个变体,GIGA 共用同一原始标题;在下方「优化后」框可按变体覆写
@@ -207,20 +208,16 @@ function CopyEditor({
     ? "• " + originalBulletsArr.join("\n• ")
     : "";
 
-  // 把 5 条 bullets 合并为带「1. xxx」行号的纯文本展示，编辑时按行拆回去
-  const bulletsText = bullets
-    .map((b, i) => `${i + 1}. ${b ?? ""}`)
-    .join("\n");
-  const updateBulletsFromText = (text: string) => {
-    const lines = text.split("\n").slice(0, 5);
-    const cleaned = lines.map(l => l.replace(/^\d+\.\s*/, "").trim());
-    while (cleaned.length < 5) cleaned.push("");
-    onBulletsChange(cleaned);
+  const bulletRows = Array.from({ length: 5 }, (_, index) => normalizeBulletLine(bullets[index] ?? ""));
+  const updateBulletAt = (index: number, value: string) => {
+    const next = [...bulletRows];
+    next[index] = normalizeBulletLine(value);
+    onBulletsChange(next);
   };
 
   // 没跑过 AI 优化时,textarea 全是 placeholder
   const placeholderTitle = isOptimizing ? "AI 优化中..." : "尚未生成,点左栏「文案优化」按钮";
-  const placeholderBullets = isOptimizing ? "AI 优化中..." : "1. xxx\n2. xxx\n3. xxx\n4. xxx\n5. xxx";
+  const placeholderBullets = isOptimizing ? "AI 优化中..." : "SUMMARY Core selling point and customer benefit";
   const placeholderDesc = isOptimizing ? "AI 优化中..." : "尚未生成,点左栏「文案优化」按钮";
   const placeholderSt = isOptimizing ? "AI 优化中..." : "尚未生成,点左栏「文案优化」按钮";
 
@@ -228,50 +225,50 @@ function CopyEditor({
     <>
       {/* compare-block 容器 — 对齐原型 prototype-ui-preview.html 行 156-231 */}
       <div style={{
-        background: "#fff",
-        border: "1px solid #eaeaea",
+        background: "var(--theme-surface)",
+        border: "1px solid var(--theme-border-soft)",
         borderRadius: "6px",
         marginBottom: "20px",
       }}>
         {/* compare-block-head */}
-        <div style={{ padding: "14px 16px", borderBottom: "1px solid #f0f0f0" }}>
+        <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--theme-border-soft)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
             {result ? (
               showEmptyWarn ? (
-                <div className="badge" style={{ background: "#ffebee", color: "#c62828", border: "1px solid #ffcdd2", padding: "2px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: 500 }}>AI 失败</div>
+                <div className="badge" style={{ background: "var(--theme-danger-bg)", color: "var(--theme-danger-text)", border: "1px solid var(--theme-danger-border)", padding: "2px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: 500 }}>AI 失败</div>
               ) : showPartialWarn ? (
-                <div className="badge" style={{ background: "#fff8e1", color: "#e65100", border: "1px solid #ffe0b2", padding: "2px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: 500 }}>部分缺失</div>
+                <div className="badge" style={{ background: "var(--theme-warning-bg)", color: "var(--theme-warning-text)", border: "1px solid var(--theme-warning-border)", padding: "2px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: 500 }}>部分缺失</div>
               ) : (
                 <div className="badge badge-ok">AI 已生成</div>
               )
             ) : (
-              <div className="badge" style={{ background: "#e3f2fd", color: "#1565c0", border: "1px solid #bbdefb", padding: "2px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: 500 }}>已抓取原始</div>
+              <div className="badge" style={{ background: "var(--theme-info-bg)", color: "var(--theme-info-text)", border: "1px solid var(--theme-info-border)", padding: "2px 10px", borderRadius: "10px", fontSize: "11px", fontWeight: 500 }}>已抓取原始</div>
             )}
-            <div style={{ fontSize: "13px", color: "#666" }}>{result?.market_name || (fetchedProduct?.market ?? "")}</div>
+            <div style={{ fontSize: "13px", color: "var(--theme-text-secondary)" }}>{result?.market_name || (fetchedProduct?.market ?? "")}</div>
             {showRetryHint && (
-              <div style={{ fontSize: "11px", color: "#999" }}>
+              <div style={{ fontSize: "11px", color: "var(--theme-text-muted)" }}>
                 (AI 重试 {aiAttempts} 次后成功)
               </div>
             )}
           </div>
-          <div style={{ fontSize: "11px", color: "#999" }}>
+          <div style={{ fontSize: "11px", color: "var(--theme-text-muted)" }}>
             原始文案 & 优化后文案 · 上方只读 · 下方可编辑可复制
           </div>
         </div>
 
         {/* AI 文案质量警告(B.7) — 放在 compare-block 内顶部 */}
         {showEmptyWarn && (
-          <div style={{ padding: "12px 16px", background: "#ffebee", borderBottom: "1px solid #ef9a9a", fontSize: "13px", color: "#c62828" }}>
+          <div style={{ padding: "12px 16px", background: "var(--theme-danger-bg)", borderBottom: "1px solid var(--theme-danger-border)", fontSize: "13px", color: "var(--theme-danger-text)" }}>
             <div style={{ fontWeight: 600, marginBottom: "4px" }}>⚠ AI 返回内容为空</div>
-            <div style={{ color: "#b71c1c" }}>
+            <div style={{ color: "var(--theme-danger-text)" }}>
               流水线虽然"完成",但 AI 没生成任何文案。下方字段全是空的。建议重试或检查 MiniMax API 配额/余额。
             </div>
           </div>
         )}
         {showPartialWarn && (
-          <div style={{ padding: "12px 16px", background: "#fff8e1", borderBottom: "1px solid #ffe082", fontSize: "13px", color: "#e65100" }}>
+          <div style={{ padding: "12px 16px", background: "var(--theme-warning-bg)", borderBottom: "1px solid var(--theme-warning-border)", fontSize: "13px", color: "var(--theme-warning-text)" }}>
             <div style={{ fontWeight: 600, marginBottom: "4px" }}>⚠ AI 文案部分缺失</div>
-            <div style={{ color: "#bf360c" }}>
+            <div style={{ color: "var(--theme-warning-text)" }}>
               部分字段(标题/五点/描述/搜索词)可能为空。你可以直接在下方编辑框补全,或重试流水线。
             </div>
           </div>
@@ -298,19 +295,16 @@ function CopyEditor({
         />
 
         {/* 字段 2: 五点描述 — 原始有内容(多行) */}
-        <CompareField
+        <BulletFields
           name="五点描述"
           tag="原始"
           original={originalBulletsText}
           emptyOriginalText="GIGA 未提供原始五点"
-          optimized={bulletsText}
+          bullets={bulletRows}
           placeholder={placeholderBullets}
-          rows={9}
-          monoFont
-          onOptimizedChange={updateBulletsFromText}
-          copied={copied === "bullets"}
-          failed={copied === "failed-bullets"}
-          onCopy={() => copy(bullets.filter(b => (b ?? "").trim()).join("\n"), "bullets")}
+          onBulletChange={updateBulletAt}
+          copied={copied}
+          onCopy={(text, key) => copy(text, key)}
         />
 
         {/* 字段 3: 产品描述 — GIGA 没原始,完全隐藏原始区 */}
@@ -350,11 +344,11 @@ function CopyEditor({
       {result?.template_skipped && (
         <div style={{
           padding: "12px 14px",
-          background: "#f1f8e9",
-          border: "1px solid #c5e1a5",
+          background: "var(--theme-success-bg)",
+          border: "1px solid var(--theme-success-border)",
           borderRadius: "4px",
           fontSize: "13px",
-          color: "#33691e",
+          color: "var(--theme-success-text)",
           lineHeight: 1.6,
           marginBottom: "20px",
         }}>
@@ -364,19 +358,131 @@ function CopyEditor({
         </div>
       )}
       {result && (
-        <div style={{ padding: "16px", background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: "4px", fontSize: "13px" }}>
+        <div style={{ padding: "16px", background: "var(--theme-surface-muted)", border: "1px solid var(--theme-border)", borderRadius: "4px", fontSize: "13px" }}>
           <div style={{ fontWeight: 500, marginBottom: "6px" }}>输出文件</div>
-          <div style={{ color: "#666" }}>
+          <div style={{ color: "var(--theme-text-secondary)" }}>
             {result.output_file || (result.template_skipped ? "（本次未生成 .xlsm — 未提供模板）" : "")}
           </div>
-          {result.output_file && (
-            <div style={{ color: "#999", fontSize: "12px", marginTop: "4px" }}>
-              保存在 F:\AI Projects\GIGAB2B\
-            </div>
+          {result.output_url && (
+            <a
+              href={result.output_url}
+              style={{ display: "inline-block", color: "var(--theme-link)", fontSize: "12px", marginTop: "8px" }}
+            >
+              下载 Excel 文件
+            </a>
           )}
         </div>
       )}
     </>
+  );
+}
+
+interface BulletFieldsProps {
+  name: string;
+  tag: string;
+  original: string | null;
+  emptyOriginalText: string;
+  bullets: string[];
+  placeholder: string;
+  onBulletChange: (index: number, value: string) => void;
+  copied: string | null;
+  onCopy: (text: string, key: string) => void;
+}
+
+function BulletFields({
+  name,
+  tag,
+  original,
+  emptyOriginalText,
+  bullets,
+  placeholder,
+  onBulletChange,
+  copied,
+  onCopy,
+}: BulletFieldsProps) {
+  const hasOriginal = !!(original && original.trim());
+
+  return (
+    <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--theme-border-soft)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--theme-text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
+          {name}
+          <span style={{
+            fontSize: 10, padding: "2px 8px", borderRadius: 10,
+            background: "var(--theme-surface-muted)", color: "var(--theme-text-secondary)", fontWeight: 500, letterSpacing: 0.2,
+          }}>{tag}</span>
+        </span>
+      </div>
+
+      {hasOriginal ? (
+        <div style={{
+          fontSize: 12, color: "var(--theme-text-secondary)", lineHeight: 1.6,
+          background: "var(--theme-surface-soft)", borderLeft: "3px solid var(--theme-border)",
+          padding: "10px 12px", borderRadius: "0 4px 4px 0",
+          marginBottom: 12, maxHeight: 120, overflowY: "auto",
+          whiteSpace: "pre-wrap",
+        }}>{original}</div>
+      ) : (
+        <div style={{
+          fontSize: 12, color: "var(--theme-text-muted)", fontStyle: "italic", lineHeight: 1.6,
+          background: "var(--theme-surface-soft)", borderLeft: "3px solid var(--theme-border-soft)",
+          padding: "10px 12px", borderRadius: "0 4px 4px 0",
+          marginBottom: 12,
+        }}>{emptyOriginalText}</div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "var(--theme-text-muted)", textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <span>优化后 · 五条独立可编辑可复制</span>
+          {bullets.some(b => b.trim()) && (
+            <span
+              onClick={() => onCopy(bullets.filter(b => b.trim()).join("\n"), "bullets")}
+              style={{ fontSize: 12, color: "var(--theme-link)", cursor: "pointer", textTransform: "none", letterSpacing: 0 }}
+            >
+              {copied === "bullets" ? "✓ 已复制全部" : copied === "failed-bullets" ? "复制失败" : "📋 复制全部"}
+            </span>
+          )}
+        </div>
+        {bullets.map((bullet, index) => {
+          const key = `bullet-${index}`;
+          const value = bullet ?? "";
+          return (
+            <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "start" }}>
+              <textarea
+                className="input"
+                rows={2}
+                value={value}
+                onChange={e => onBulletChange(index, e.target.value)}
+                placeholder={placeholder}
+                style={{
+                  minHeight: 52,
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  resize: "vertical",
+                  fontFamily: "Menlo, Consolas, monospace",
+                }}
+              />
+              <button
+                className={value.trim() ? "btn-secondary" : ""}
+                disabled={!value.trim()}
+                onClick={() => onCopy(value.trim(), key)}
+                style={{
+                  padding: "8px 10px",
+                  fontSize: 12,
+                  minWidth: 72,
+                  border: value.trim() ? undefined : "1px solid var(--theme-border)",
+                  background: value.trim() ? undefined : "var(--theme-surface-muted)",
+                  color: value.trim() ? undefined : "var(--theme-text-muted)",
+                  cursor: value.trim() ? "pointer" : "not-allowed",
+                }}
+              >
+                {copied === key ? "✓ 已复制" : copied === `failed-${key}` ? "复制失败" : "复制"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -413,13 +519,13 @@ function CompareField({
   const hasOriginal = !!(original && original.trim());
   const showOriginalBlock = !hideOriginal;
   return (
-    <div style={{ padding: "14px 16px", borderBottom: "1px solid #f5f5f5" }}>
+    <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--theme-border-soft)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: "#333", display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--theme-text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
           {name}
           <span style={{
             fontSize: 10, padding: "2px 8px", borderRadius: 10,
-            background: "#f0f0f0", color: "#888", fontWeight: 500, letterSpacing: 0.2,
+            background: "var(--theme-surface-muted)", color: "var(--theme-text-secondary)", fontWeight: 500, letterSpacing: 0.2,
           }}>{tag}</span>
         </span>
       </div>
@@ -427,8 +533,8 @@ function CompareField({
       {/* 原始区 — hideOriginal=true 时整个区域不渲染(没有空态提示框) */}
       {showOriginalBlock && hasOriginal && (
         <div style={{
-          fontSize: 12, color: "#888", lineHeight: 1.6,
-          background: "#fafafa", borderLeft: "3px solid #e0e0e0",
+          fontSize: 12, color: "var(--theme-text-secondary)", lineHeight: 1.6,
+          background: "var(--theme-surface-soft)", borderLeft: "3px solid var(--theme-border)",
           padding: "10px 12px", borderRadius: "0 4px 4px 0",
           marginBottom: 12, maxHeight: 120, overflowY: "auto",
           whiteSpace: "pre-wrap",
@@ -436,8 +542,8 @@ function CompareField({
       )}
       {showOriginalBlock && !hasOriginal && (
         <div style={{
-          fontSize: 12, color: "#bbb", fontStyle: "italic", lineHeight: 1.6,
-          background: "#fcfcfc", borderLeft: "3px solid #f0f0f0",
+          fontSize: 12, color: "var(--theme-text-muted)", fontStyle: "italic", lineHeight: 1.6,
+          background: "var(--theme-surface-soft)", borderLeft: "3px solid var(--theme-border-soft)",
           padding: "10px 12px", borderRadius: "0 4px 4px 0",
           marginBottom: 12,
         }}>{emptyOriginalText}</div>
@@ -445,10 +551,10 @@ function CompareField({
 
       {/* 优化后区 */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "#999", textTransform: "uppercase", letterSpacing: 0.4 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "var(--theme-text-muted)", textTransform: "uppercase", letterSpacing: 0.4 }}>
           <span>优化后 · 可编辑</span>
           {optimized && (
-            <span onClick={onCopy} style={{ fontSize: 12, color: "#1565c0", cursor: "pointer", textTransform: "none", letterSpacing: 0 }}>
+            <span onClick={onCopy} style={{ fontSize: 12, color: "var(--theme-link)", cursor: "pointer", textTransform: "none", letterSpacing: 0 }}>
               {copied ? "✓ 已复制" : failed ? "复制失败" : "📋 复制"}
             </span>
           )}
@@ -468,7 +574,7 @@ function CompareField({
           }}
         />
         {showFoot && footText != null && (
-          <div style={{ fontSize: 11, color: footError ? "#c62828" : "#999" }}>
+          <div style={{ fontSize: 11, color: footError ? "var(--theme-danger-text)" : "var(--theme-text-muted)" }}>
             {footText}
           </div>
         )}

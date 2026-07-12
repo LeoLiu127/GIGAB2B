@@ -55,15 +55,16 @@ export function PromptForm({
               <button
                 key={o.value}
                 type="button"
+                className={active ? "theme-action" : ""}
                 onClick={() => onImageTypeChange(o.value)}
                 style={{
                   flex: 1,
                   padding: "8px 6px",
                   fontSize: "12px",
                   cursor: "pointer",
-                  background: active ? "#1565c0" : "#fafafa",
-                  color: active ? "#fff" : "#333",
-                  border: active ? "1px solid #1565c0" : "1px solid #e0e0e0",
+                  background: active ? "var(--theme-action-bg)" : "var(--theme-surface-soft)",
+                  color: active ? "var(--theme-action-fg)" : "var(--theme-text-primary)",
+                  border: active ? "1px solid var(--theme-action-bg)" : "1px solid var(--theme-border)",
                   borderRadius: "4px",
                   textAlign: "left",
                   lineHeight: 1.3,
@@ -80,7 +81,7 @@ export function PromptForm({
 
       {/* 尺寸下拉 */}
       <div style={{ marginBottom: "10px" }}>
-        <div style={{ fontSize: "11px", color: "#666", marginBottom: "3px" }}>尺寸</div>
+        <div style={{ fontSize: "11px", color: "var(--theme-text-secondary)", marginBottom: "3px" }}>尺寸</div>
         <select
           className="input"
           style={{ padding: "6px 8px", fontSize: "12px", width: "100%" }}

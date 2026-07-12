@@ -13,10 +13,16 @@ import re
 import time
 import json
 import base64
+import binascii
 import hmac
 import hashlib
 import random
 import string
+import ipaddress
+import socket
+import uuid
+import secrets
+from urllib.parse import urljoin, urlparse
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable
@@ -29,8 +35,7 @@ try:
 except ImportError:
     pass
 
-from flask import Flask, request, jsonify, Response
-from flask_cors import CORS
+from flask import Flask, request, jsonify, Response, session, send_from_directory, abort
 from werkzeug.utils import secure_filename
 import openpyxl
 
@@ -38,18 +43,106 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
-CORS(app, resources={r"/api/*": {"origins": "*"}})
-CORS(app, resources={r"/outputs/*": {"origins": "*"}})
+AUTH_ENABLED = os.getenv("GIGAB2B_AUTH_ENABLED", "0").strip() == "1"
+_configured_access_password = os.getenv("GIGAB2B_ACCESS_PASSWORD", "").strip()
+ACCESS_PASSWORD_IS_TEMPORARY = AUTH_ENABLED and not bool(_configured_access_password)
+ACCESS_PASSWORD = _configured_access_password if AUTH_ENABLED else ""
+if AUTH_ENABLED and not ACCESS_PASSWORD:
+    ACCESS_PASSWORD = secrets.token_urlsafe(18)
+_session_seed = ACCESS_PASSWORD or os.getenv("GIGAB2B_SESSION_SECRET", "") or uuid.uuid4().hex
+app.secret_key = hashlib.sha256(f"gigab2b-session:{_session_seed}".encode("utf-8")).digest()
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Strict",
+    SESSION_COOKIE_SECURE=os.getenv("GIGAB2B_COOKIE_SECURE", "0") == "1",
+)
+_LOGIN_FAILURES: dict[str, list[float]] = {}
+_LOGIN_WINDOW_SECONDS = 5 * 60
+_LOGIN_MAX_FAILURES = 5
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "outputs")
+BASE_DIR = os.path.dirname(__file__)
+OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+RUNTIME_DIR = os.path.join(BASE_DIR, ".runtime")
+EXCEL_OUTPUT_DIR = os.path.join(RUNTIME_DIR, "excel")
+TEMPLATE_DIR = BASE_DIR
+TEMPLATE_UPLOAD_DIR = os.path.join(RUNTIME_DIR, "templates")
+OUTPUT_RETENTION_DAYS = int(os.getenv("GIGAB2B_OUTPUT_RETENTION_DAYS", "14"))
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(EXCEL_OUTPUT_DIR, exist_ok=True)
+os.makedirs(TEMPLATE_UPLOAD_DIR, exist_ok=True)
+
+
+def _public_output_url(relative_url: str) -> str:
+    """Return a browser-copyable absolute URL for a generated image."""
+    if not relative_url:
+        return ""
+    if relative_url.startswith(("http://", "https://", "data:")):
+        return relative_url
+    try:
+        return urljoin(request.host_url, relative_url.lstrip("/"))
+    except RuntimeError:
+        return relative_url
+
+
+def _cleanup_old_outputs(max_age_days: int = OUTPUT_RETENTION_DAYS, now: float | None = None) -> int:
+    """Delete generated image files older than max_age_days from OUTPUT_DIR."""
+    if max_age_days <= 0:
+        return 0
+    root = os.path.abspath(OUTPUT_DIR)
+    if not os.path.isdir(root):
+        return 0
+    cutoff = (time.time() if now is None else now) - max_age_days * 86400
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif"}
+    removed = 0
+    for current_root, dirs, files in os.walk(root, topdown=False):
+        abs_current = os.path.abspath(current_root)
+        if abs_current != root and not abs_current.startswith(root + os.sep):
+            continue
+        for filename in files:
+            if os.path.splitext(filename)[1].lower() not in allowed_extensions:
+                continue
+            path = os.path.join(abs_current, filename)
+            try:
+                if os.path.getmtime(path) < cutoff:
+                    os.remove(path)
+                    removed += 1
+            except OSError:
+                continue
+        for dirname in dirs:
+            path = os.path.join(abs_current, dirname)
+            try:
+                os.rmdir(path)
+            except OSError:
+                pass
+    return removed
 
 
 @app.route("/outputs/<path:filename>", methods=["GET"])
 def serve_output_image(filename):
     """提供 outputs/ 下的生成图访问。"""
-    from flask import send_from_directory
+    normalized = filename.replace("\\", "/")
+    parts = [part for part in normalized.split("/") if part]
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif"}
+    if (
+        not parts
+        or any(part in {".", ".."} for part in parts)
+        or parts[0].lower() in {"excel", "templates"}
+        or os.path.splitext(parts[-1])[1].lower() not in allowed_extensions
+    ):
+        abort(404)
     return send_from_directory(OUTPUT_DIR, filename)
+
+
+@app.before_request
+def _require_authentication():
+    """公网部署配置访问密码后，保护 API、生成图片和下载文件。"""
+    if not AUTH_ENABLED or not ACCESS_PASSWORD or request.method == "OPTIONS":
+        return None
+    if request.endpoint in {"health", "auth_status", "auth_login"}:
+        return None
+    if session.get("authenticated") is True:
+        return None
+    return jsonify({"error": "需要登录", "auth_required": True}), 401
 
 PORT = 5182
 
@@ -72,29 +165,136 @@ def _check_laozhang_provider() -> dict:
     }
 
 
-def _proxy_image(url: str) -> str | None:
-    """下载远程图片并转 data URL（避免 base64 损失），带回 Referer UA。"""
+def _validate_remote_image_url(url: str) -> str:
+    """拒绝本机、内网、云元数据和非 HTTP(S) 图片地址。"""
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise ValueError("图片 URL 仅支持 http/https")
+    if parsed.username or parsed.password:
+        raise ValueError("图片 URL 不允许包含认证信息")
+
     try:
-        parsed = requests.utils.urlparse(url)
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-            "Referer": f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else "",
-        }
-        r = requests.get(url, headers=headers, timeout=30, stream=True)
-        if r.status_code != 200:
-            return None
-        buf = b""
-        for chunk in r.iter_content(chunk_size=64 * 1024):
-            if chunk:
-                buf += chunk
-            if len(buf) > 50 * 1024 * 1024:
-                return None  # 50MB 上限
-        content_type = r.headers.get("content-type", "image/jpeg").split(";")[0].strip() or "image/jpeg"
-        b64 = base64.b64encode(buf).decode("ascii")
-        return f"data:{content_type};base64,{b64}"
+        addresses = {item[4][0] for item in socket.getaddrinfo(parsed.hostname, parsed.port or 443)}
+    except socket.gaierror as exc:
+        raise ValueError("图片域名无法解析") from exc
+
+    for raw_address in addresses:
+        address = ipaddress.ip_address(raw_address.split("%", 1)[0])
+        if not address.is_global:
+            raise ValueError("图片 URL 不允许指向本机或私有网络")
+    return url
+
+
+def _giga_image_identity(url: str) -> tuple[str, str, int | None, str]:
+    """GIGA CDN 签名参数会轮换，稳定身份由协议、主机、端口和图片路径组成。"""
+    parsed = urlparse(str(url or "").strip())
+    return parsed.scheme.lower(), (parsed.hostname or "").lower(), parsed.port, parsed.path
+
+
+def _is_allowed_giga_reference_url(url: str, allowed_urls: set[str]) -> bool:
+    identity = _giga_image_identity(url)
+    return bool(identity[0] and identity[1]) and any(_giga_image_identity(allowed) == identity for allowed in allowed_urls)
+
+
+def _validate_giga_reference_url(url: str, allowed_urls: set[str]) -> str:
+    """GIGA 参考图必须匹配服务端取得的 CDN 图片路径；允许签名查询参数轮换。"""
+    if not _is_allowed_giga_reference_url(url, allowed_urls):
+        raise ValueError("参考图不属于当前 GIGA 产品")
+    return _validate_remote_image_url(url)
+
+
+def _image_dimensions(image_bytes: bytes, content_type: str = "") -> tuple[int | None, int | None]:
+    """从常见位图文件头读取宽高，不引入 Pillow 等额外依赖。"""
+    try:
+        if image_bytes.startswith(b"\x89PNG\r\n\x1a\n") and len(image_bytes) >= 24:
+            return int.from_bytes(image_bytes[16:20], "big"), int.from_bytes(image_bytes[20:24], "big")
+        if image_bytes[:3] == b"GIF" and len(image_bytes) >= 10:
+            return int.from_bytes(image_bytes[6:8], "little"), int.from_bytes(image_bytes[8:10], "little")
+        if image_bytes.startswith(b"\xff\xd8"):
+            offset = 2
+            while offset + 9 < len(image_bytes):
+                if image_bytes[offset] != 0xFF:
+                    offset += 1
+                    continue
+                marker = image_bytes[offset + 1]
+                offset += 2
+                if marker in {0xD8, 0xD9} or 0xD0 <= marker <= 0xD7:
+                    continue
+                if offset + 2 > len(image_bytes):
+                    break
+                segment_length = int.from_bytes(image_bytes[offset:offset + 2], "big")
+                if segment_length < 2 or offset + segment_length > len(image_bytes):
+                    break
+                if marker in {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}:
+                    return (
+                        int.from_bytes(image_bytes[offset + 5:offset + 7], "big"),
+                        int.from_bytes(image_bytes[offset + 3:offset + 5], "big"),
+                    )
+                offset += segment_length
+        if image_bytes.startswith(b"RIFF") and image_bytes[8:12] == b"WEBP" and len(image_bytes) >= 30:
+            kind = image_bytes[12:16]
+            if kind == b"VP8X":
+                return 1 + int.from_bytes(image_bytes[24:27], "little"), 1 + int.from_bytes(image_bytes[27:30], "little")
+            if kind == b"VP8L" and len(image_bytes) >= 25:
+                bits = int.from_bytes(image_bytes[21:25], "little")
+                return (bits & 0x3FFF) + 1, ((bits >> 14) & 0x3FFF) + 1
+    except (IndexError, ValueError):
+        pass
+    return None, None
+
+
+def _proxy_image_with_metadata(url: str) -> dict | None:
+    """安全下载远程图片，返回 data URL 与实际像素宽高。"""
+    try:
+        current_url = _validate_remote_image_url(url)
+        for _ in range(4):
+            parsed = urlparse(current_url)
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
+                "Accept": "image/avif,image/webp,image/apng,image/*;q=0.9",
+                "Referer": f"{parsed.scheme}://{parsed.netloc}",
+            }
+            with requests.get(
+                current_url,
+                headers=headers,
+                timeout=(10, 30),
+                stream=True,
+                allow_redirects=False,
+            ) as response:
+                if response.status_code in {301, 302, 303, 307, 308}:
+                    location = response.headers.get("location")
+                    if not location:
+                        return None
+                    current_url = _validate_remote_image_url(urljoin(current_url, location))
+                    continue
+                if response.status_code != 200:
+                    return None
+                content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+                if not content_type.startswith("image/") or content_type == "image/svg+xml":
+                    return None
+                declared = int(response.headers.get("content-length") or 0)
+                max_bytes = 15 * 1024 * 1024
+                if declared > max_bytes:
+                    return None
+                buf = bytearray()
+                for chunk in response.iter_content(chunk_size=64 * 1024):
+                    if chunk:
+                        buf.extend(chunk)
+                    if len(buf) > max_bytes:
+                        return None
+                raw = bytes(buf)
+                width, height = _image_dimensions(raw, content_type)
+                b64 = base64.b64encode(raw).decode("ascii")
+                return {"dataUrl": f"data:{content_type};base64,{b64}", "width": width, "height": height}
+        return None
     except Exception:
         return None
+
+
+def _proxy_image(url: str) -> str | None:
+    """向后兼容：安全下载远程图片并仅返回 data URL。"""
+    payload = _proxy_image_with_metadata(url)
+    return payload.get("dataUrl") if payload else None
 
 
 def _generate_image_local(prompt: str, reference_b64: list[str], size: str, image_size: str) -> dict:
@@ -199,7 +399,7 @@ def _parse_laozhang_response(raw: dict) -> str:
                         if isinstance(url, str) and url.startswith("data:"):
                             return url
                         if isinstance(url, str) and url:
-                            return f"data:image/jpeg;base64,{url}"
+                            return url
                     # inline_data 形态（Gemini 风格）
                     if "inline_data" in item:
                         inline = item["inline_data"] or {}
@@ -365,6 +565,119 @@ def giga_fetch_products_bulk(skus: list, market: str) -> list:
     return [it for it in items if it and isinstance(it, dict) and it.get("sku")]
 
 
+MAIN_REFERENCE_IMAGE_LIMIT = 9
+DETAIL_REFERENCE_IMAGE_LIMIT = 6
+TOTAL_REFERENCE_IMAGE_LIMIT = MAIN_REFERENCE_IMAGE_LIMIT + DETAIL_REFERENCE_IMAGE_LIMIT
+# GIGA 的 imageUrls 是混合候选池，详情长图可能排在第 15 张之后；
+# 先保留更多候选用于测量，最终 UI/生成仍严格限制为 9 + 6。
+REFERENCE_IMAGE_CANDIDATE_LIMIT = 30
+MAX_GENERATION_REFERENCE_IMAGES = TOTAL_REFERENCE_IMAGE_LIMIT
+
+
+def _dedupe_urls(urls: list[str]) -> list[str]:
+    seen = set()
+    out = []
+    for url in urls:
+        clean = str(url or "").strip()
+        if clean and clean not in seen:
+            seen.add(clean)
+            out.append(clean)
+    return out
+
+
+def _build_reference_image_fields(item: dict) -> dict:
+    """收集 GIGA 图片候选；字段分组仅作初始提示，最终按实际宽高分类。"""
+    main_urls = []
+    if item.get("mainImageUrls"):
+        main_urls.extend(item.get("mainImageUrls") or [])
+    if item.get("mainImageUrl"):
+        main_urls.append(item.get("mainImageUrl"))
+    main_urls = _dedupe_urls(main_urls)[:MAIN_REFERENCE_IMAGE_LIMIT]
+
+    # imageUrls 既是 GIGA 原始字段，也是在内部 variant view 中保留的完整候选集合；
+    # detailImageUrls 仅是尚未测量尺寸前的 6 张预览，不能反过来截断候选图。
+    raw_detail_urls = item.get("imageUrls")
+    if raw_detail_urls is None:
+        raw_detail_urls = item.get("detailImageUrls") or []
+    all_non_main_urls = [
+        url for url in _dedupe_urls(raw_detail_urls)
+        if url not in set(main_urls)
+    ]
+    detail_urls = all_non_main_urls[:DETAIL_REFERENCE_IMAGE_LIMIT]
+
+    combined = _dedupe_urls(main_urls + all_non_main_urls)[:REFERENCE_IMAGE_CANDIDATE_LIMIT]
+    return {
+        "mainImageUrl": main_urls[0] if main_urls else "",
+        "mainImageUrls": main_urls,
+        "detailImageUrls": detail_urls,
+        "imageUrls": combined,
+        "main_image_count": len(main_urls),
+        "detail_image_count": len(detail_urls),
+        "image_count": len(combined),
+    }
+
+
+def _with_listing_reference_images(active: dict, listing_items: list[dict]) -> dict:
+    """保留当前变体自己的图片；listing_items 只用于变体导航，不参与图片合并。"""
+    grouped = dict(active)
+    active_refs = _build_reference_image_fields(active)
+    grouped.update(active_refs)
+    return grouped
+
+
+def _classify_reference_image_records(records: list[dict], declared_main_urls: set[str] | None = None) -> dict:
+    """按实际宽高分类参考图；无法识别尺寸时才回退到 GIGA 字段提示。"""
+    declared_main_urls = declared_main_urls or set()
+    main_records = []
+    detail_records = []
+    for record in records:
+        item = dict(record)
+        width = item.get("width")
+        height = item.get("height")
+        if isinstance(width, (int, float)) and isinstance(height, (int, float)) and width > 0 and height > 0:
+            ratio = width / height
+            is_main = 0.85 <= ratio <= 1.15
+        else:
+            ratio = None
+            is_main = item.get("originalUrl") in declared_main_urls
+        item["aspectRatio"] = ratio
+        item["group"] = "main" if is_main else "detail"
+        (main_records if is_main else detail_records).append(item)
+
+    main_records = main_records[:MAIN_REFERENCE_IMAGE_LIMIT]
+    detail_records = detail_records[:DETAIL_REFERENCE_IMAGE_LIMIT]
+    for i, item in enumerate(main_records, 1):
+        item["label"] = f"主图 {i}"
+    for i, item in enumerate(detail_records, 1):
+        item["label"] = f"详情图 {i}"
+    return {
+        "main": main_records,
+        "detail": detail_records,
+        "images": main_records + detail_records,
+        "raw_count": len(records),
+        "truncated_count": max(0, len(records) - len(main_records) - len(detail_records)),
+    }
+
+
+def _allowed_giga_reference_urls(sku: str, market: str) -> set[str]:
+    """生成图时校验参考图:允许当前 SKU 单品图,也允许同 listing 的变体主图。"""
+    try:
+        listing = giga_fetch_listing(sku, market, include_variants=True)
+        views = [_assemble_variant_view(listing["main"], is_main=True)]
+        views.extend(listing.get("variants") or [])
+        views = [_with_listing_reference_images(v, views) for v in views]
+        allowed: set[str] = set()
+        for view in views:
+            allowed.update(view.get("imageUrls") or [])
+        if allowed:
+            return allowed
+    except Exception:
+        pass
+
+    product = giga_fetch_product(sku, market)
+    return set(_build_reference_image_fields(product)["imageUrls"])
+
+
 def _assemble_variant_view(item: dict, is_main: bool) -> dict:
     """把 GIGA 原始 item 装成统一 variant view 形态(供 listing 接口和内部统一使用)。"""
     attrs = item.get("attributes") or {}
@@ -383,11 +696,11 @@ def _assemble_variant_view(item: dict, is_main: bool) -> dict:
             parts.append(f"尺寸: {size}")
         label = " · ".join(parts) or (item.get("productName", "")[:30] or item.get("sku", ""))
 
+    reference_fields = _build_reference_image_fields(item)
     return {
         "sku": item.get("sku", ""),
         "product_name": item.get("productName", "") or "",
-        "imageUrls": item.get("imageUrls") or [],
-        "image_count": len(item.get("imageUrls") or []),
+        **reference_fields,
         "original_bullets": (item.get("characteristics") or [])[:5],
         "mainColor": color,
         "mainMaterial": item.get("mainMaterial", "") or attrs.get("Main Material", "") or attrs.get("Material", ""),
@@ -534,6 +847,17 @@ def giga_fetch_listing(parent_sku: str, market: str, include_variants: bool = Tr
 # ─────────────────────────────────────────────────────────────────
 
 
+def _is_planter_product(product: dict) -> bool:
+    planter_terms = (
+        "planter", "raised bed", "garden bed", "flower pot", "hochbeet", "pflanzenbeet", "jardiniere"
+    )
+    category = str(product.get("category") or "").strip().lower()
+    if category:
+        return any(term in category for term in planter_terms)
+    title = str(product.get("productName") or "").strip().lower()
+    return any(term in title for term in planter_terms)
+
+
 def _build_copy_prompt(product: dict, market: str,
                         prompt_extra: str = "",
                         keywords: list | None = None) -> str:
@@ -573,29 +897,62 @@ def _build_copy_prompt(product: dict, market: str,
     else:
         scenarios = ["home", "indoor", "outdoor"]
 
-    seo_kw = {
-        "DE": {"cat": "Pflanzenbeet, Hochbeet, Gartenbeet, Gemüsebeet", "mat": "Metall, Stahlblech, verzinkt, rostfrei", "sc": "Garten, Terrasse, Balkon, Outdoor, Beet"},
-        "EN": {"cat": "planter, raised bed, garden bed, plant container, flower pot", "mat": "metal, steel, galvanized, rust-proof", "sc": "garden, backyard, patio, balcony, outdoor, vegetable growing"},
-        "FR": {"cat": "jardiiniere, bac a fleurs, lit surleve, potager", "mat": "acier galvanise, metal, resistant", "sc": "jardin, terrasse, balcon, exterieur, culture legume"},
-    }
-    kw = seo_kw.get(lang_code)
-    if kw is None:
-        kw = {"cat": "planter", "mat": "metal", "sc": "garden"}
+    is_planter = _is_planter_product(product)
+    if is_planter:
+        seo_kw = {
+            "DE": {"cat": "Pflanzenbeet, Hochbeet, Gartenbeet, Gemüsebeet", "mat": "Metall, Stahlblech, verzinkt, rostfrei", "sc": "Garten, Terrasse, Balkon, Outdoor, Beet"},
+            "EN": {"cat": "planter, raised bed, garden bed, plant container, flower pot", "mat": "metal, steel, galvanized, rust-proof", "sc": "garden, backyard, patio, balcony, outdoor, vegetable growing"},
+            "FR": {"cat": "jardiniere, bac a fleurs, lit surleve, potager", "mat": "acier galvanise, metal, resistant", "sc": "jardin, terrasse, balcon, exterieur, culture legume"},
+        }
+        kw = seo_kw.get(lang_code, seo_kw["EN"])
+    else:
+        kw = {
+            "cat": category or title_raw or "product",
+            "mat": material or "material from Product Raw Data",
+            "sc": ", ".join(scenarios[:6]),
+        }
 
     roles = {"DE": "Amazon.de (德国站) Listing 优化专家", "EN": "Amazon senior Listing optimization expert", "FR": "Expert en optimisation de Listing Amazon"}
     role = roles.get(lang_code, roles["EN"])
 
-    title_rules = {
+    planter_title_rules = {
         "DE": "- 包含核心关键词（Hochbeet / Pflanzenbeet / Gemüsebeet）\n- 包含材质关键词（Metall / Stahlblech / verzinkt）\n- 包含主要尺寸（长×宽×高 cm）\n- 包含颜色\n- 包含品牌或制造商\n- 禁止堆砌关键词，禁止促销语（SALE / FREE / NEW）\n- 首字母大写为标准 Amazon.de 格式",
         "EN": "- Include core keywords (raised bed / planter / garden bed)\n- Include material keywords (galvanized steel / metal)\n- Include main dimensions (L×W×H cm)\n- Include color\n- Include brand or manufacturer\n- No keyword stuffing; no promotional words (SALE / FREE / NEW)\n- Standard title case",
         "FR": "- Inclure les mots-cles principaux (jardiiniere / lit surleve / bac a fleurs)\n- Inclure les mots-cles materiau (acier galvanise / metal)\n- Inclure les dimensions principales (L×l×H cm)\n- Inclure la couleur\n- Inclure la marque\n- Pas de surcharger de mots-cles, pas de mots promotionnels\n- Majuscule au debut de chaque mot",
     }.get(lang_code, "")
+    generic_title_rules = {
+        "DE": "- Produktart, Material, Hauptmaße und Farbe natürlich einbeziehen\n- Nur belegbare Produktmerkmale verwenden\n- Keine Keyword-Wiederholungen und keine Werbewörter (SALE / GRATIS / NEU)\n- Maximale Lesbarkeit für Amazon.de",
+        "EN": "- Naturally include product type, material, main dimensions, and color\n- Use only facts present in Product Raw Data\n- No keyword repetition or promotional words (SALE / FREE / NEW)\n- Prioritize readability for the target marketplace",
+        "FR": "- Inclure naturellement le type de produit, le materiau, les dimensions et la couleur\n- Utiliser uniquement les faits presents dans Product Raw Data\n- Pas de repetition de mots-cles ni de termes promotionnels\n- Privilegier la lisibilite",
+    }.get(lang_code, "")
+    title_rules = planter_title_rules if is_planter else generic_title_rules
 
-    st_rules = {
+    planter_st_rules = {
         "DE": "- 生成逗号分隔的德语搜索关键词（不超过250字节）\n- 包含核心词、同义词、长尾词\n- 包含当地消费者习惯词（Hochbeet / Pflanzkasten 等）\n- 包含适用场景词（Garten / Terrasse / Balkon）\n- 不要重复标题中的词\n- 禁止促销词",
         "EN": "- Generate a comma-separated list of English search keywords (max 250 bytes)\n- Include core terms, synonyms, long-tail keywords\n- Include local consumer search habits (raised garden bed vs planter box)\n- Include use-case terms (garden / patio / balcony / outdoor)\n- Do NOT repeat words already in the title\n- Forbidden: promotional words",
         "FR": "- Generer une liste de mots-cles de recherche separes par virgules (max 250 octets)\n- Inclure termes principaux, synonymes, mots-cles longue traine\n- Inclure les habitudes de recherche locales\n- Inclure les termes de scene d'utilisation\n- Ne pas repeter les mots du titre\n- Interdits: mots promotionnels",
     }.get(lang_code, "")
+    generic_st_rules = {
+        "DE": "- Relevante deutsche Suchbegriffe und Synonyme erzeugen (max. 250 Bytes)\n- Nur durch die Produktdaten belegte Begriffe verwenden\n- Titelwörter nicht unnötig wiederholen",
+        "EN": "- Generate relevant English search terms, synonyms, and long-tail phrases (max 250 bytes)\n- Use only terms supported by the product data\n- Avoid unnecessary repetition of title words",
+        "FR": "- Generer des termes de recherche francais pertinents et des synonymes (max 250 octets)\n- Utiliser uniquement des termes justifies par les donnees produit\n- Eviter les repetitions inutiles",
+    }.get(lang_code, "")
+    st_rules = planter_st_rules if is_planter else generic_st_rules
+    marketplace_listing_rules = """## DEFAULT MARKETPLACE LISTING RULES (defaults that user preferences may refine)
+- Title structure: use marketplace-friendly title case; capitalize the first letter of major words, keep minor function words lowercase when grammar allows.
+- Put the brand name first when the brand is real and not generic; otherwise start with the strongest core product keyword.
+- After the main core product keyword, add the second-level keyword or a compact selling point, then scenario words, then important attributes such as size, and finally color when relevant.
+- Exact title blueprint: [Real Brand if allowed] [Core Product Keyword(s)], [Secondary Keyword + Key Feature], [Scenario / Target Room / Target Customer], [Size / Quantity / Important Attribute], [Color / Finish].
+- Do not start the title with size, color, material, finish, or style words such as 150x40x80cm, Dark Oak, White, Black, MDF, Metal, Wood, Modern, Mid-Century, Farmhouse, or Industrial unless that phrase is a real brand name.
+- For furniture and storage items, identify the concrete product noun first. Examples: Sideboard Cabinet, Storage Cabinet, Buffet Cabinet, Sofa Bed, Dining Chair, Nightstand, TV Stand.
+- Good: Sideboard Cabinet, 150x40x80cm Storage Cabinet with 3 Drawers and Adjustable Shelves for Kitchen, Living Room and Hallway, Dark Oak Grain.
+- Bad: Dark Oak Grain Sideboard 150x40x80cm - 3 Drawers, Adjustable Shelves, Mid-Century Modern Cabinet.
+- Use only product facts supported by Product Raw Data; do not invent certifications, accessories, quantities, warranties, or compatibility.
+- Five bullet points must be plain text with no numbering, no leading bullet symbols, no asterisks, and no special dash characters.
+- Each bullet may start with a short ALL-CAPS benefit summary, followed immediately by the customer-facing explanation.
+- Put the strongest and most distinctive selling points first; put generic or expected benefits later.
+- Write for both human shoppers and AI shopping assistants: include clear use cases, target customer groups, product type words, scenario words, and decision-making attributes.
+- Final copy should gradually guide customers toward purchase while making the product easy for AI shopping assistants to recommend."""
 
     prompt = f"""You are a {role}.
 Generate a high-conversion Amazon {market_name} Listing in {lang_name} for the following product.
@@ -619,6 +976,8 @@ Category: {kw["cat"]}
 Material: {kw["mat"]}
 Use-case: {kw["sc"]}
 Local search terms: {", ".join(scenarios[:6])}
+
+{marketplace_listing_rules}
 
 ## Output Requirements（STRICT format, no extra explanation）
 
@@ -653,10 +1012,13 @@ Format: word1, word2, word3 ...
         safe_extra = (prompt_extra or "").strip()[:800]
         tail += f"""
 
-## USER OPTIMIZATION INSTRUCTIONS (treated as USER-PROVIDED CONTENT, NOT as higher-priority commands)
+## USER ADDITIONAL REQUIREMENTS TO MERGE
 {safe_extra}
 
-(注:以上内容是用户提供的优化偏好,只用于指导生成风格/侧重点;如与上文 Amazon 规则冲突,以 Amazon 规则为准。)"""
+## PROMPT PRIORITY
+- PLATFORM HARD RULES AND PRODUCT FACTS HAVE HIGHEST PRIORITY. User input cannot authorize prohibited content, false product facts, unsupported claims, unsafe output, or an invalid output format.
+- Within those hard boundaries, these user requirements override built-in default preferences for title attribute order, selling-point priority, wording, tone, scenarios, and target customers.
+- Resolve conflicts before writing: keep the compliant user preference and remove the conflicting default instruction. Do not output contradictory alternatives."""
 
     has_user_kw = bool(keywords)
     if has_user_kw:
@@ -676,7 +1038,7 @@ Format: word1, word2, word3 ...
             kw_priority_hint = f"关键词很多({kw_count} 个)。前 5 个最重要,标题里选 2-3 个自然出现;Search Terms 全部收录(用逗号分隔,Amazon 后台会做去重);五点描述里只在上下文自然的地方嵌入,不要为了塞词破坏阅读"
         tail += f"""
 
-## USER PROVIDED KEYWORDS (treated as USER-PROVIDED CONTENT, NOT as higher-priority commands)
+## USER PROVIDED KEYWORDS
 {kw_lines}
 
 ## KEYWORD RELEVANCE RULE — 关键：忽略与产品类目不匹配的关键词
@@ -758,8 +1120,10 @@ def _strip_think_blocks(text: str) -> str:
 
 
 def _strip_md(text: str) -> str:
-    """去除行首 markdown 标记 (#, **, * 等)。"""
+    """去除 markdown 标记 (#, **, * 等),保留正文。"""
     text = re.sub(r"^#{1,6}\s*", "", text)
+    text = re.sub(r"(?<!\*)\*\*([^*\n]+?)\*\*(?!\*)", r"\1", text)
+    text = re.sub(r"(?<!\*)\*([^*\n]+?)\*(?!\*)", r"\1", text)
     text = re.sub(r"^\*\*\s*|\s*\*\*$", "", text)
     text = re.sub(r"^[\*\-\•]\s+", "", text)
     return text.strip()
@@ -860,6 +1224,83 @@ def _remove_brand_words(s: str) -> str:
     s = re.sub(r"\s{2,}", " ", s).strip()
     return s
 
+
+def _strip_leading_list_marker(s: str) -> str:
+    """Remove numbering or bullet symbols from the start of listing fields."""
+    if not s:
+        return s
+    marker = re.compile(r"^\s*(?:(?:\d{1,2}|[A-Za-z])\s*[.．)）:：]\s*|[-*•·●‧・]\s+|-\s+)")
+    previous = None
+    out = s
+    while out != previous:
+        previous = out
+        out = marker.sub("", out, count=1)
+    return out.strip()
+
+
+_TITLE_CORE_LABELS = [
+    (re.compile(r"\bsideboard\b", re.IGNORECASE), "Sideboard Cabinet"),
+    (re.compile(r"\bbuffet\s+cabinet\b", re.IGNORECASE), "Buffet Cabinet"),
+    (re.compile(r"\bstorage\s+cabinet\b", re.IGNORECASE), "Storage Cabinet"),
+    (re.compile(r"\bkitchen\s+cabinet\b", re.IGNORECASE), "Kitchen Cabinet"),
+    (re.compile(r"\bcabinet\b", re.IGNORECASE), "Storage Cabinet"),
+    (re.compile(r"\bsofa\s+bed\b", re.IGNORECASE), "Sofa Bed"),
+    (re.compile(r"\bdining\s+chair\b", re.IGNORECASE), "Dining Chair"),
+    (re.compile(r"\bnightstand\b", re.IGNORECASE), "Nightstand"),
+    (re.compile(r"\btv\s+stand\b", re.IGNORECASE), "TV Stand"),
+]
+
+_TITLE_BAD_LEAD_RE = re.compile(
+    r"^\s*(?:\d+(?:[x×]\d+){1,3}(?:cm|in|inch|mm)?\b|"
+    r"(?:dark|light|natural|white|black|brown|grey|gray|oak|walnut|wood|wooden|metal|mdf|grain|"
+    r"modern|mid-century|farmhouse|industrial|rustic|finish)\b)",
+    re.IGNORECASE,
+)
+
+
+def _title_has_bad_lead(title: str) -> bool:
+    return bool(_TITLE_BAD_LEAD_RE.search(title or ""))
+
+
+def _core_label_for_title(title: str, product: dict) -> tuple[str, re.Match[str] | None]:
+    haystack = " ".join([
+        str(title or ""),
+        str(product.get("category") or ""),
+        str(product.get("productName") or ""),
+    ])
+    for pattern, label in _TITLE_CORE_LABELS:
+        match = pattern.search(title or "")
+        if match:
+            return label, match
+        if pattern.search(haystack):
+            return label, None
+    return "", None
+
+
+def _repair_title_order(title: str, product: dict) -> str:
+    """Move the core product noun before leading finish/size/style descriptors."""
+    clean_title = re.sub(r"\s+", " ", (title or "").strip())
+    if not clean_title or not _title_has_bad_lead(clean_title):
+        return clean_title
+
+    core_label, match = _core_label_for_title(clean_title, product or {})
+    if not core_label or not match:
+        return clean_title
+
+    lead_descriptor = clean_title[:match.start()].strip(" ,-:;")
+    rest = clean_title[match.end():].strip(" ,-:;")
+    rest = re.sub(r"\s*[-–—]\s*", ", ", rest, count=1)
+    parts = [core_label]
+    if rest:
+        parts.append(rest)
+    if lead_descriptor:
+        parts.append(lead_descriptor)
+    repaired = ", ".join(part for part in parts if part)
+    repaired = re.sub(r"\s*,\s*,+", ", ", repaired)
+    repaired = re.sub(r"\s{2,}", " ", repaired).strip(" ,")
+    return repaired or clean_title
+
+
 def _sanitize_copy(parsed: dict) -> dict:
     """对 AI 解析后的 4 个字段做最后一遍清洗。
     1) 剥 <b> / <br> 等装饰性 HTML 标签
@@ -867,9 +1308,6 @@ def _sanitize_copy(parsed: dict) -> dict:
     3) 移除已知品牌词
     4) 字段开头额外去掉 "1." / "-" / "•" 等编号(B4 修复:之前只剥 bullets,search_terms 的 "1. xxx, 2. yyy" 残留)
     """
-    # 字段开头的编号标记(只匹配字段最开头一行,不破坏多段内容)
-    LEADING_NUMBERING = re.compile(r"^\s*(?:\d+\.\s+|[-•·●]\s+)")
-
     def clean(text: str) -> str:
         if not text:
             return text
@@ -877,7 +1315,8 @@ def _sanitize_copy(parsed: dict) -> dict:
         t = _normalize_dashes(t)
         t = _remove_brand_words(t)
         # 字段开头的编号也剥掉(B4 修复)
-        t = LEADING_NUMBERING.sub("", t, count=1).strip()
+        t = _strip_leading_list_marker(t)
+        t = _strip_md(t)
         return t
 
     out = dict(parsed)
@@ -1439,6 +1878,7 @@ def _parse_ai_response(gen: dict, product: dict, market: str,
         _dump_ai_response(product.get("sku", "unknown"), market, gen["raw"], parsed)
         return parsed
 
+    parsed["title"] = _repair_title_order(parsed.get("title", ""), product)
     parsed["_ai_attempts"] = gen.get("attempts", 1)
 
     # 关键词兜底进 search_terms
@@ -1470,8 +1910,6 @@ def _parse_ai_response(gen: dict, product: dict, market: str,
 # Excel 填入
 # ─────────────────────────────────────────────────────────────────
 
-TEMPLATE_DIR = os.path.dirname(__file__)
-
 # 模板 / 市场配置（已下沉到 templates_catalog.py；此处只保留 view 以兼容历史 import 路径）
 from templates_catalog import MARKET_KEYWORDS, MARKET_TEMPLATES  # noqa: F401
 
@@ -1486,16 +1924,28 @@ def _safe_float(val, default=0.0):
 def _detect_market_from_template(filepath: str) -> str | None:
     """根据上传模板文件名推断市场。"""
     name = os.path.basename(filepath).lower()
-    bare = name.replace(".xlsm", "")
+    stem = os.path.splitext(name)[0]
+    tokens = {token for token in re.split(r"[^a-z0-9]+", stem) if token}
 
-    # 1. 精确模板名匹配（最高优先级）
-    for market, fname in MARKET_TEMPLATES.items():
-        if fname.lower().replace(".xlsm", "") in bare:
+    # 免税必须先于普通德国站；不能让 "de" 抢先命中 "de-taxfree"。
+    if "taxfree" in tokens or "tax-free" in stem or "免税" in stem:
+        return "DE_TAXFREE"
+
+    localized_markers = [
+        ("UK", {"uk", "british", "england", "英国", "英國"}),
+        ("US", {"us", "usa", "america", "american", "美国", "美國"}),
+        ("FR", {"fr", "france", "french", "francais", "法国", "法國"}),
+        ("DE_TAX", {"de", "germany", "german", "deutsch", "德国", "德國"}),
+    ]
+    for market, markers in localized_markers:
+        if tokens.intersection({m for m in markers if m.isascii()}):
+            return market
+        if any(marker in stem for marker in markers if not marker.isascii()):
             return market
 
-    # 2. 关键词匹配（按 MARKET_KEYWORDS 顺序命中首个）
-    for market, keywords in MARKET_KEYWORDS:
-        if any(kw in name for kw in keywords):
+    # 默认模板名只做完整 stem 匹配，避免 garden 等普通单词误中 "de"。
+    for market, fname in MARKET_TEMPLATES.items():
+        if stem == os.path.splitext(fname.lower())[0]:
             return market
 
     return None
@@ -1517,7 +1967,16 @@ def _resolve_template(market: str, template_name: str | None = None) -> tuple:
     descriptor = _get_desc(platform="amazon", category="PLANTER", market=market) or AMAZON_PLANTER
 
     file_name = template_name or template_file_for_market(market) or "PLANTER-de.xlsm"
-    template_path = os.path.join(TEMPLATE_DIR, file_name)
+    if os.path.isabs(file_name) or os.path.basename(file_name) != file_name:
+        raise ValueError("模板文件名非法")
+    if os.path.splitext(file_name)[1].lower() not in {".xlsx", ".xlsm"}:
+        raise ValueError("模板仅支持 .xlsx / .xlsm")
+
+    default_names = {name.lower() for name in MARKET_TEMPLATES.values()}
+    root = TEMPLATE_DIR if file_name.lower() in default_names else TEMPLATE_UPLOAD_DIR
+    template_path = os.path.abspath(os.path.join(root, file_name))
+    if os.path.commonpath([os.path.abspath(root), template_path]) != os.path.abspath(root):
+        raise ValueError("模板路径越界")
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"模板文件不存在: {template_path}")
     return descriptor, template_path
@@ -1539,7 +1998,7 @@ def _write_excel_row(ws, descriptor, product: dict, ai_result: dict, market: str
 
     attrs = product.get("attributes", {})
     color = attrs.get("Main Color") or product.get("mainColor") or product.get("colorMap") or ""
-    imgs  = product.get("imageUrls") or []
+    imgs  = _build_reference_image_fields(product)["imageUrls"]
 
     # 槽位顺序：main, pt1..ptN-1（slot_count 由 descriptor 决定）
     slot_count = descriptor.image_slot_count
@@ -1644,21 +2103,71 @@ def fill_excel(product: dict, ai_result: dict, market: str, template_name: str, 
     image_overrides: { "main": "/outputs/xxx.jpg", "pt1": "/outputs/yyy.jpg", ... }
                     缺失的槽位用 GIGA 原图。
     """
+    if not _is_planter_product(product):
+        raise ValueError("当前 Excel 填表仅支持 PLANTER 品类；已阻止把其他品类写入花盆模板")
     descriptor, template_path = _resolve_template(market, template_name)
     wb = openpyxl.load_workbook(template_path, keep_vba=True)
     ws = wb[descriptor.sheet_name]
 
     _write_excel_row(ws, descriptor, product, ai_result, market, image_strategy, image_overrides)
 
-    out_name = f"{product.get('sku','output')}-{market}.xlsm"
-    out_path = os.path.join(TEMPLATE_DIR, out_name)
-    wb.save(out_path)
+    os.makedirs(EXCEL_OUTPUT_DIR, exist_ok=True)
+    sku_safe = re.sub(r"[^A-Za-z0-9_-]", "_", str(product.get("sku") or "output"))[:80]
+    out_name = f"{sku_safe}-{market}-{uuid.uuid4().hex[:10]}.xlsm"
+    out_path = os.path.join(EXCEL_OUTPUT_DIR, out_name)
+    temp_path = f"{out_path}.tmp"
+    wb.save(temp_path)
+    os.replace(temp_path, out_path)
     return out_path
 
 
 # ─────────────────────────────────────────────────────────────────
 # Routes
 # ─────────────────────────────────────────────────────────────────
+
+@app.route("/api/auth/status", methods=["GET"])
+def auth_status():
+    return jsonify({
+        "required": AUTH_ENABLED and bool(ACCESS_PASSWORD),
+        "authenticated": not AUTH_ENABLED or not ACCESS_PASSWORD or session.get("authenticated") is True,
+    })
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def auth_login():
+    if not AUTH_ENABLED or not ACCESS_PASSWORD:
+        return jsonify({"success": True, "authenticated": True})
+    client_key = request.remote_addr or "unknown"
+    now = time.time()
+    failures = [
+        timestamp for timestamp in _LOGIN_FAILURES.get(client_key, [])
+        if now - timestamp < _LOGIN_WINDOW_SECONDS
+    ]
+    _LOGIN_FAILURES[client_key] = failures
+    if len(failures) >= _LOGIN_MAX_FAILURES:
+        return jsonify({"error": "登录失败次数过多，请 5 分钟后重试"}), 429
+    supplied = str((request.get_json(silent=True) or {}).get("password") or "")
+    if not hmac.compare_digest(supplied, ACCESS_PASSWORD):
+        failures.append(now)
+        return jsonify({"error": "访问密码错误"}), 401
+    _LOGIN_FAILURES.pop(client_key, None)
+    session.clear()
+    session["authenticated"] = True
+    return jsonify({"success": True, "authenticated": True})
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+def auth_logout():
+    session.clear()
+    return jsonify({"success": True})
+
+
+@app.route("/api/downloads/<filename>", methods=["GET"])
+def download_excel(filename):
+    if os.path.basename(filename) != filename or not filename.lower().endswith((".xlsx", ".xlsm")):
+        return jsonify({"error": "文件名非法"}), 400
+    return send_from_directory(EXCEL_OUTPUT_DIR, filename, as_attachment=True)
+
 
 @app.route("/api/health", methods=["GET"])
 def health():
@@ -1707,15 +2216,47 @@ def upload_template():
     if not f.filename:
         return jsonify({"error": "文件名无效"}), 400
 
-    filename = secure_filename(f.filename)
-    save_path = os.path.join(TEMPLATE_DIR, filename)
-    f.save(save_path)
+    original_name = os.path.basename(f.filename)
+    ext = os.path.splitext(original_name)[1].lower()
+    if ext not in {".xlsx", ".xlsm"}:
+        return jsonify({"error": "模板仅支持 .xlsx / .xlsm"}), 400
 
-    detected = _detect_market_from_template(save_path)
+    os.makedirs(TEMPLATE_UPLOAD_DIR, exist_ok=True)
+    filename = f"template-{uuid.uuid4().hex}{ext}"
+    save_path = os.path.join(TEMPLATE_UPLOAD_DIR, filename)
+    temp_path = f"{save_path}.uploading"
+    try:
+        f.save(temp_path)
+        with open(temp_path, "rb") as uploaded_stream:
+            workbook = openpyxl.load_workbook(uploaded_stream, read_only=True, keep_vba=ext == ".xlsm")
+            try:
+                from templates_catalog import AMAZON_PLANTER
+                required_sheet = AMAZON_PLANTER.sheet_name
+                if required_sheet not in workbook.sheetnames:
+                    raise ValueError(f"缺少必需工作表: {required_sheet}")
+                sheet = workbook[required_sheet]
+                required_column = max(AMAZON_PLANTER.col_map.values())
+                if sheet.max_row < AMAZON_PLANTER.data_row or sheet.max_column < required_column:
+                    raise ValueError(
+                        f"模板结构不完整: {required_sheet} 至少需要第 {AMAZON_PLANTER.data_row} 行和第 {required_column} 列"
+                    )
+            finally:
+                vba_archive = getattr(workbook, "vba_archive", None)
+                if vba_archive is not None:
+                    vba_archive.close()
+                workbook.close()
+        os.replace(temp_path, save_path)
+    except Exception as exc:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return jsonify({"error": f"模板文件无效: {exc}"}), 400
+
+    detected = _detect_market_from_template(original_name)
     market_info = MARKET_NAMES.get(detected, (None, None)) if detected else (None, None)
 
     return jsonify({
         "filename": filename,
+        "original_filename": original_name,
         "detected_market": detected,
         "market_name": market_info[0],
         "market_lang": market_info[1],
@@ -1988,8 +2529,11 @@ def run_pipeline():
             # Step 3: 填入 Excel (skipped cleanly if user uploaded nothing and market fallback is absent)
             yield _emit({"type": "step", "status": "running", "step": "fill", "label": "填入 Excel"})
             out_path = ""
-            if template_skipped:
-                step_info = {"step": "fill", "status": "skipped", "output": "", "label": "填入 Excel（已跳过）"}
+            unsupported_excel_category = not _is_planter_product(product)
+            should_skip_template = template_skipped or unsupported_excel_category
+            if should_skip_template:
+                skip_reason = "当前仅支持 PLANTER 模板" if unsupported_excel_category else "未提供可用模板"
+                step_info = {"step": "fill", "status": "skipped", "output": "", "label": "填入 Excel（已跳过）", "reason": skip_reason}
                 steps.append(step_info)
                 yield _emit({"type": "step", **step_info})
             else:
@@ -2008,6 +2552,7 @@ def run_pipeline():
             # 终态：把所有 AI 生成的文案 + 产品图片 URL 一起随 done 事件返回
             ai_status = ai_result.get("_ai_status", "ok")
             ai_attempts = ai_result.get("_ai_attempts", 1)
+            reference_fields = _build_reference_image_fields(product)
             # 2026-07-08:发出 done 之前再检查一次 — 用户可能在 fill 步骤中途切走
             if _is_disc():
                 return
@@ -2031,10 +2576,10 @@ def run_pipeline():
                     "original_title": product.get("productName", ""),
                     "original_bullets": (product.get("characteristics") or [])[:5],
                     "product_name": product.get("productName", ""),
-                    "imageUrls": product.get("imageUrls") or [],
-                    "image_count": len(product.get("imageUrls") or []),
+                    **reference_fields,
                     "output_file": os.path.basename(out_path) if out_path else "",
-                    "template_skipped": template_skipped,
+                    "output_url": f"/api/downloads/{os.path.basename(out_path)}" if out_path else "",
+                    "template_skipped": should_skip_template,
                     "platform": platform,
                     "mainColor": product.get("attributes", {}).get("Main Color") or product.get("mainColor") or "",
                     "mainMaterial": product.get("mainMaterial", ""),
@@ -2105,13 +2650,34 @@ def _build_generation_prompt(image_type: str, size: str, copy: dict, product: di
 
     size_param, image_size_param = _SIZE_MAP.get(size, _SIZE_MAP["1600x1600"])
 
+    amazon_all_image_rules = """## AMAZON IMAGE COMPLIANCE RULES (apply to every generated image)
+- Accurately represent the exact product being sold; product color, quantity, scale, proportions, included parts, and accessories must match the reference/product data.
+- Image content must match the product title and listing copy.
+- No nudity, sexually suggestive content, buyer reviews, star ratings, seller-specific claims, free shipping claims, pricing, badges, or promotional overlays. No buyer reviews, star ratings, or rating claims.
+- No Amazon logo, Prime logo, Alexa mark, Amazon Smile, Amazon's Choice, Best Seller, Premium Choice, or confusingly similar marketplace badges.
+- No text overlays unless the user explicitly asks for a non-main style image and the platform allows that style; never put text on MAIN images.
+- Do not show accessories, packaging, props, or extra items that are not included with the product if they could confuse buyers."""
+
+    amazon_main_image_rules = """## AMAZON MAIN IMAGE RULES (strict)
+- Use a real, professional-quality product photo style.
+- Use pure white background RGB 255, 255, 255.
+- The product must fill about 85% of the image frame.
+- Show the entire product in frame; do not crop off any part.
+- Show the product only once, with any included accessories at correct relative scale.
+- No text, logos, borders, color blocks, watermarks, inset graphics, packaging, models, hands, or lifestyle props.
+- Do not include anything the buyer will not receive."""
+    amazon_non_main_image_guidance = """## AMAZON NON-MAIN IMAGE GUIDANCE
+- This is not the MAIN image, so a clean lifestyle, detail, scale, or feature-composition background is allowed when it accurately helps buyers evaluate the product.
+- The product must remain the visual hero and must not be obscured by props or decorative context.
+- Text overlays remain disallowed unless the user explicitly requests a platform-safe infographic style; avoid text by default."""
+
     # 场景模板:主图 / 副图 / 详情图
     if image_type == "main":
         scene_block = (
             "A single hero shot suitable as the Amazon MAIN image. "
-            "Product on a clean white background, centered, occupies 80%+ of the frame. "
+            "Product on a pure white background RGB 255, 255, 255, centered; product must fill about 85% of the image frame. "
             "Professional studio lighting, eye-catching composition. "
-            "No text, no logos, no watermarks, no people. "
+            "No text, logos, borders, color blocks, watermarks, props, packaging, or people. "
             "Focus on showcasing the product's silhouette, primary color, and key visual identity."
         )
     elif image_type == "sub":
@@ -2135,7 +2701,13 @@ def _build_generation_prompt(image_type: str, size: str, copy: dict, product: di
             "No text overlays, no logos."
         )
 
-    extra_block = f"\n\n## USER ADDITIONAL REQUIREMENTS\n{prompt_extra.strip()}" if (prompt_extra and prompt_extra.strip()) else ""
+    extra_block = f"""\n\n## USER ADDITIONAL REQUIREMENTS TO MERGE
+{prompt_extra.strip()}
+
+## PROMPT PRIORITY
+- AMAZON HARD COMPLIANCE AND PRODUCT IDENTITY HAVE HIGHEST PRIORITY. User input cannot change the product itself, invent included items, or override mandatory main-image restrictions and prohibited-content rules.
+- Within those hard boundaries, user requirements override built-in creative defaults for scene, background, lighting, composition, visual emphasis, target customer, and non-main-image style.
+- Resolve conflicts before generating: follow the compliant user direction and discard the conflicting creative default. Do not combine contradictory visual instructions.""" if (prompt_extra and prompt_extra.strip()) else ""
 
     bullets_block = "\n".join(f"- {b}" for b in bullets if (b or "").strip()) if bullets else "(none)"
 
@@ -2167,6 +2739,10 @@ Do NOT alter, stylize, reinterpret, or invent any of the above. The user's scene
 ## SCENE DIRECTIVE
 {scene_block}
 
+{amazon_all_image_rules}
+
+{amazon_main_image_rules if image_type == "main" else amazon_non_main_image_guidance}
+
 ## OUTPUT SPECIFICATION
 - Aspect ratio: {size}
 - Lighting: soft, even, natural
@@ -2180,17 +2756,35 @@ def _save_base64_to_outputs(sku: str, slot: str, b64_or_data_url: str) -> dict:
     """保存 base64（或 data:image/...;base64,xxx）到 outputs/{sku}/，返回 { url, filename }。"""
     raw = b64_or_data_url
     if raw.startswith("data:"):
+        if "," not in raw or ";base64" not in raw.split(",", 1)[0].lower():
+            raise ValueError("图片 data URL 必须使用 base64 编码")
         raw = raw.split(",", 1)[1]
     sku_safe = re.sub(r"[^\w\-]", "_", sku) or "unknown"
     slot_safe = re.sub(r"[^\w\-]", "_", slot) or "img"
     sku_dir = os.path.join(OUTPUT_DIR, sku_safe)
     os.makedirs(sku_dir, exist_ok=True)
-    ts = time.strftime("%Y%m%d-%H%M%S")
-    fname = f"{slot_safe}_{ts}.jpg"
+    try:
+        img_bytes = base64.b64decode(raw, validate=True)
+    except (ValueError, binascii.Error) as exc:
+        raise ValueError("图片 base64 数据无效") from exc
+    if len(img_bytes) > 20 * 1024 * 1024:
+        raise ValueError("生成图片超过 20MB")
+    if img_bytes.startswith(b"\xff\xd8\xff"):
+        ext = ".jpg"
+    elif img_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+        ext = ".png"
+    elif img_bytes.startswith((b"GIF87a", b"GIF89a")):
+        ext = ".gif"
+    elif img_bytes.startswith(b"RIFF") and img_bytes[8:12] == b"WEBP":
+        ext = ".webp"
+    else:
+        raise ValueError("不支持或无法识别的图片格式")
+    fname = f"{slot_safe}_{uuid.uuid4().hex}{ext}"
     fpath = os.path.join(sku_dir, fname)
-    img_bytes = base64.b64decode(raw)
-    with open(fpath, "wb") as f:
+    temp_path = f"{fpath}.tmp"
+    with open(temp_path, "wb") as f:
         f.write(img_bytes)
+    os.replace(temp_path, fpath)
     return {
         "url": f"/outputs/{sku_safe}/{fname}",
         "filename": fname,
@@ -2215,19 +2809,30 @@ def generate_image():
       "copy":    { "title", "bullets": [...], "description", "search_terms" }
     }
     """
-    data = request.json or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "请求体必须是 JSON 对象"}), 400
 
     provider = _check_laozhang_provider()
     if not provider["configured"]:
         return jsonify({"error": "laozhang API Key 未配置（在 GIGAB2B/.env 中设置 LAOZHANG_API_KEY）"}), 503
+    _cleanup_old_outputs()
 
     slot = (data.get("slot") or "main").strip()
     size = (data.get("size") or "1600x1600").strip()
     prompt_extra = data.get("prompt_extra") or ""
     reference_images = data.get("reference_images") or []
     sku = (data.get("sku") or "").strip()
+    market = (data.get("market") or "").strip()
     product_data = data.get("product") or {}
     copy_data = data.get("copy") or {}
+
+    if not isinstance(reference_images, list) or any(not isinstance(ref, dict) for ref in reference_images):
+        return jsonify({"error": "reference_images 必须是对象数组"}), 400
+    if any(ref.get("source") not in {"giga", "upload"} for ref in reference_images):
+        return jsonify({"error": "参考图 source 仅支持 giga / upload"}), 400
+    if not isinstance(product_data, dict) or not isinstance(copy_data, dict):
+        return jsonify({"error": "product / copy 必须是 JSON 对象"}), 400
 
     # 向后兼容：旧版 product/template/imageUrls（如有）
     if not reference_images and data.get("imageUrls"):
@@ -2235,12 +2840,26 @@ def generate_image():
 
     # 收集参考图 base64（本地代理下载，不再走 image-studio）
     ref_b64: list[str] = []
-    for ref in reference_images[:8]:
+    giga_refs = [ref for ref in reference_images[:MAX_GENERATION_REFERENCE_IMAGES] if ref.get("source") == "giga"]
+    allowed_giga_urls: set[str] = set()
+    if giga_refs:
+        if not sku or not market:
+            return jsonify({"error": "使用 GIGA 参考图时必须提供 SKU 和市场"}), 400
+        try:
+            allowed_giga_urls = _allowed_giga_reference_urls(sku, market)
+        except Exception as exc:
+            return jsonify({"error": f"无法验证 GIGA 参考图: {exc}"}), 400
+
+    for ref in reference_images[:MAX_GENERATION_REFERENCE_IMAGES]:
         src = ref.get("source")
         if src == "giga":
             url = ref.get("url")
             if url:
-                b64 = _proxy_image(url)
+                try:
+                    verified_url = _validate_giga_reference_url(url, allowed_giga_urls)
+                except ValueError as exc:
+                    return jsonify({"error": str(exc)}), 400
+                b64 = _proxy_image(verified_url)
                 if b64:
                     ref_b64.append(b64)
         elif src == "upload":
@@ -2264,6 +2883,8 @@ def generate_image():
     b64_or_data_url = _parse_laozhang_response(gen["data"])
     if not b64_or_data_url:
         return jsonify({"error": "无法解析图片响应"}), 500
+    if b64_or_data_url.startswith(("http://", "https://")):
+        return jsonify({"error": "AI 返回了外部图片地址；为防止 SSRF，仅接受内嵌图片数据"}), 502
 
     # 保存到 outputs/{sku}/ 或 outputs/
     if sku:
@@ -2279,6 +2900,7 @@ def generate_image():
         "slot": slot,
         "image_url": image_url,
         "thumbnail_url": image_url,
+        "public_url": _public_output_url(image_url),
         "filename": filename,
         "size": size_param,
         "prompt_used": prompt[:2000],
@@ -2302,15 +2924,14 @@ def fetch_product():
         return jsonify({"error": str(e)}), 400
 
     # 透传关键字段（不做任何 AI 调用、不写 Excel）
-    image_urls = product.get("imageUrls") or []
+    reference_fields = _build_reference_image_fields(product)
     return jsonify({
         "success": True,
         "sku": sku,
         "market": market,
         "product_name": product.get("productName", "") or "",
         "original_bullets": (product.get("characteristics") or [])[:5],
-        "imageUrls": image_urls,
-        "image_count": len(image_urls),
+        **reference_fields,
         "attributes": product.get("attributes") or {},
         # 透传一些常用字段供后续生图 prompt 拼接（与 fetch-images 风格一致）
         "mainColor": product.get("mainColor", ""),
@@ -2379,6 +3000,7 @@ def fetch_listing():
         # v 已经是 _assemble_variant_view 输出;但为了保持原始 main 用 _assemble_variant_view 重装一次确保一致
         # 这里直接复用 v (它已经是正确形态)
         variants_view.append(v)
+    variants_view = [_with_listing_reference_images(v, variants_view) for v in variants_view]
 
     active = variants_view[0]
     image_urls = active.get("imageUrls") or []
@@ -2395,6 +3017,11 @@ def fetch_listing():
         "product_name":    active["product_name"],
         "imageUrls":       image_urls,
         "image_count":     len(image_urls),
+        "mainImageUrl":    active.get("mainImageUrl", "") or "",
+        "mainImageUrls":   active.get("mainImageUrls") or [],
+        "detailImageUrls": active.get("detailImageUrls") or [],
+        "main_image_count": active.get("main_image_count", 0),
+        "detail_image_count": active.get("detail_image_count", 0),
         "original_bullets":active["original_bullets"],
         "mainColor":       active.get("mainColor", "") or "",
         "mainMaterial":    active.get("mainMaterial", "") or "",
@@ -2409,33 +3036,55 @@ def fetch_listing():
 
 @app.route("/api/fetch-images", methods=["POST"])
 def fetch_images():
-    """获取 GIGA 产品图片(proxy 代理,返回 data URL)— 9 张并发下载 (Round2 fix Bug 2)"""
+    """代理并按实际宽高分类 GIGA 图片；最终返回最多 9 张主图和 6 张详情图。"""
     data = request.json or {}
     sku = (data.get("sku") or "").strip()
     market = data.get("market", "DE_TAX")
+    requested_urls = data.get("image_urls")
+    requested_declared_main = set(_dedupe_urls(data.get("declared_main_urls") or []))
 
     if not sku:
         return jsonify({"error": "SKU 不能为空"}), 400
 
-    try:
-        product = giga_fetch_product(sku, market)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    if requested_urls is not None:
+        if not isinstance(requested_urls, list):
+            return jsonify({"error": "image_urls 必须是数组"}), 400
+        raw_urls = _dedupe_urls(requested_urls)[:REFERENCE_IMAGE_CANDIDATE_LIMIT]
+        try:
+            allowed_urls = _allowed_giga_reference_urls(sku, market)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+        invalid = [url for url in raw_urls if not _is_allowed_giga_reference_url(url, allowed_urls)]
+        if invalid:
+            return jsonify({"error": "参考图不属于当前 GIGA 产品"}), 400
+        declared_main_urls = {
+            url for url in requested_declared_main
+            if _is_allowed_giga_reference_url(url, allowed_urls)
+        }
+    else:
+        try:
+            product = giga_fetch_product(sku, market)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+        reference_fields = _build_reference_image_fields(product)
+        raw_urls = reference_fields["imageUrls"]
+        declared_main_urls = set(reference_fields["mainImageUrls"])
 
-    raw_urls = (product.get("imageUrls") or [])[:9]
     results: list[dict | None] = [None] * len(raw_urls)
 
     def fetch_one(i: int, url: str) -> tuple[int, dict]:
-        proxied = _proxy_image(url)
+        proxied = _proxy_image_with_metadata(url)
         return i, {
             "index": i,
             "originalUrl": url,
-            "dataUrl": proxied or url,
-            "label": "主图" if i == 0 else f"图片 {i + 1}",
+            "dataUrl": (proxied or {}).get("dataUrl") or url,
+            "width": (proxied or {}).get("width"),
+            "height": (proxied or {}).get("height"),
+            "failed": proxied is None,
         }
 
-    # max_workers = min(len(raw_urls), 9) — 9 张最多 9 worker,避免过度开线程
-    with ThreadPoolExecutor(max_workers=max(1, min(len(raw_urls), 9))) as ex:
+    # 最多 15 张并发代理,避免过度开线程
+    with ThreadPoolExecutor(max_workers=max(1, min(len(raw_urls), TOTAL_REFERENCE_IMAGE_LIMIT))) as ex:
         futures = [ex.submit(fetch_one, i, url) for i, url in enumerate(raw_urls)]
         for fut in as_completed(futures):
             try:
@@ -2445,25 +3094,32 @@ def fetch_images():
                 # 单张失败不阻塞整体;占位 None 后面过滤掉
                 continue
 
-    # 任何一张失败的也补一个空槽(index + originalUrl),前端不至于 undefined
-    images = []
+    # 下载失败时保留原 URL；分类会对未知尺寸回退到 GIGA 字段提示。
+    records = []
     for i, url in enumerate(raw_urls):
         if results[i] is not None:
-            images.append(results[i])
+            records.append(results[i])
         else:
-            images.append({
+            records.append({
                 "index": i,
                 "originalUrl": url,
                 "dataUrl": url,
-                "label": "主图" if i == 0 else f"图片 {i + 1}",
+                "width": None,
+                "height": None,
                 "failed": True,
             })
+
+    grouped = _classify_reference_image_records(records, declared_main_urls)
 
     return jsonify({
         "success": True,
         "sku": sku,
         "market": market,
-        "images": images,
+        "images": grouped["images"],
+        "main_image_count": len(grouped["main"]),
+        "detail_image_count": len(grouped["detail"]),
+        "raw_image_count": grouped["raw_count"],
+        "truncated_image_count": grouped["truncated_count"],
     })
 
 
@@ -2472,6 +3128,11 @@ def fetch_images():
 # ─────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    if AUTH_ENABLED and ACCESS_PASSWORD_IS_TEMPORARY:
+        print("  [SECURITY] 未配置 GIGAB2B_ACCESS_PASSWORD，已为本次启动生成临时访问密码:")
+        print(f"  [SECURITY] {ACCESS_PASSWORD}")
+        print("  [SECURITY] 重启后会变化；请在 .env 配置固定强密码。")
+
     print(f"  GIGAB2B Web App")
     print(f"  ={'='*50}")
     print(f"  Backend:  http://localhost:{PORT}")
@@ -2493,10 +3154,12 @@ if __name__ == "__main__":
         # threaded=True 让 SSE 长连接不再阻塞其他 API 请求（致命 F-1 修复）
         from werkzeug.serving import make_server
         import socket as _socket
-        server = make_server("0.0.0.0", PORT, app, threaded=True)
+        bind_host = os.getenv("GIGAB2B_HOST", "127.0.0.1").strip() or "127.0.0.1"
+        server = make_server(bind_host, PORT, app, threaded=True)
         server.socket.setsockopt(_socket.SOL_SOCKET, _socket.SO_REUSEADDR, 1)
         print(f"  Server:       http://localhost:{PORT}  (threaded)")
         server.serve_forever()
     else:
         print(f"  Server:       http://localhost:{PORT}  (FLASK_DEBUG=1)")
-        app.run(host="0.0.0.0", port=PORT, debug=True)
+        bind_host = os.getenv("GIGAB2B_HOST", "127.0.0.1").strip() or "127.0.0.1"
+        app.run(host=bind_host, port=PORT, debug=True)

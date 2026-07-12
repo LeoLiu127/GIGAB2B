@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import type { MarketInfo, FetchedProduct, VariantView } from "../types";
+import { formatPlatformLabel } from "../workflow";
 import { VariantsList } from "./VariantsList";
 
 interface LeftPanelProps {
@@ -110,7 +111,7 @@ export function LeftPanel({
     : "请选择目标市场";
 
   return (
-    <section style={{ padding: "32px", borderRight: "1px solid #eee", overflowY: "auto", maxHeight: "calc(100vh - 77px)" }}>
+    <section style={{ padding: "32px", borderRight: "1px solid var(--theme-border-soft)", overflowY: "auto", maxHeight: "calc(100vh - 77px)" }}>
       {/* 市场选择 — 原型 v4:下拉菜单(顺序固定),下方状态 hint */}
       <div style={{ marginBottom: "28px" }}>
         <div className="section-title">目标市场</div>
@@ -128,7 +129,7 @@ export function LeftPanel({
             </option>
           ))}
         </select>
-        <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>
+        <div style={{ fontSize: "11px", color: "var(--theme-text-muted)", marginTop: "4px" }}>
           {credsHint}
         </div>
       </div>
@@ -151,7 +152,7 @@ export function LeftPanel({
             gap: "6px",
             marginTop: "8px",
             fontSize: "12px",
-            color: "#666",
+            color: "var(--theme-text-secondary)",
             cursor: isRunning || isFetching ? "not-allowed" : "pointer",
           }}
         >
@@ -178,7 +179,7 @@ export function LeftPanel({
             onSelect={onVariantSelect}
             warning={listingWarning}
           />
-          <div style={{ marginTop: "6px", fontSize: "11px", color: "#999" }}>
+          <div style={{ marginTop: "6px", fontSize: "11px", color: "var(--theme-text-muted)" }}>
             点击 chip 切换;「文案优化」只针对当前选中变体跑 AI
           </div>
         </div>
@@ -187,7 +188,7 @@ export function LeftPanel({
       {/* 平台选择 — amazon 已实现；walmart / wayfair 仅占位 */}
       <div style={{ marginBottom: "16px" }}>
         <div className="section-title">
-          平台 <span style={{ fontWeight: 400, fontSize: "11px", color: "#999" }}>（amazon 已上线）</span>
+          平台 <span style={{ fontWeight: 400, fontSize: "11px", color: "var(--theme-text-muted)" }}>（Amazon 已上线）</span>
         </div>
         <select
           className="input"
@@ -198,7 +199,7 @@ export function LeftPanel({
         >
           {platformList.map(p => (
             <option key={p} value={p} disabled={!supportedPlatforms[p]}>
-              {p}{!supportedPlatforms[p] ? "（敬请期待）" : ""}
+              {formatPlatformLabel(p)}{!supportedPlatforms[p] ? "（敬请期待）" : ""}
             </option>
           ))}
         </select>
@@ -207,17 +208,17 @@ export function LeftPanel({
       {/* 模板上传（可选） */}
       <div style={{ marginBottom: "28px" }}>
         <div className="section-title">
-          {platform === "amazon" ? "Amazon" : platform} 模板 <span style={{ fontWeight: 400, fontSize: "11px", color: "#999" }}>（可选）</span>
+          {formatPlatformLabel(platform)} 模板 <span style={{ fontWeight: 400, fontSize: "11px", color: "var(--theme-text-muted)" }}>（可选）</span>
         </div>
         <div
           style={{
-            border: "1px dashed #e0e0e0",
+            border: "1px dashed var(--theme-border)",
             padding: "12px",
             textAlign: "center",
             cursor: supportedPlatforms[platform] ? "pointer" : "not-allowed",
-            background: supportedPlatforms[platform] ? "#fafafa" : "#f0f0f0",
+            background: supportedPlatforms[platform] ? "var(--theme-surface-soft)" : "var(--theme-surface-muted)",
             fontSize: "13px",
-            color: supportedPlatforms[platform] ? "#666" : "#999",
+            color: supportedPlatforms[platform] ? "var(--theme-text-secondary)" : "var(--theme-text-muted)",
           }}
           onClick={() => supportedPlatforms[platform] && fileRef.current?.click()}
         >
@@ -241,7 +242,7 @@ export function LeftPanel({
               const isSkipped = s.status === "skipped";
               const isRunning = s.status === "running";
               const icon     = isError ? "✕" : isOk ? "✓" : isSkipped ? "↷" : isRunning ? "↻" : "○";
-              const iconColor = isError ? "#c62828" : isOk ? "#2e7d32" : isSkipped ? "#9e9e9e" : isRunning ? "#1976d2" : "#999";
+              const iconColor = isError ? "var(--theme-danger-text)" : isOk ? "#2e7d32" : isSkipped ? "#9e9e9e" : isRunning ? "var(--theme-link)" : "var(--theme-text-muted)";
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
                   <span
@@ -251,19 +252,19 @@ export function LeftPanel({
                       animation: isRunning ? "lp-spin 1s linear infinite" : "none",
                     }}
                   >{icon}</span>
-                  <span style={{ color: isError ? "#c62828" : "#333" }}>
+                  <span style={{ color: isError ? "var(--theme-danger-text)" : "var(--theme-text-primary)" }}>
                     {stepLabels[s.step] || (s as { label?: string }).label || s.step}
                   </span>
                   {isRunning && (
-                    <span style={{ color: "#1976d2", fontSize: "12px", marginLeft: "auto" }}>进行中…</span>
+                    <span style={{ color: "var(--theme-link)", fontSize: "12px", marginLeft: "auto" }}>进行中…</span>
                   )}
                   {isOk && s.step === "ai_copy" && typeof s.title === "string" && (
-                    <span style={{ color: "#666", fontSize: "12px", marginLeft: "auto", maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ color: "var(--theme-text-secondary)", fontSize: "12px", marginLeft: "auto", maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {s.title}
                     </span>
                   )}
                   {isOk && s.step === "fetch" && typeof s.product_name === "string" && (
-                    <span style={{ color: "#666", fontSize: "12px", marginLeft: "auto" }}>
+                    <span style={{ color: "var(--theme-text-secondary)", fontSize: "12px", marginLeft: "auto" }}>
                       {s.product_name.slice(0, 25)}...
                     </span>
                   )}
@@ -274,7 +275,7 @@ export function LeftPanel({
                     <span style={{ color: "#9e9e9e", fontSize: "12px", marginLeft: "auto" }}>已跳过</span>
                   )}
                   {isError && (
-                    <span style={{ color: "#c62828", fontSize: "12px", marginLeft: "auto" }}>{String(s.message || "")}</span>
+                    <span style={{ color: "var(--theme-danger-text)", fontSize: "12px", marginLeft: "auto" }}>{String(s.message || "")}</span>
                   )}
                 </div>
               );
@@ -289,11 +290,11 @@ export function LeftPanel({
           style={{
             marginBottom: "20px",
             padding: "10px 12px",
-            background: "#f5f9ff",
-            border: "1px solid #d0e3ff",
+            background: "var(--theme-info-bg)",
+            border: "1px solid var(--theme-info-border)",
             borderRadius: "6px",
             fontSize: "12px",
-            color: "#1976d2",
+            color: "var(--theme-info-text)",
             lineHeight: 1.5,
             whiteSpace: "pre-wrap",
             wordBreak: "break-word",
@@ -304,13 +305,13 @@ export function LeftPanel({
           <div style={{ fontWeight: 500, marginBottom: "4px" }}>
             AI 已生成 {aiCopyChunkLen} 字符…
           </div>
-          <div style={{ color: "#555" }}>{aiCopyChunkText.slice(-200)}</div>
+          <div style={{ color: "var(--theme-text-secondary)" }}>{aiCopyChunkText.slice(-200)}</div>
         </div>
       )}
 
       {/* 错误 */}
       {error && (
-        <div style={{ marginBottom: "28px", padding: "14px", background: "#ffebee", border: "1px solid #ffcdd2", borderRadius: "4px", fontSize: "13px", color: "#c62828" }}>
+        <div style={{ marginBottom: "28px", padding: "14px", background: "var(--theme-danger-bg)", border: "1px solid var(--theme-danger-border)", borderRadius: "4px", fontSize: "13px", color: "var(--theme-danger-text)" }}>
           {error}
         </div>
       )}
@@ -321,7 +322,7 @@ export function LeftPanel({
         onClick={onFetch}>
         {isFetching ? "抓取中..." : "抓取数据"}
       </button>
-      <div style={{ marginTop: "6px", fontSize: "12px", color: "#999", lineHeight: 1.6 }}>
+      <div style={{ marginTop: "6px", fontSize: "12px", color: "var(--theme-text-muted)", lineHeight: 1.6 }}>
         仅从 GIGA 拉取产品信息，不出 AI 文案
       </div>
 
@@ -334,7 +335,7 @@ export function LeftPanel({
       >
         {isOptimizing ? "AI 优化中..." : "文案优化"}
       </button>
-      <div style={{ marginTop: "6px", fontSize: "12px", color: "#999", lineHeight: 1.6 }}>
+      <div style={{ marginTop: "6px", fontSize: "12px", color: "var(--theme-text-muted)", lineHeight: 1.6 }}>
         基于已抓取的产品数据生成 AI 文案（{markets[selectedMarket]?.lang || ""}），可选填入 Excel
       </div>
 
@@ -347,12 +348,12 @@ export function LeftPanel({
         {/* 块 1: 提示词 */}
         <div style={{ marginBottom: "16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-            <span style={{ fontSize: "13px", fontWeight: 500, color: "#333" }}>
-              提示词 <span style={{ color: "#999", fontWeight: 400, fontSize: "11px", marginLeft: "4px" }}>可选</span>
+            <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--theme-text-primary)" }}>
+              提示词 <span style={{ color: "var(--theme-text-muted)", fontWeight: 400, fontSize: "11px", marginLeft: "4px" }}>可选</span>
             </span>
             <span
               onClick={() => onCopyPromptExtraChange("")}
-              style={{ fontSize: "12px", color: "#1565c0", cursor: "pointer" }}
+              style={{ fontSize: "12px", color: "var(--theme-link)", cursor: "pointer" }}
               onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
               onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
             >清空</span>
@@ -371,13 +372,13 @@ export function LeftPanel({
         {/* 块 2: 关键词文件 */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-            <span style={{ fontSize: "13px", fontWeight: 500, color: "#333" }}>
-              关键词文件 <span style={{ color: "#999", fontWeight: 400, fontSize: "11px", marginLeft: "4px" }}>可选 · .txt/.csv/.xlsx</span>
+            <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--theme-text-primary)" }}>
+              关键词文件 <span style={{ color: "var(--theme-text-muted)", fontWeight: 400, fontSize: "11px", marginLeft: "4px" }}>可选 · .txt/.csv/.xlsx</span>
             </span>
             {(keywordsList.length > 0 || keywordsError) && (
               <span
                 onClick={onClearKeywords}
-                style={{ fontSize: "12px", color: "#1565c0", cursor: "pointer" }}
+                style={{ fontSize: "12px", color: "var(--theme-link)", cursor: "pointer" }}
                 onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
                 onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
               >清空</span>
@@ -385,13 +386,13 @@ export function LeftPanel({
           </div>
           <div
             style={{
-              border: "1px dashed #e0e0e0",
+              border: "1px dashed var(--theme-border)",
               padding: "12px",
               textAlign: "center",
               cursor: keywordsBusy ? "wait" : "pointer",
-              background: "#fafafa",
+              background: "var(--theme-surface-soft)",
               fontSize: "13px",
-              color: "#666",
+              color: "var(--theme-text-secondary)",
             }}
             onClick={() => !keywordsBusy && kwFileRef.current?.click()}
           >

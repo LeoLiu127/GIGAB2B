@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Lightbox } from "./Lightbox";
+import { resolveGeneratedImageLink } from "../workflow";
 
 export interface GeneratedImage {
   slot: string;
   image_url: string;
+  public_url?: string;
   filename: string;
   sceneParams?: { scene_type: string; background: string; lighting: string; angle: string };
   generatedAt: number;
@@ -35,6 +37,7 @@ interface GeneratedGalleryProps {
 export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGalleryProps) {
   const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
   const [hovered, setHovered] = useState<{ key: string; rect: DOMRect; url: string; label: string } | null>(null);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   const handleDownload = (img: GeneratedImage) => {
     const a = document.createElement("a");
@@ -44,6 +47,30 @@ export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGallery
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  };
+
+  const handleCopyLink = (img: GeneratedImage, key: string) => {
+    const link = resolveGeneratedImageLink(img.image_url, img.public_url);
+    const done = () => {
+      setCopiedLink(key);
+      window.setTimeout(() => setCopiedLink(prev => (prev === key ? null : prev)), 1500);
+    };
+    const fallback = () => {
+      const ta = document.createElement("textarea");
+      ta.value = link;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(link).then(done, fallback);
+    } else {
+      fallback();
+    }
   };
 
   // 排序:新生成的图排在最前(按 generatedAt 倒序);同 slot 内也是新的在前;
@@ -56,14 +83,15 @@ export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGallery
         <div className="section-title" style={{ margin: 0 }}>生成结果（{images.length}）</div>
         {images.length > 0 && (
           <button
+            className="theme-action"
             onClick={onClear}
-            style={{ background: "none", border: "none", color: "#999", fontSize: "11px", cursor: "pointer", textDecoration: "underline" }}
+            style={{ background: "none", border: "none", color: "var(--theme-link)", fontSize: "11px", cursor: "pointer", textDecoration: "underline" }}
           >清空</button>
         )}
       </div>
 
       {images.length === 0 ? (
-        <div style={{ fontSize: "11px", color: "#ccc", padding: "12px 0", textAlign: "center" }}>
+        <div style={{ fontSize: "11px", color: "var(--theme-text-muted)", padding: "12px 0", textAlign: "center" }}>
           点击「生成」后，图片会显示在这里
         </div>
       ) : (
@@ -79,8 +107,8 @@ export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGallery
                   position: "relative",
                   borderRadius: "4px",
                   overflow: "hidden",
-                  border: isMain ? "2px solid #000" : "1px solid #e0e0e0",
-                  background: "#f5f5f5",
+                  border: isMain ? "2px solid var(--theme-action-bg)" : "1px solid var(--theme-border)",
+                  background: "var(--theme-surface-muted)",
                   aspectRatio: "1/1",
                 }}
               >
@@ -101,7 +129,7 @@ export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGallery
                 </div>
                 <div style={{
                   position: "absolute", top: "4px", left: "4px",
-                  background: isMain ? "#000" : "rgba(21,101,192,0.9)",
+                  background: "var(--theme-action-bg)",
                   color: "#fff", fontSize: "10px", padding: "2px 6px", borderRadius: "2px",
                   fontWeight: 500,
                 }}>{label}</div>
@@ -125,7 +153,7 @@ export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGallery
                     onClick={(e) => { e.stopPropagation(); onDelete(img); }}
                     title="删除这张"
                     style={{
-                      position: "absolute", top: "4px", right: "32px",
+                      position: "absolute", top: "4px", right: "72px",
                       background: "rgba(198,40,40,0.85)", color: "#fff", border: "none",
                       borderRadius: "2px", fontSize: "10px", cursor: "pointer",
                       padding: "2px 6px", lineHeight: 1,
@@ -133,11 +161,23 @@ export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGallery
                   >×</button>
                 )}
                 <button
+                  className="theme-action"
+                  onClick={() => handleCopyLink(img, key)}
+                  title="复制图片链接"
+                  style={{
+                    position: "absolute", top: "4px", right: "32px",
+                    background: "var(--theme-action-bg)", color: "var(--theme-action-fg)", border: "none",
+                    borderRadius: "2px", fontSize: "10px", cursor: "pointer",
+                    padding: "2px 6px", lineHeight: 1,
+                  }}
+                >{copiedLink === key ? "✓" : "链"}</button>
+                <button
+                  className="theme-action"
                   onClick={() => handleDownload(img)}
                   title="下载"
                   style={{
                     position: "absolute", top: "4px", right: "4px",
-                    background: "rgba(0,0,0,0.55)", color: "#fff", border: "none",
+                    background: "var(--theme-action-bg)", color: "var(--theme-action-fg)", border: "none",
                     borderRadius: "2px", fontSize: "10px", cursor: "pointer",
                     padding: "2px 6px", lineHeight: 1,
                   }}
@@ -171,8 +211,8 @@ export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGallery
               height: ZOOM_H,
               zIndex: 9999,
               pointerEvents: "none",
-              background: "#fff",
-              border: "2px solid #000",
+              background: "var(--theme-surface)",
+              border: "2px solid var(--theme-action-bg)",
               borderRadius: "6px",
               boxShadow: "0 16px 40px rgba(0,0,0,0.3)",
               overflow: "hidden",
@@ -184,10 +224,10 @@ export function GeneratedGallery({ images, onClear, onDelete }: GeneratedGallery
               <img
                 src={url}
                 alt=""
-                style={{ width: "100%", height: "100%", objectFit: "contain", background: "#fff" }}
+                style={{ width: "100%", height: "100%", objectFit: "contain", background: "var(--theme-surface)" }}
               />
             </div>
-            <div style={{ padding: "4px 8px", background: "#000", color: "#fff", fontSize: "10px", textAlign: "center" }}>
+            <div style={{ padding: "4px 8px", background: "var(--theme-action-bg)", color: "var(--theme-action-fg)", fontSize: "10px", textAlign: "center" }}>
               {label} · 悬浮放大
             </div>
           </div>

@@ -3,23 +3,32 @@ const BASE = "/api";
 // 默认 60s，足以覆盖一次完整 pipeline；调用方可在 opts.timeout 覆盖
 const DEFAULT_TIMEOUT_MS = 60_000;
 
-async function request<T>(path: string, opts?: RequestInit & { timeout?: number; stream?: boolean }): Promise<T> {
+export async function request<T>(path: string, opts?: RequestInit & { timeout?: number; stream?: boolean }): Promise<T> {
   const { timeout = DEFAULT_TIMEOUT_MS, stream = false, signal: externalSignal, ...fetchOpts } = opts ?? {};
   const ctrl = new AbortController();
-  const tid = setTimeout(() => ctrl.abort(new Error("Request timeout")), timeout);
+  let timedOut = false;
+  const tid = setTimeout(() => {
+    timedOut = true;
+    ctrl.abort(new Error("Request timeout"));
+  }, timeout);
+  const onExternalAbort = () => ctrl.abort(externalSignal?.reason ?? new Error("请求已取消"));
+  const cleanup = () => {
+    clearTimeout(tid);
+    externalSignal?.removeEventListener("abort", onExternalAbort);
+  };
   // 把外部 signal 也接进来（用户可自行 cancel）
   if (externalSignal) {
     if (externalSignal.aborted) ctrl.abort(externalSignal.reason);
-    else externalSignal.addEventListener("abort", () => ctrl.abort(externalSignal.reason), { once: true });
+    else externalSignal.addEventListener("abort", onExternalAbort, { once: true });
   }
   let res: Response;
   try {
     res = await fetch(`${BASE}${path}`, { ...fetchOpts, signal: ctrl.signal });
   } catch (e) {
-    if (ctrl.signal.aborted) throw new Error(`请求超时（${timeout}ms）：${path}`);
+    cleanup();
+    if (timedOut) throw new Error(`请求超时（${timeout}ms）：${path}`);
+    if (ctrl.signal.aborted) throw new Error("请求已取消");
     throw e;
-  } finally {
-    clearTimeout(tid);
   }
 
   // 流式响应（SSE）：把 text/event-stream 按 "data: {...}\n\n" 切分，逐块回调
@@ -27,11 +36,22 @@ async function request<T>(path: string, opts?: RequestInit & { timeout?: number;
     if (!res.ok) {
       // 错误也尝试读一下 body
       const text = await res.text().catch(() => "");
+      cleanup();
       throw new Error(text || `HTTP ${res.status}`);
     }
-    if (!res.body) throw new Error("SSE: 空响应 body");
+    if (!res.body) {
+      cleanup();
+      throw new Error("SSE: 空响应 body");
+    }
     const reader = res.body.getReader();
     const decoder = new TextDecoder("utf-8");
+    const abortRead = new Promise<never>((_, reject) => {
+      ctrl.signal.addEventListener("abort", () => {
+        reject(timedOut
+          ? new Error(`请求超时（${timeout}ms）：${path}`)
+          : new Error("请求已取消"));
+      }, { once: true });
+    });
     let buf = "";
     let lastEvent: Record<string, unknown> | null = null;
     // SSE 标准事件分隔符是 \r\n\r\n，但 Flask/werkzeug 在 Windows 上可能发 \n\n
@@ -44,7 +64,7 @@ async function request<T>(path: string, opts?: RequestInit & { timeout?: number;
           await reader.cancel().catch(() => {});
           throw new Error(ctrl.signal.reason instanceof Error ? ctrl.signal.reason.message : "请求已取消");
         }
-        const { done, value } = await reader.read();
+        const { done, value } = await Promise.race([reader.read(), abortRead]);
         if (done) break;
         buf += decoder.decode(value, { stream: true });
         // 一次可能拿到多条事件，按 SSE_SEP 切片
@@ -86,6 +106,7 @@ async function request<T>(path: string, opts?: RequestInit & { timeout?: number;
       }
       throw err;
     } finally {
+      cleanup();
       try { reader.releaseLock(); } catch { /* noop */ }
     }
     // 流结束：以最后一个事件作为返回值（约定 done 事件在最末尾）
@@ -94,11 +115,28 @@ async function request<T>(path: string, opts?: RequestInit & { timeout?: number;
   }
 
   const data = await res.json().catch(() => ({}));
+  cleanup();
   if (!res.ok) throw new Error((data as { error?: string }).error || `HTTP ${res.status}`);
   return data as T;
 }
 
 export const api = {
+  getAuthStatus(opts?: { signal?: AbortSignal }) {
+    return request<{ required: boolean; authenticated: boolean }>("/auth/status", { signal: opts?.signal });
+  },
+
+  login(password: string) {
+    return request<{ success: boolean; authenticated: boolean }>("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+  },
+
+  logout() {
+    return request<{ success: boolean }>("/auth/logout", { method: "POST" });
+  },
+
   getStatus(opts?: { signal?: AbortSignal }) {
     return request<{ image_studio: { ok: boolean; providers: Record<string, string> }; giga_markets: Record<string, boolean>; has_giga_creds: boolean; port: number }>("/server-status", { signal: opts?.signal });
   },
@@ -183,6 +221,7 @@ export const api = {
   generateImage(opts: {
     slot: "main" | "sub" | "detail";
     sku?: string;
+    market?: string;
     size: string;
     prompt_extra?: string;
     reference_images: Array<
@@ -205,6 +244,7 @@ export const api = {
       slot: string;
       image_url: string;
       thumbnail_url: string;
+      public_url?: string;
       filename: string;
       size: string;
       prompt_used: string;
@@ -216,12 +256,23 @@ export const api = {
     });
   },
 
-  fetchImages(sku: string, market: string, signal?: AbortSignal) {
+  fetchImages(
+    sku: string,
+    market: string,
+    imageUrls: string[] = [],
+    declaredMainUrls: string[] = [],
+    signal?: AbortSignal,
+  ) {
     // 加 signal 支持切换 SKU 时取消(B3 修复 — 旧 SKU 代理图不再覆盖新 SKU state)
     return request<{ success: boolean; sku: string; market: string; images: import("./types").GigaImage[] }>("/fetch-images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sku, market }),
+      body: JSON.stringify({
+        sku,
+        market,
+        image_urls: imageUrls,
+        declared_main_urls: declaredMainUrls,
+      }),
       signal,
     });
   },

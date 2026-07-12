@@ -7,7 +7,7 @@ interface LightboxProps {
 export function Lightbox({ url, label, onClose }: LightboxProps) {
   return (
     <div
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}
+      style={{ position: "fixed", inset: 0, background: "var(--theme-overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}
       onClick={onClose}
     >
       <div style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh" }} onClick={e => e.stopPropagation()}>
