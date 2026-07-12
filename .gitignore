@@ -1,6 +1,7 @@
 # ── 敏感凭证(绝不入库)─────────────────────
 .env
 .env.bak*
+.claude/settings.local.json
 secrets/.env
 
 # ── Python ────────────────────────────────
