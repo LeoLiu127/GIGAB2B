@@ -2,6 +2,7 @@ const STATUS_LABELS: Record<string, string> = {
   missing_required: "缺少必填信息",
   dropdown_required: "需要下拉选择",
   conditional_attention: "条件必填待确认",
+  manual_attention: "需要人工确认",
   invalid_existing_value: "现有值不符合下拉规则",
   api_not_found: "GIGA 未返回该 SKU",
   preserved: "已保留人工填写值",
@@ -9,6 +10,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function issueStatusLabel(status: string): string {
   return STATUS_LABELS[status] ?? status;
+}
+
+export function filledSourceLabel(source: string): string {
+  return source === "business_default" ? "业务默认值" : source === "giga_api" ? "GIGA API" : source;
 }
 
 export function uploadReadinessLabel(uploadReady: boolean): string {

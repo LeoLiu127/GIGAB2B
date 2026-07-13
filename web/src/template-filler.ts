@@ -1,5 +1,5 @@
 import "./template-filler.css";
-import { isSupportedTemplateFile, issueStatusLabel, uploadReadinessLabel } from "./template-filler-model";
+import { filledSourceLabel, isSupportedTemplateFile, issueStatusLabel, uploadReadinessLabel } from "./template-filler-model";
 
 type AnalyzeResponse = {
   template_id: string;
@@ -20,6 +20,15 @@ type Issue = {
   allowed_values: string[];
 };
 
+type FilledField = {
+  sku: string;
+  row: number;
+  field_id: string;
+  label: string;
+  value: string | number;
+  source: string;
+};
+
 type FillResponse = {
   output_file: string;
   report_file: string;
@@ -28,9 +37,11 @@ type FillResponse = {
     fields_filled: number;
     missing_required: number;
     conditional_attention: number;
+    manual_attention: number;
     dropdown_required: number;
     upload_ready: boolean;
   };
+  filled_fields: FilledField[];
   issues: Issue[];
 };
 
@@ -130,6 +141,36 @@ function renderIssues(filter: string) {
   }));
 }
 
+function renderFilledFields(filledFields: FilledField[]) {
+  const tbody = document.querySelector<HTMLTableSectionElement>("#filled-table")!;
+  if (!filledFields.length) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 4;
+    cell.textContent = "本次没有新增填写字段。";
+    row.append(cell);
+    tbody.replaceChildren(row);
+    return;
+  }
+  tbody.replaceChildren(...filledFields.map(item => {
+    const row = document.createElement("tr");
+    const sku = document.createElement("td");
+    sku.textContent = item.sku;
+    const field = document.createElement("td");
+    const label = document.createElement("strong");
+    label.textContent = item.label || item.field_id;
+    const code = document.createElement("code");
+    code.textContent = item.field_id;
+    field.append(label, document.createElement("br"), code);
+    const value = document.createElement("td");
+    value.textContent = String(item.value);
+    const source = document.createElement("td");
+    source.textContent = filledSourceLabel(item.source);
+    row.append(sku, field, value, source);
+    return row;
+  }));
+}
+
 function renderResult(data: FillResponse) {
   issues = data.issues;
   const metrics = document.querySelector<HTMLElement>("#result-metrics")!;
@@ -137,7 +178,7 @@ function renderResult(data: FillResponse) {
     metric(data.summary.fields_filled, "自动填写字段"),
     metric(data.summary.missing_required, "缺少严格必填"),
     metric(data.summary.dropdown_required, "下拉待选择"),
-    metric(data.summary.conditional_attention, "条件必填待确认"),
+    metric(data.summary.manual_attention, "人工待确认"),
   );
   const badge = document.querySelector<HTMLElement>("#ready-badge")!;
   badge.textContent = uploadReadinessLabel(data.summary.upload_ready);
@@ -148,6 +189,7 @@ function renderResult(data: FillResponse) {
   const report = document.querySelector<HTMLAnchorElement>("#report-download")!;
   report.href = `/api/template-filler/reports/${encodeURIComponent(data.report_file)}`;
   report.download = data.report_file;
+  renderFilledFields(data.filled_fields);
   issueFilter.value = "all";
   renderIssues("all");
   resultPanel.classList.remove("hidden");

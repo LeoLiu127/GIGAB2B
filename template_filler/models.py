@@ -78,10 +78,31 @@ class ValidationIssue:
         }
 
 
+@dataclass(frozen=True)
+class FilledField:
+    sku: str
+    row: int
+    field_id: str
+    label: str
+    value: Any
+    source: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "sku": self.sku,
+            "row": self.row,
+            "field_id": self.field_id,
+            "label": self.label,
+            "value": self.value,
+            "source": self.source,
+        }
+
+
 @dataclass
 class FillPlan:
     changes: dict[tuple[int, int], Any] = field(default_factory=dict)
     issues: list[ValidationIssue] = field(default_factory=list)
+    filled_fields: list[FilledField] = field(default_factory=list)
     rows_processed: int = 0
 
     @property

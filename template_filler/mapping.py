@@ -7,13 +7,15 @@ from typing import Any
 
 import openpyxl
 
-from .models import FillPlan, SkuRow, TemplateField, TemplateProfile, ValidationIssue
+from .models import FilledField, FillPlan, SkuRow, TemplateField, TemplateProfile, ValidationIssue
 
 
 UNIT_ALIASES = {
     "cm": {"cm", "centimetre", "centimetres", "centimeter", "centimeters"},
     "kg": {"kg", "kilogram", "kilograms"},
 }
+
+MANUAL_ATTENTION_FIELDS = {"recommended_browse_nodes", "manufacturer"}
 
 
 def _number(value: Any) -> int | float | None:
@@ -36,27 +38,6 @@ def _plain_description(product: dict[str, Any]) -> str:
     if cleaned:
         return cleaned
     return "\n".join(str(item).strip() for item in (product.get("characteristics") or []) if str(item).strip())
-
-
-def _brand(product: dict[str, Any]) -> str:
-    info = product.get("brandInfo") or {}
-    return str(info.get("brandName") or product.get("brand") or "").strip()
-
-
-def _valid_gtin(value: Any) -> str:
-    digits = str(value or "").strip()
-    if not digits.isdigit() or len(digits) not in {8, 12, 13, 14}:
-        return ""
-    body = digits[:-1]
-    total = 0
-    for index, digit in enumerate(reversed(body)):
-        total += int(digit) * (3 if index % 2 == 0 else 1)
-    check = (10 - total % 10) % 10
-    return digits if check == int(digits[-1]) else ""
-
-
-def _gtin_type(gtin: str) -> str:
-    return {8: "EAN", 12: "UPC", 13: "EAN", 14: "GTIN"}.get(len(gtin), "")
 
 
 def _sequence(field_id: str, base_name: str) -> int:
@@ -98,7 +79,30 @@ def _dimension_candidate(field: TemplateField, product: dict[str, Any]) -> Any:
     return None
 
 
-def _candidate(field: TemplateField, profile: TemplateProfile, product: dict[str, Any]) -> Any:
+def _business_default(field: TemplateField, product: dict[str, Any]) -> tuple[bool, Any]:
+    base = field.base_name
+    if base == "brand":
+        return True, "GENERIC"
+    if base == "amzn1.volt.ca.product_id_type":
+        return True, "GTIN Exempt"
+    if base == "amzn1.volt.ca.product_id_value":
+        return True, None
+    if base == "country_of_origin":
+        return True, "China"
+    if base == "condition_type":
+        return True, "New"
+    if base in {"batteries_required", "batteries_included"}:
+        return True, "No"
+    if base == "fulfillment_availability" and field.field_id.endswith(".quantity"):
+        available = product.get("skuAvailable")
+        if available is True:
+            return True, 5
+        if available is False:
+            return True, 0
+    return False, None
+
+
+def _giga_candidate(field: TemplateField, profile: TemplateProfile, product: dict[str, Any]) -> Any:
     base = field.base_name
     if base == "product_type":
         return profile.category
@@ -106,12 +110,6 @@ def _candidate(field: TemplateField, profile: TemplateProfile, product: dict[str
         return str(product.get("productName") or "").strip()
     if base in {"model_number", "part_number"}:
         return str(product.get("mpn") or "").strip()
-    if base == "brand":
-        return _brand(product)
-    if base == "amzn1.volt.ca.product_id_value":
-        return _valid_gtin(product.get("upc"))
-    if base == "amzn1.volt.ca.product_id_type":
-        return _gtin_type(_valid_gtin(product.get("upc")))
     if base == "product_description":
         return _plain_description(product)
     if base == "bullet_point":
@@ -132,16 +130,21 @@ def _candidate(field: TemplateField, profile: TemplateProfile, product: dict[str
         if field.field_id.endswith(".unit"):
             return str(product.get("assembledWeightUnit") or "kg").lower()
         return _number(product.get("assembledWeight") or product.get("weightKg"))
-    if base == "country_of_origin":
-        return str(product.get("placeOfOrigin") or "").strip()
     return None
 
 
-def _coerce_dropdown(field: TemplateField, value: Any) -> Any:
+def _candidate(field: TemplateField, profile: TemplateProfile, product: dict[str, Any]) -> tuple[Any, str]:
+    has_default, default = _business_default(field, product)
+    if has_default:
+        return default, "business_default"
+    return _giga_candidate(field, profile, product), "giga_api"
+
+
+def _coerce_dropdown(field: TemplateField, value: Any, *, allow_unresolved_default: bool = False) -> Any:
     if value in (None, "") or not field.is_dropdown:
         return value
     if not field.allowed_values:
-        return None
+        return value if allow_unresolved_default else None
     text = str(value).strip()
     exact = next((allowed for allowed in field.allowed_values if allowed.casefold() == text.casefold()), None)
     if exact is not None:
@@ -185,7 +188,7 @@ def build_fill_plan(
             final_values: dict[str, Any] = {}
             for field in profile.fields:
                 existing = sheet.cell(row.row, field.column).value
-                candidate = _candidate(field, profile, product)
+                candidate, source = _candidate(field, profile, product)
                 if existing not in (None, ""):
                     final_values[field.field_id] = existing
                     if candidate not in (None, "") and field.base_name != "contribution_sku":
@@ -197,20 +200,33 @@ def build_fill_plan(
                     continue
 
                 if candidate not in (None, ""):
-                    value = _coerce_dropdown(field, candidate)
+                    value = _coerce_dropdown(
+                        field,
+                        candidate,
+                        allow_unresolved_default=source == "business_default",
+                    )
                     if field.is_dropdown and value in (None, ""):
-                        plan.issues.append(_issue(row, field, "warning", "dropdown_required", f"GIGA 候选值 {candidate!r} 不在模板允许值中"))
+                        candidate_source = "业务默认值" if source == "business_default" else "GIGA 候选值"
+                        plan.issues.append(_issue(row, field, "warning", "dropdown_required", f"{candidate_source} {candidate!r} 不在模板允许值中"))
                     else:
                         plan.changes[(row.row, field.column)] = value
                         final_values[field.field_id] = value
+                        plan.filled_fields.append(FilledField(
+                            sku=row.sku,
+                            row=row.row,
+                            field_id=field.field_id,
+                            label=field.label,
+                            value=value,
+                            source=source,
+                        ))
 
             for field in profile.fields:
                 if final_values.get(field.field_id) not in (None, ""):
                     continue
                 if field.requirement == "required":
                     plan.issues.append(_issue(row, field, "error", "missing_required", "Amazon 必填字段无法从 GIGA 数据自动填写"))
-                elif field.requirement == "conditionally_required":
-                    plan.issues.append(_issue(row, field, "warning", "conditional_attention", "Amazon 条件必填字段为空，需要运营确认是否触发"))
+                elif field.base_name in MANUAL_ATTENTION_FIELDS and field.field_id.endswith("#1.value"):
+                    plan.issues.append(_issue(row, field, "warning", "manual_attention", "按运营规则保持空白，需要人工补充或确认"))
         return plan
     finally:
         workbook.close()

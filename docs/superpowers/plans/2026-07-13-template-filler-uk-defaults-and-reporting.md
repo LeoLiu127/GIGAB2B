@@ -39,7 +39,7 @@ self.assertEqual(planned("condition_type"), "New")
 self.assertEqual(planned("country_of_origin"), "China")
 self.assertEqual(planned("batteries_required"), "No")
 self.assertEqual(planned("batteries_included"), "No")
-self.assertEqual(planned("fulfillment_availability"), 5)
+self.assertEqual(planned_field("fulfillment_availability", ".quantity"), 5)
 self.assertTrue(any(item.source == "business_default" for item in plan.filled_fields))
 ```
 
@@ -100,7 +100,7 @@ Expected: failure because the current implementation emits every empty condition
 MANUAL_ATTENTION_FIELDS = {"recommended_browse_nodes", "manufacturer"}
 ```
 
-Emit the reminder only when the final target cell is empty; keep strict required and dropdown validation unchanged.
+Emit the reminder only when the final target cell is empty. For repeated Recommended Browse Nodes slots, emit a single reminder for `#1.value`; keep strict required and dropdown validation unchanged.
 
 - [ ] **Step 4: Run focused tests**
 

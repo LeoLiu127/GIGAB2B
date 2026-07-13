@@ -155,11 +155,13 @@ def fill_template():
                 "fields_filled": plan.fields_filled,
                 "missing_required": counts["missing_required"],
                 "conditional_attention": counts["conditional_attention"],
+                "manual_attention": counts["manual_attention"],
                 "dropdown_required": counts["dropdown_required"],
                 "api_not_found": counts["api_not_found"],
                 "invalid_existing_value": counts["invalid_existing_value"],
                 "upload_ready": not any(issue.severity == "error" for issue in plan.issues),
             },
+            "filled_fields": [item.to_dict() for item in plan.filled_fields],
             "issues": [issue.to_dict() for issue in plan.issues],
         }
         temporary_report = report_path.with_suffix(".json.tmp")
@@ -171,6 +173,7 @@ def fill_template():
                 "output_file": output_name,
                 "report_file": report_name,
                 "summary": report["summary"],
+                "filled_fields": report["filled_fields"],
                 "issues": report["issues"],
             }
         )

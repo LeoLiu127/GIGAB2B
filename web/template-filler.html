@@ -69,7 +69,16 @@
           <a class="secondary-button link-button" id="report-download">下载 JSON 校验报告</a>
         </div>
         <div class="report-toolbar">
-          <div><h3>需要处理的字段</h3><p class="muted">严格必填错误优先；条件必填需要结合实际 Listing 判断。</p></div>
+          <div><h3>本次已填写内容</h3><p class="muted">列出每个写入字段、值和数据来源；运营已有值不会出现在此清单。</p></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>SKU</th><th>字段</th><th>写入值</th><th>来源</th></tr></thead>
+            <tbody id="filled-table"></tbody>
+          </table>
+        </div>
+        <div class="report-toolbar">
+          <div><h3>需要处理的字段</h3><p class="muted">仅显示严格必填、下拉不匹配、SKU 查询失败和运营指定的人工作业。</p></div>
           <select id="issue-filter" aria-label="筛选问题类型">
             <option value="all">全部问题</option>
             <option value="error">仅错误</option>

@@ -110,14 +110,65 @@ class AmazonTemplateFillTests(unittest.TestCase):
         self.assertIsNone(planned("material"), "Chenille is not an allowed Material dropdown value")
 
         statuses = {(issue.status, issue.field_id) for issue in plan.issues}
-        self.assertIn(("missing_required", profile.field_by_base_name("brand").field_id), statuses)
-        self.assertIn(("missing_required", profile.field_by_base_name("amzn1.volt.ca.product_id_type").field_id), statuses)
-        self.assertIn(("missing_required", profile.field_by_base_name("country_of_origin").field_id), statuses)
+        self.assertNotIn(("missing_required", profile.field_by_base_name("brand").field_id), statuses)
+        self.assertNotIn(("missing_required", profile.field_by_base_name("amzn1.volt.ca.product_id_type").field_id), statuses)
+        self.assertNotIn(("missing_required", profile.field_by_base_name("country_of_origin").field_id), statuses)
         self.assertTrue(any(issue.status == "dropdown_required" and issue.field_id.startswith("material[") for issue in plan.issues))
         self.assertEqual(
             sum(issue.status == "dropdown_required" and issue.field_id.startswith("material[") for issue in plan.issues),
             1,
         )
+
+    def test_cabinet_plan_applies_approved_uk_defaults_and_tracks_their_provenance(self):
+        source = FIXTURE_DIR / "CABINET-UK-1SKU.xlsm"
+        profile = parse_amazon_template(source)
+        product = {
+            "sku": "N890P39984041W",
+            "productName": "Sideboard",
+            "brandInfo": {"brandName": "A GIGA supplier brand that must not be used"},
+            "upc": "012345678905",
+            "skuAvailable": True,
+        }
+
+        plan = build_fill_plan(profile, source, {"N890P39984041W": product})
+
+        def planned(base_name: str, suffix: str = ""):
+            field = next(field for field in profile.fields if field.base_name == base_name and suffix in field.field_id)
+            return plan.changes.get((7, field.column))
+
+        self.assertEqual(planned("brand"), "GENERIC")
+        self.assertEqual(planned("amzn1.volt.ca.product_id_type"), "GTIN Exempt")
+        self.assertIsNone(planned("amzn1.volt.ca.product_id_value"))
+        self.assertEqual(planned("condition_type"), "New")
+        self.assertEqual(planned("country_of_origin"), "China")
+        self.assertEqual(planned("batteries_required"), "No")
+        self.assertEqual(planned("batteries_included"), "No")
+        self.assertEqual(planned("fulfillment_availability", ".quantity"), 5)
+
+        defaults = {item.field_id: item for item in plan.filled_fields if item.source == "business_default"}
+        self.assertEqual(defaults[profile.field_by_base_name("brand").field_id].value, "GENERIC")
+        self.assertEqual(defaults[profile.field_by_base_name("amzn1.volt.ca.product_id_type").field_id].value, "GTIN Exempt")
+
+    def test_cabinet_plan_uses_zero_quantity_when_giga_marks_sku_unavailable(self):
+        source = FIXTURE_DIR / "CABINET-UK-1SKU.xlsm"
+        profile = parse_amazon_template(source)
+        plan = build_fill_plan(profile, source, {"N890P39984041W": {"sku": "N890P39984041W", "skuAvailable": False}})
+
+        quantity = next(
+            field for field in profile.fields
+            if field.base_name == "fulfillment_availability" and field.field_id.endswith(".quantity")
+        )
+        self.assertEqual(plan.changes[(7, quantity.column)], 0)
+
+    def test_cabinet_plan_keeps_manual_fields_empty_and_suppresses_unconfigured_conditional_noise(self):
+        source = FIXTURE_DIR / "CABINET-UK-1SKU.xlsm"
+        profile = parse_amazon_template(source)
+        plan = build_fill_plan(profile, source, {"N890P39984041W": {"sku": "N890P39984041W"}})
+
+        manual = {(issue.status, issue.field_id) for issue in plan.issues}
+        self.assertTrue(any(status == "manual_attention" and field_id.startswith("recommended_browse_nodes") for status, field_id in manual))
+        self.assertTrue(any(status == "manual_attention" and field_id.startswith("manufacturer") for status, field_id in manual))
+        self.assertFalse(any(issue.status == "conditional_attention" for issue in plan.issues))
 
     def test_fill_plan_preserves_existing_operator_values(self):
         source = FIXTURE_DIR / "CABINET-UK-1SKU.xlsm"
@@ -246,6 +297,8 @@ class TemplateFillerApiTests(unittest.TestCase):
                 payload = filled.get_json()
                 self.assertGreater(payload["summary"]["fields_filled"], 0)
                 self.assertGreater(payload["summary"]["missing_required"], 0)
+                self.assertIn("filled_fields", payload)
+                self.assertTrue(payload["filled_fields"])
                 self.assertTrue((outputs / payload["output_file"]).is_file())
                 self.assertTrue((outputs / payload["report_file"]).is_file())
 
