@@ -175,6 +175,40 @@ class AmazonTemplateFillTests(unittest.TestCase):
         self.assertTrue(any(status == "manual_attention" and field_id.startswith("manufacturer") for status, field_id in manual))
         self.assertFalse(any(issue.status == "conditional_attention" for issue in plan.issues))
 
+    def test_chair_plan_reports_operator_required_listing_fields_and_applies_default_channel(self):
+        source = FIXTURE_DIR / "CHAIR-UK-1SKU.xlsm"
+        profile = parse_amazon_template(source)
+        plan = build_fill_plan(profile, source, {"W5807S00002": {"sku": "W5807S00002"}})
+
+        required_fields = {
+            "number_of_items",
+            "is_assembly_required",
+            "size",
+            "unit_count",
+            "included_components",
+            "is_fragile",
+            "list_price",
+            "merchant_shipping_group",
+        }
+        reported = {issue.field_id for issue in plan.issues if issue.status == "business_required"}
+        for field in profile.fields:
+            if field.base_name in required_fields and (
+                field.base_name != "included_components" or field.field_id.endswith("#1.value")
+            ):
+                self.assertIn(field.field_id, reported)
+
+        channel = next(
+            field for field in profile.fields
+            if field.base_name == "fulfillment_availability" and field.field_id.endswith(".fulfillment_channel_code")
+        )
+        self.assertEqual(plan.changes[(8, channel.column)], "DEFAULT")
+        self.assertFalse(any(issue.status == "business_required" and issue.field_id == channel.field_id for issue in plan.issues))
+
+        cabinet_source = FIXTURE_DIR / "CABINET-UK-1SKU.xlsm"
+        cabinet_profile = parse_amazon_template(cabinet_source)
+        cabinet_plan = build_fill_plan(cabinet_profile, cabinet_source, {"N890P39984041W": {"sku": "N890P39984041W"}})
+        self.assertFalse(any(issue.status == "business_required" for issue in cabinet_plan.issues))
+
     def test_fill_plan_preserves_existing_operator_values(self):
         source = FIXTURE_DIR / "CABINET-UK-1SKU.xlsm"
         profile = parse_amazon_template(source)
@@ -303,6 +337,7 @@ class TemplateFillerApiTests(unittest.TestCase):
                 self.assertGreater(payload["summary"]["fields_filled"], 0)
                 self.assertEqual(payload["summary"]["missing_required"], 0)
                 self.assertGreater(payload["summary"]["dropdown_required"], 0)
+                self.assertEqual(payload["summary"]["business_required"], 0)
                 self.assertFalse(payload["summary"]["upload_ready"])
                 self.assertIn("filled_fields", payload)
                 self.assertTrue(payload["filled_fields"])

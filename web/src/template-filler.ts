@@ -38,6 +38,7 @@ type FillResponse = {
     missing_required: number;
     conditional_attention: number;
     manual_attention: number;
+    business_required: number;
     dropdown_required: number;
     upload_ready: boolean;
   };
@@ -179,6 +180,7 @@ function renderResult(data: FillResponse) {
     metric(data.summary.missing_required, "缺少严格必填"),
     metric(data.summary.dropdown_required, "下拉待选择"),
     metric(data.summary.manual_attention, "人工待确认"),
+    metric(data.summary.business_required, "运营必填待补充"),
   );
   const badge = document.querySelector<HTMLElement>("#ready-badge")!;
   badge.textContent = uploadReadinessLabel(data.summary.upload_ready);

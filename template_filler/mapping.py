@@ -16,6 +16,26 @@ UNIT_ALIASES = {
 }
 
 MANUAL_ATTENTION_FIELDS = {"recommended_browse_nodes", "manufacturer"}
+CHAIR_LISTING_REQUIRED_FIELDS = {
+    "number_of_items",
+    "is_assembly_required",
+    "size",
+    "unit_count",
+    "included_components",
+    "is_fragile",
+    "list_price",
+    "merchant_shipping_group",
+}
+
+
+def _is_uk_chair(profile: TemplateProfile) -> bool:
+    return profile.market.casefold() == "uk" and profile.category.casefold() == "chair"
+
+
+def _is_chair_listing_required(profile: TemplateProfile, field: TemplateField) -> bool:
+    if not _is_uk_chair(profile) or field.base_name not in CHAIR_LISTING_REQUIRED_FIELDS:
+        return False
+    return field.base_name != "included_components" or field.field_id.endswith("#1.value")
 
 
 def _number(value: Any) -> int | float | None:
@@ -79,7 +99,7 @@ def _dimension_candidate(field: TemplateField, product: dict[str, Any]) -> Any:
     return None
 
 
-def _business_default(field: TemplateField, product: dict[str, Any]) -> tuple[bool, Any]:
+def _business_default(field: TemplateField, profile: TemplateProfile, product: dict[str, Any]) -> tuple[bool, Any]:
     base = field.base_name
     if base == "brand":
         return True, "GENERIC"
@@ -95,6 +115,9 @@ def _business_default(field: TemplateField, product: dict[str, Any]) -> tuple[bo
         return True, "No"
     if base == "supplier_declared_dg_hz_regulation":
         return True, "Not Applicable"
+    if _is_uk_chair(profile) and base == "fulfillment_availability" and field.field_id.endswith(".fulfillment_channel_code"):
+        default = next((value for value in field.allowed_values if value.casefold() == "default"), None)
+        return (True, default) if default else (False, None)
     if base == "fulfillment_availability" and field.field_id.endswith(".quantity"):
         available = product.get("skuAvailable")
         if available is True:
@@ -136,7 +159,7 @@ def _giga_candidate(field: TemplateField, profile: TemplateProfile, product: dic
 
 
 def _candidate(field: TemplateField, profile: TemplateProfile, product: dict[str, Any]) -> tuple[Any, str]:
-    has_default, default = _business_default(field, product)
+    has_default, default = _business_default(field, profile, product)
     if has_default:
         return default, "business_default"
     return _giga_candidate(field, profile, product), "giga_api"
@@ -225,7 +248,9 @@ def build_fill_plan(
             for field in profile.fields:
                 if final_values.get(field.field_id) not in (None, ""):
                     continue
-                if field.base_name in MANUAL_ATTENTION_FIELDS and field.field_id.endswith("#1.value"):
+                if _is_chair_listing_required(profile, field):
+                    plan.issues.append(_issue(row, field, "error", "business_required", "CHAIR UK 运营规则要求补充此字段"))
+                elif field.base_name in MANUAL_ATTENTION_FIELDS and field.field_id.endswith("#1.value"):
                     plan.issues.append(_issue(row, field, "warning", "manual_attention", "按运营规则保持空白，需要人工补充或确认"))
                 elif field.requirement == "required":
                     plan.issues.append(_issue(row, field, "error", "missing_required", "Amazon 必填字段无法从 GIGA 数据自动填写"))

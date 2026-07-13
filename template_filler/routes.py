@@ -156,11 +156,12 @@ def fill_template():
                 "missing_required": counts["missing_required"],
                 "conditional_attention": counts["conditional_attention"],
                 "manual_attention": counts["manual_attention"],
+                "business_required": counts["business_required"],
                 "dropdown_required": counts["dropdown_required"],
                 "api_not_found": counts["api_not_found"],
                 "invalid_existing_value": counts["invalid_existing_value"],
                 "upload_ready": not any(
-                    issue.status in {"missing_required", "dropdown_required", "api_not_found", "invalid_existing_value"}
+                    issue.status in {"missing_required", "business_required", "dropdown_required", "api_not_found", "invalid_existing_value"}
                     for issue in plan.issues
                 ),
             },

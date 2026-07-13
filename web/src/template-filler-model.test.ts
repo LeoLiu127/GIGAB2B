@@ -9,6 +9,7 @@ describe("template filler report labels", () => {
     expect(issueStatusLabel("dropdown_required")).toBe("需要下拉选择");
     expect(issueStatusLabel("conditional_attention")).toBe("条件必填待确认");
     expect(issueStatusLabel("manual_attention")).toBe("需要人工确认");
+    expect(issueStatusLabel("business_required")).toBe("运营必填待补充");
   });
 
   it("labels GIGA values and explicit business defaults", () => {

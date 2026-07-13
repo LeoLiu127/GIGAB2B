@@ -3,6 +3,7 @@ const STATUS_LABELS: Record<string, string> = {
   dropdown_required: "需要下拉选择",
   conditional_attention: "条件必填待确认",
   manual_attention: "需要人工确认",
+  business_required: "运营必填待补充",
   invalid_existing_value: "现有值不符合下拉规则",
   api_not_found: "GIGA 未返回该 SKU",
   preserved: "已保留人工填写值",
