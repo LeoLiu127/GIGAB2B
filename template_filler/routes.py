@@ -7,12 +7,15 @@ import uuid
 from collections import Counter
 from pathlib import Path
 
+import openpyxl
+
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from werkzeug.utils import secure_filename
 
 from .mapping import build_fill_plan
 from .parser import parse_amazon_template
 from .policy import PolicyStore
+from .variants import ListingProducts, VariantExpansion, expand_variant_rows
 from .writer import write_filled_workbook
 
 
@@ -74,6 +77,22 @@ def _profile_payload(profile) -> dict:
         "field_count": len(profile.fields),
         "has_vba": profile.has_vba,
     }
+
+
+def _manual_variation_themes(profile, source: Path) -> dict[int, str]:
+    field = next((item for item in profile.fields if item.base_name == "variation_theme"), None)
+    if field is None:
+        return {}
+    workbook = openpyxl.load_workbook(source, read_only=True, data_only=False, keep_vba=True)
+    try:
+        sheet = workbook[profile.sheet_name]
+        return {
+            row.row: str(sheet.cell(row.row, field.column).value or "").strip()
+            for row in profile.sku_rows
+            if sheet.cell(row.row, field.column).value not in (None, "")
+        }
+    finally:
+        workbook.close()
 
 
 def _resolve_template(template_id: str, templates: Path) -> tuple[Path, dict]:
@@ -173,7 +192,7 @@ def save_template_policy(template_id: str):
             field_id = str(item["field_id"]).strip()
             if field_id in rules:
                 raise ValueError(f"策略字段重复: {field_id}")
-            rules[field_id] = {"action": item.get("action"), "value": item.get("value")}
+            rules[field_id] = {"action": item.get("action"), "value": item.get("value"), "scope": item.get("scope")}
         policy = _policy_store().save(profile, rules)
         return jsonify({"success": True, "policy_status": "active", "policy_drift": [], "policy": policy.to_dict()})
     except Exception as exc:
@@ -188,14 +207,57 @@ def fill_template():
         source, metadata = _resolve_template(str(body.get("template_id") or ""), templates)
         profile = parse_amazon_template(source)
         policy, policy_status, policy_drift = _policy_state(profile)
-        fetch_products = current_app.config["TEMPLATE_FILLER_FETCH_PRODUCTS"]
-        products = fetch_products([row.sku for row in profile.sku_rows], profile.market)
-        products_by_sku = {
-            str(item.get("sku") or "").strip(): item
-            for item in products
-            if isinstance(item, dict) and item.get("sku")
-        }
-        plan = build_fill_plan(profile, source, products_by_sku, policy=policy, policy_configured=policy is not None)
+        expand_variants = body.get("expand_variants") is not False
+        expansion: VariantExpansion | None = None
+        if expand_variants:
+            fetch_listing = current_app.config["TEMPLATE_FILLER_FETCH_LISTING_PRODUCTS"]
+
+            def listing_products(sku: str, market: str) -> ListingProducts:
+                try:
+                    raw = fetch_listing(sku, market)
+                except Exception as exc:
+                    return ListingProducts(
+                        seed_sku=sku,
+                        main_sku=sku,
+                        requested_skus=(sku,),
+                        products={},
+                        missing_skus=(sku,),
+                        warning=f"GIGA 变体详情请求失败: {exc}",
+                    )
+                if isinstance(raw, ListingProducts):
+                    return raw
+                main = raw.get("main") or {}
+                products = {
+                    str(item.get("sku") or "").strip(): item
+                    for item in raw.get("products") or []
+                    if isinstance(item, dict) and item.get("sku")
+                }
+                requested = tuple(str(item).strip() for item in raw.get("requested_skus") or [] if str(item).strip())
+                return ListingProducts(
+                    seed_sku=str(raw.get("seed_sku") or sku),
+                    main_sku=str(main.get("sku") or sku),
+                    requested_skus=requested or (sku,),
+                    products=products,
+                    missing_skus=tuple(str(item).strip() for item in raw.get("missing_skus") or [] if str(item).strip()),
+                    over_limit=bool(raw.get("over_limit")),
+                    warning=str(raw.get("warning") or "") or None,
+                )
+
+            expansion = expand_variant_rows(profile, listing_products, manual_themes=_manual_variation_themes(profile, source))
+            products_by_sku = {row.sku: row.product for row in expansion.rows if row.product is not None}
+            plan = build_fill_plan(
+                profile, source, products_by_sku, policy=policy, policy_configured=policy is not None, rows=expansion.rows,
+            )
+            plan.issues.extend(expansion.issues)
+        else:
+            fetch_products = current_app.config["TEMPLATE_FILLER_FETCH_PRODUCTS"]
+            products = fetch_products([row.sku for row in profile.sku_rows], profile.market)
+            products_by_sku = {
+                str(item.get("sku") or "").strip(): item
+                for item in products
+                if isinstance(item, dict) and item.get("sku")
+            }
+            plan = build_fill_plan(profile, source, products_by_sku, policy=policy, policy_configured=policy is not None)
 
         original = secure_filename(str(metadata.get("original_filename") or source.name)) or "amazon-template.xlsm"
         stem = Path(original).stem[:80] or "amazon-template"
@@ -204,7 +266,7 @@ def fill_template():
         report_name = f"{stem}-report-{token}.json"
         output_path = outputs / output_name
         report_path = outputs / report_name
-        write_filled_workbook(source, output_path, profile, plan.changes)
+        write_filled_workbook(source, output_path, profile, plan.changes, row_materializations=expansion.rows if expansion else None)
 
         counts = Counter(issue.status for issue in plan.issues)
         report = {
@@ -222,8 +284,9 @@ def fill_template():
                 "dropdown_required": counts["dropdown_required"],
                 "api_not_found": counts["api_not_found"],
                 "invalid_existing_value": counts["invalid_existing_value"],
+                "variant_groups_blocked": counts["variant_theme_unresolved"] + counts["variant_group_too_large"] + counts["variant_fetch_incomplete"] + counts["variant_manual_theme_conflict"],
                 "upload_ready": not any(
-                    issue.status in {"missing_required", "business_required", "policy_unconfigured", "dropdown_required", "api_not_found", "invalid_existing_value"}
+                    issue.status in {"missing_required", "business_required", "policy_unconfigured", "dropdown_required", "api_not_found", "invalid_existing_value", "variant_theme_unresolved", "variant_group_too_large", "variant_fetch_incomplete", "variant_manual_theme_conflict"}
                     for issue in plan.issues
                 ),
             },
@@ -232,6 +295,8 @@ def fill_template():
             "policy_status": policy_status,
             "policy_drift": policy_drift,
             "policy": policy.to_dict() if policy else None,
+            "variant_summary": expansion.summary if expansion else {"seed_rows": len(profile.sku_rows), "groups_expanded": 0, "groups_blocked": 0, "parents_added": 0, "children_added": 0},
+            "variant_groups": [group.to_dict() for group in expansion.groups] if expansion else [],
         }
         temporary_report = report_path.with_suffix(".json.tmp")
         temporary_report.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -247,6 +312,8 @@ def fill_template():
                 "policy_status": report["policy_status"],
                 "policy_drift": report["policy_drift"],
                 "policy": report["policy"],
+                "variant_summary": report["variant_summary"],
+                "variant_groups": report["variant_groups"],
             }
         )
     except Exception as exc:

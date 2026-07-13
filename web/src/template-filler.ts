@@ -10,7 +10,7 @@ type TemplateField = {
   allowed_values: string[];
 };
 
-type PolicyRule = { action: "required" | "reminder" | "default" | "ignore"; value?: string };
+type PolicyRule = { action: "required" | "reminder" | "default" | "ignore"; value?: string; scope?: "parent" | "child" | "all" };
 type Policy = { version: number; rules: Record<string, PolicyRule> };
 type PolicyDrift = { kind: string; field_id: string };
 
@@ -57,6 +57,7 @@ type FillResponse = {
     manual_attention: number;
     business_required: number;
     policy_required: number;
+    variant_groups_blocked: number;
     dropdown_required: number;
     upload_ready: boolean;
   };
@@ -65,6 +66,8 @@ type FillResponse = {
   policy_status: string;
   policy_drift: PolicyDrift[];
   policy: Policy | null;
+  variant_summary: { seed_rows: number; groups_expanded: number; groups_blocked: number; parents_added: number; children_added: number };
+  variant_groups: Array<{ seed_sku: string; parent_sku: string; child_skus: string[]; variation_theme: string; status: string; message: string }>;
 };
 
 const fileInput = document.querySelector<HTMLInputElement>("#template-file")!;
@@ -78,6 +81,7 @@ const resultPanel = document.querySelector<HTMLElement>("#result-panel")!;
 const issueFilter = document.querySelector<HTMLSelectElement>("#issue-filter")!;
 const savePolicyButton = document.querySelector<HTMLButtonElement>("#save-policy-button")!;
 const policyMessage = document.querySelector<HTMLElement>("#policy-message")!;
+const expandVariants = document.querySelector<HTMLInputElement>("#expand-variants")!;
 
 let templateId = "";
 let issues: Issue[] = [];
@@ -168,21 +172,33 @@ function renderPolicyEditor(status: string, drift: PolicyDrift[]) {
     select.addEventListener("change", () => { input.disabled = select.value !== "default"; });
     actionCell.append(select);
     valueCell.append(input);
+    const scopeCell = document.createElement("td");
+    const scope = document.createElement("select");
+    scope.className = "policy-scope";
+    for (const [value, text] of [["child", "仅子体"], ["parent", "仅父体"], ["all", "父体与子体"]]) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = text;
+      option.selected = (rule?.scope ?? "child") === value;
+      scope.append(option);
+    }
+    scopeCell.append(scope);
     const allowed = document.createElement("td");
     allowed.textContent = field.allowed_values.length ? field.allowed_values.slice(0, 10).join(" / ") : "—";
-    row.append(name, actionCell, valueCell, allowed);
+    row.append(name, actionCell, scopeCell, valueCell, allowed);
     return row;
   }));
 }
 
 async function savePolicy() {
   if (!templateId) return;
-  const rules: Array<{ field_id: string; action: string; value?: string }> = [];
+  const rules: Array<{ field_id: string; action: string; scope: string; value?: string }> = [];
   document.querySelectorAll<HTMLTableRowElement>("#policy-rule-table tr").forEach(row => {
     const select = row.querySelector<HTMLSelectElement>(".policy-select")!;
     const input = row.querySelector<HTMLInputElement>(".policy-value")!;
+    const scope = row.querySelector<HTMLSelectElement>(".policy-scope")!;
     if (select.value !== "ignore") {
-      rules.push({ field_id: row.dataset.fieldId!, action: select.value, ...(select.value === "default" ? { value: input.value.trim() } : {}) });
+      rules.push({ field_id: row.dataset.fieldId!, action: select.value, scope: scope.value, ...(select.value === "default" ? { value: input.value.trim() } : {}) });
     }
   });
   setBusy(savePolicyButton, true, "正在保存策略…", "保存当前类目策略");
@@ -270,6 +286,28 @@ function renderFilledFields(filledFields: FilledField[]) {
   }));
 }
 
+function renderVariantGroups(groups: FillResponse["variant_groups"]) {
+  const tbody = document.querySelector<HTMLTableSectionElement>("#variant-group-table")!;
+  if (!groups.length) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 5;
+    cell.textContent = "本次按单 SKU 模式处理，未展开 Listing 变体。";
+    row.append(cell);
+    tbody.replaceChildren(row);
+    return;
+  }
+  tbody.replaceChildren(...groups.map(group => {
+    const row = document.createElement("tr");
+    for (const value of [group.seed_sku, group.parent_sku || "—", group.child_skus.join(" / ") || "—", group.variation_theme || "—", group.status === "expanded" ? "已展开" : `${group.status}：${group.message}`]) {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.append(cell);
+    }
+    return row;
+  }));
+}
+
 function renderResult(data: FillResponse) {
   issues = data.issues;
   const metrics = document.querySelector<HTMLElement>("#result-metrics")!;
@@ -279,6 +317,8 @@ function renderResult(data: FillResponse) {
     metric(data.summary.dropdown_required, "下拉待选择"),
     metric(data.summary.manual_attention, "人工待确认"),
     metric(data.summary.business_required, "运营必填待补充"),
+    metric(data.variant_summary.children_added, "新增子体行"),
+    metric(data.variant_summary.groups_blocked, "阻断变体组"),
   );
   const badge = document.querySelector<HTMLElement>("#ready-badge")!;
   badge.textContent = uploadReadinessLabel(data.summary.upload_ready);
@@ -290,6 +330,7 @@ function renderResult(data: FillResponse) {
   report.href = `/api/template-filler/reports/${encodeURIComponent(data.report_file)}`;
   report.download = data.report_file;
   renderFilledFields(data.filled_fields);
+  renderVariantGroups(data.variant_groups);
   issueFilter.value = "all";
   renderIssues("all");
   resultPanel.classList.remove("hidden");
@@ -348,7 +389,7 @@ fillButton.addEventListener("click", async () => {
     const data = await api<FillResponse>("/fill", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ template_id: templateId }),
+      body: JSON.stringify({ template_id: templateId, expand_variants: expandVariants.checked }),
     });
     renderResult(data);
   } catch (error) {

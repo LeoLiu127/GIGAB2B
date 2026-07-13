@@ -16,6 +16,10 @@ POLICY_ACTION_REMINDER = "reminder"
 POLICY_ACTION_DEFAULT = "default"
 POLICY_ACTION_IGNORE = "ignore"
 POLICY_ACTIONS = {POLICY_ACTION_REQUIRED, POLICY_ACTION_REMINDER, POLICY_ACTION_DEFAULT, POLICY_ACTION_IGNORE}
+POLICY_SCOPE_PARENT = "parent"
+POLICY_SCOPE_CHILD = "child"
+POLICY_SCOPE_ALL = "all"
+POLICY_SCOPES = {POLICY_SCOPE_PARENT, POLICY_SCOPE_CHILD, POLICY_SCOPE_ALL}
 
 CHAIR_REQUIRED_BASE_NAMES = {
     "number_of_items",
@@ -33,9 +37,10 @@ CHAIR_REQUIRED_BASE_NAMES = {
 class PolicyRule:
     action: str
     value: str | None = None
+    scope: str = POLICY_SCOPE_CHILD
 
     def to_dict(self) -> dict[str, str]:
-        result = {"action": self.action}
+        result = {"action": self.action, "scope": self.scope}
         if self.value is not None:
             result["value"] = self.value
         return result
@@ -113,9 +118,15 @@ def _normalize_rules(profile: TemplateProfile, raw_rules: Mapping[str, PolicyRul
         if isinstance(raw_rule, PolicyRule):
             rule = raw_rule
         else:
-            rule = PolicyRule(str(raw_rule.get("action") or "").strip(), str(raw_rule.get("value")).strip() if raw_rule.get("value") is not None else None)
+            rule = PolicyRule(
+                str(raw_rule.get("action") or "").strip(),
+                str(raw_rule.get("value")).strip() if raw_rule.get("value") is not None else None,
+                str(raw_rule.get("scope") or POLICY_SCOPE_CHILD).strip(),
+            )
         if rule.action not in POLICY_ACTIONS:
             raise ValueError(f"不支持的策略动作: {rule.action}")
+        if rule.scope not in POLICY_SCOPES:
+            raise ValueError(f"不支持的策略适用对象: {rule.scope}")
         if rule.action == POLICY_ACTION_DEFAULT:
             if rule.value in (None, ""):
                 raise ValueError(f"默认值不能为空: {field_id}")

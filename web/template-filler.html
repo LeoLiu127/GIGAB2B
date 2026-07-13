@@ -62,11 +62,12 @@
           </div>
           <div class="table-wrap policy-table-wrap">
             <table>
-              <thead><tr><th>字段</th><th>策略</th><th>默认值</th><th>模板允许值</th></tr></thead>
+              <thead><tr><th>字段</th><th>策略</th><th>适用对象</th><th>默认值</th><th>模板允许值</th></tr></thead>
               <tbody id="policy-rule-table"></tbody>
             </table>
           </div>
         </div>
+        <label class="variant-toggle"><input id="expand-variants" type="checkbox" checked /> 展开同 Listing 全部变体 <small>自动生成 Parent/Child 行；无法确认主题时保留种子 SKU 并阻止上传。</small></label>
         <button class="primary-button" id="fill-button">抓取 GIGA 数据并填表</button>
       </section>
 
@@ -79,6 +80,15 @@
         <div class="download-row">
           <a class="primary-button link-button" id="workbook-download">下载填写后的模板</a>
           <a class="secondary-button link-button" id="report-download">下载 JSON 校验报告</a>
+        </div>
+        <div class="report-toolbar" id="variant-report-toolbar">
+          <div><h3>变体展开结果</h3><p class="muted">显示每个种子 SKU 的 Parent、子体数量、变体主题或阻断原因。</p></div>
+        </div>
+        <div class="table-wrap" id="variant-report-table">
+          <table>
+            <thead><tr><th>种子 SKU</th><th>Parent SKU</th><th>子 SKU</th><th>变体主题</th><th>结果</th></tr></thead>
+            <tbody id="variant-group-table"></tbody>
+          </table>
         </div>
         <div class="report-toolbar">
           <div><h3>本次已填写内容</h3><p class="muted">列出每个写入字段、值和数据来源；运营已有值不会出现在此清单。</p></div>

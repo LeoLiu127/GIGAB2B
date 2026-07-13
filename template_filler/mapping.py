@@ -9,6 +9,7 @@ import openpyxl
 
 from .models import FilledField, FillPlan, SkuRow, TemplateField, TemplateProfile, ValidationIssue
 from .policy import POLICY_ACTION_DEFAULT, POLICY_ACTION_REMINDER, POLICY_ACTION_REQUIRED, TemplatePolicy, initial_policy_rules
+from .variants import VariantRow, attribute_value
 
 
 UNIT_ALIASES = {
@@ -17,6 +18,11 @@ UNIT_ALIASES = {
 }
 
 MANUAL_ATTENTION_FIELDS = {"recommended_browse_nodes", "manufacturer"}
+RELATIONSHIP_FIELDS = {"contribution_sku", "parentage_level", "child_parent_sku_relationship", "variation_theme"}
+PARENT_SAFE_BASE_NAMES = {
+    "product_type", "item_name", "model_number", "part_number", "product_description", "bullet_point",
+    "brand", "country_of_origin", "supplier_declared_dg_hz_regulation",
+}
 
 
 def _number(value: Any) -> int | float | None:
@@ -120,13 +126,19 @@ def _giga_candidate(field: TemplateField, profile: TemplateProfile, product: dic
         index = _sequence(field.field_id, "bullet_point") - 1
         return str(bullets[index]).strip() if index < len(bullets) else ""
     if base == "color":
-        attributes = product.get("attributes") or {}
-        return str(product.get("mainColor") or attributes.get("Main Color") or "").strip()
+        return attribute_value(product, "COLOR")
     if base == "material":
         if _sequence(field.field_id, "material") != 1:
             return None
-        attributes = product.get("attributes") or {}
-        return str(product.get("mainMaterial") or attributes.get("Main Material") or attributes.get("Material") or "").strip()
+        return attribute_value(product, "MATERIAL")
+    if base == "fabric_type":
+        return attribute_value(product, "FABRIC_TYPE")
+    if base in {"frame_material", "frame_material_type"} or (base == "frame" and "material" in field.field_id):
+        return attribute_value(product, "FRAME_MATERIAL_TYPE") or attribute_value(product, "FRAME_MATERIAL")
+    if base == "seat" and "material_type" in field.field_id:
+        return attribute_value(product, "SEAT_MATERIAL_TYPE")
+    if base == "size":
+        return attribute_value(product, "SIZE")
     if base in {"item_depth_width_height", "item_display_dimensions", "item_length", "item_width"}:
         return _dimension_candidate(field, product)
     if base in {"item_weight", "item_display_weight"}:
@@ -136,14 +148,34 @@ def _giga_candidate(field: TemplateField, profile: TemplateProfile, product: dic
     return None
 
 
-def _candidate(field: TemplateField, profile: TemplateProfile, product: dict[str, Any], policy_rules) -> tuple[Any, str]:
+def _candidate(field: TemplateField, profile: TemplateProfile, product: dict[str, Any], policy_rules, role: str = "seed") -> tuple[Any, str]:
     has_default, default = _business_default(field, profile, product)
     if has_default:
         return default, "business_default"
     rule = policy_rules.get(field.field_id)
-    if rule is not None and rule.action == POLICY_ACTION_DEFAULT:
+    if rule is not None and rule.action == POLICY_ACTION_DEFAULT and _rule_applies(rule, role):
         return rule.value, "template_policy"
     return _giga_candidate(field, profile, product), "giga_api"
+
+
+def _relationship_candidate(field: TemplateField, row: VariantRow) -> tuple[Any, str] | None:
+    if field.base_name == "contribution_sku":
+        return row.sku, "variant_relationship"
+    if field.base_name == "parentage_level" and row.role in {"parent", "child"}:
+        return ("Parent" if row.role == "parent" else "Child"), "variant_relationship"
+    if field.base_name == "child_parent_sku_relationship" and row.role == "child":
+        return row.parent_sku, "variant_relationship"
+    if field.base_name == "variation_theme" and row.role in {"parent", "child"}:
+        return row.variation_theme, "variant_relationship"
+    return None
+
+
+def _rule_applies(rule, role: str) -> bool:
+    if role == "seed":
+        return True
+    if rule.scope == "all":
+        return True
+    return rule.scope == role
 
 
 def _coerce_dropdown(field: TemplateField, value: Any, *, allow_unresolved_default: bool = False) -> Any:
@@ -181,13 +213,19 @@ def build_fill_plan(
     *,
     policy: TemplatePolicy | None = None,
     policy_configured: bool = True,
+    rows: list[VariantRow] | None = None,
 ) -> FillPlan:
     workbook = openpyxl.load_workbook(workbook_path, read_only=True, data_only=False, keep_vba=True)
-    plan = FillPlan(rows_processed=len(profile.sku_rows))
+    active_rows = rows or [VariantRow(row.row, row.row, row.sku, "seed") for row in profile.sku_rows]
+    plan = FillPlan(rows_processed=sum(row.role != "omit" for row in active_rows))
     policy_rules = policy.rules if policy is not None else (initial_policy_rules(profile) if policy_configured else {})
     try:
         sheet = workbook[profile.sheet_name]
-        for row in profile.sku_rows:
+        for output in active_rows:
+            if output.role == "omit":
+                continue
+            row = SkuRow(output.output_row, output.sku)
+            source_row = output.source_row
             if not policy_configured:
                 plan.issues.append(
                     ValidationIssue(
@@ -195,7 +233,7 @@ def build_fill_plan(
                         "该平台/站点/类目尚未配置运营策略，请在规则编辑器中保存后再上传",
                     )
                 )
-            product = products_by_sku.get(row.sku)
+            product = output.product or products_by_sku.get(row.sku)
             if not product:
                 plan.issues.append(
                     ValidationIssue(row.sku, row.row, "contribution_sku#1.value", "SKU", "error", "api_not_found", "GIGA API 未返回该 SKU")
@@ -204,8 +242,18 @@ def build_fill_plan(
 
             final_values: dict[str, Any] = {}
             for field in profile.fields:
-                existing = sheet.cell(row.row, field.column).value
-                candidate, source = _candidate(field, profile, product, policy_rules)
+                relationship = _relationship_candidate(field, output)
+                existing = sheet.cell(source_row, field.column).value if (
+                    output.role in {"seed", "parent"}
+                    and relationship is None
+                    and not (output.role == "parent" and field.base_name in RELATIONSHIP_FIELDS)
+                ) else None
+                if relationship is not None:
+                    candidate, source = relationship
+                elif output.role == "parent" and field.base_name not in PARENT_SAFE_BASE_NAMES:
+                    candidate, source = None, "parent_excluded"
+                else:
+                    candidate, source = _candidate(field, profile, product, policy_rules, output.role)
                 if existing not in (None, ""):
                     final_values[field.field_id] = existing
                     if candidate not in (None, "") and field.base_name != "contribution_sku":
@@ -240,10 +288,12 @@ def build_fill_plan(
             for field in profile.fields:
                 if final_values.get(field.field_id) not in (None, ""):
                     continue
+                if output.role == "parent" and field.base_name not in PARENT_SAFE_BASE_NAMES | RELATIONSHIP_FIELDS:
+                    continue
                 rule = policy_rules.get(field.field_id)
-                if rule is not None and rule.action == POLICY_ACTION_REQUIRED:
+                if rule is not None and _rule_applies(rule, output.role) and rule.action == POLICY_ACTION_REQUIRED:
                     plan.issues.append(_issue(row, field, "error", "business_required", "当前模板运营策略要求补充此字段"))
-                elif rule is not None and rule.action == POLICY_ACTION_REMINDER:
+                elif rule is not None and _rule_applies(rule, output.role) and rule.action == POLICY_ACTION_REMINDER:
                     plan.issues.append(_issue(row, field, "warning", "manual_attention", "当前模板运营策略要求人工确认"))
                 elif rule is None and field.base_name in MANUAL_ATTENTION_FIELDS and field.field_id.endswith("#1.value"):
                     plan.issues.append(_issue(row, field, "warning", "manual_attention", "按运营规则保持空白，需要人工补充或确认"))

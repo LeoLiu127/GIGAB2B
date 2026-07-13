@@ -80,8 +80,11 @@ td code { font-size: 11px; color: #657068; }
 .policy-table-wrap { max-height: 520px; }
 .policy-table-wrap table { min-width: 940px; }
 .policy-table-wrap thead { position: sticky; top: 0; z-index: 1; }
-.policy-select, .policy-value { width: 100%; min-width: 150px; padding: 8px; border: 1px solid #c8cec8; border-radius: 7px; background: #fff; }
+.policy-select, .policy-scope, .policy-value { width: 100%; min-width: 150px; padding: 8px; border: 1px solid #c8cec8; border-radius: 7px; background: #fff; }
 .policy-value:disabled { background: #f3f4f1; color: #89918b; }
+.variant-toggle { margin: 22px 0 16px; padding: 14px 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 9px; border: 1px solid #dce3d9; border-radius: 10px; background: #f7faf5; color: #294536; font-weight: 700; }
+.variant-toggle input { width: 17px; height: 17px; accent-color: #1f6b45; }
+.variant-toggle small { flex-basis: 100%; margin-left: 26px; color: #6d766f; font-weight: 400; }
 
 @media (max-width: 760px) {
   .topbar { padding: 0 20px; }

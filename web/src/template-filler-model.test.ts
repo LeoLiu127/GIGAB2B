@@ -11,6 +11,8 @@ describe("template filler report labels", () => {
     expect(issueStatusLabel("manual_attention")).toBe("需要人工确认");
     expect(issueStatusLabel("business_required")).toBe("运营必填待补充");
     expect(issueStatusLabel("policy_unconfigured")).toBe("需先配置类目策略");
+    expect(issueStatusLabel("variant_theme_unresolved")).toBe("变体主题无法确认");
+    expect(issueStatusLabel("variant_fetch_incomplete")).toBe("变体详情不完整");
   });
 
   it("labels template policy states for the rule editor", () => {

@@ -852,6 +852,71 @@ def giga_fetch_listing(parent_sku: str, market: str, include_variants: bool = Tr
     }
 
 
+def giga_fetch_listing_products(seed_sku: str, market: str) -> dict:
+    """Return complete raw products for template variant expansion.
+
+    This is deliberately separate from ``giga_fetch_listing``: the existing
+    workbench consumes its compact variant views, while templates need every
+    raw product field and must reject partial groups rather than truncating.
+    """
+    main = giga_fetch_product(seed_sku, market)
+    discovered: list[str] = []
+    for value in main.get("associateProductList") or []:
+        if isinstance(value, str) and value.strip():
+            discovered.append(value.strip())
+    if main.get("comboFlag"):
+        for item in main.get("comboInfo") or []:
+            sku = item.get("sku") if isinstance(item, dict) else None
+            if isinstance(sku, str) and sku.strip():
+                discovered.append(sku.strip())
+
+    requested_skus: list[str] = []
+    seen: set[str] = set()
+    for sku in [seed_sku, *discovered]:
+        clean = str(sku or "").strip()
+        if clean and clean not in seen:
+            seen.add(clean)
+            requested_skus.append(clean)
+
+    if len(requested_skus) > 200:
+        return {
+            "seed_sku": seed_sku,
+            "main": main,
+            "requested_skus": requested_skus,
+            "products": [],
+            "missing_skus": [],
+            "over_limit": True,
+            "warning": f"同一 Listing 发现 {len(requested_skus)} 个 SKU，超过 GIGA 单次详情查询上限 200",
+        }
+
+    items = giga_fetch_products_bulk(requested_skus, market)
+    by_sku = {str(item.get("sku")): item for item in items if isinstance(item, dict) and item.get("sku")}
+    # The seed was successfully fetched for discovery; use it only if bulk did
+    # not echo it back, while still requiring every discovered sibling.
+    if seed_sku not in by_sku and main.get("sku"):
+        by_sku[str(main["sku"])] = main
+
+    def usable(item: dict | None) -> bool:
+        if not item:
+            return False
+        return bool((item.get("productName") or "").strip() or item.get("imageUrls") or item.get("attributes"))
+
+    missing_skus = [sku for sku in requested_skus if not usable(by_sku.get(sku))]
+    products = [by_sku[sku] for sku in requested_skus if sku not in missing_skus]
+    return {
+        "seed_sku": seed_sku,
+        "main": main,
+        "requested_skus": requested_skus,
+        "products": products,
+        "missing_skus": missing_skus,
+        "over_limit": False,
+        "warning": f"GIGA 未返回 {len(missing_skus)} 个关联 SKU" if missing_skus else None,
+    }
+
+
+app.config.setdefault("TEMPLATE_FILLER_FETCH_LISTING_PRODUCTS", giga_fetch_listing_products)
+
+
 # ─────────────────────────────────────────────────────────────────
 # AI 文案生成（通过 image-studio server）
 # ─────────────────────────────────────────────────────────────────
