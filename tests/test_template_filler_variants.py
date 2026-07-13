@@ -123,6 +123,27 @@ class VariantExpansionTests(unittest.TestCase):
         self.assertFalse(expansion.issues)
         self.assertEqual(expansion.summary["groups_expanded"], 1)
 
+    def test_expands_effective_variants_and_reports_skipped_associations_as_warning(self):
+        products = {
+            "A": {"sku": "A", "mainColor": "Red", "mainMaterial": "Wood"},
+            "B": {"sku": "B", "mainColor": "Blue", "mainMaterial": "Steel"},
+        }
+        listing = ListingProducts(
+            seed_sku="A",
+            main_sku="A",
+            requested_skus=("A", "B"),
+            products=products,
+            warning="已忽略 2 个 GIGA 不可访问关联 SKU: C, D",
+        )
+
+        expansion = expand_variant_rows(_profile(), lambda _sku, _market: listing)
+
+        self.assertEqual(expansion.summary["groups_expanded"], 1)
+        self.assertEqual(expansion.summary["groups_blocked"], 0)
+        self.assertEqual([issue.status for issue in expansion.issues], ["variant_associations_skipped"])
+        self.assertEqual(expansion.issues[0].severity, "warning")
+        self.assertIn("C, D", expansion.groups[0].message)
+
     def test_keeps_seed_row_and_blocks_group_when_no_unique_theme_can_be_inferred(self):
         products = {
             "A": {"sku": "A", "mainColor": "Red", "mainMaterial": "Wood"},

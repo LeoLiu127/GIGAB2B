@@ -9,6 +9,7 @@ const STATUS_LABELS: Record<string, string> = {
   variant_group_too_large: "变体数量超过上限",
   variant_fetch_incomplete: "变体详情不完整",
   variant_manual_theme_conflict: "人工主题与变体不一致",
+  variant_associations_skipped: "已忽略无效关联 SKU",
   invalid_existing_value: "现有值不符合下拉规则",
   api_not_found: "GIGA 未返回该 SKU",
   preserved: "已保留人工填写值",

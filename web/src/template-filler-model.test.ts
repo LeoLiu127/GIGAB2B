@@ -20,6 +20,7 @@ describe("template filler report labels", () => {
     expect(issueStatusLabel("policy_unconfigured")).toBe("需先配置类目策略");
     expect(issueStatusLabel("variant_theme_unresolved")).toBe("变体主题无法确认");
     expect(issueStatusLabel("variant_fetch_incomplete")).toBe("变体详情不完整");
+    expect(issueStatusLabel("variant_associations_skipped")).toBe("已忽略无效关联 SKU");
   });
 
   it("labels template policy states for the rule editor", () => {

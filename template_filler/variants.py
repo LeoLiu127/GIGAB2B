@@ -169,6 +169,18 @@ def _issue(seed: SkuRow, status: str, message: str) -> ValidationIssue:
     )
 
 
+def _warning_issue(seed: SkuRow, status: str, message: str) -> ValidationIssue:
+    return ValidationIssue(
+        sku=seed.sku,
+        row=seed.row,
+        field_id="__variant_expansion__",
+        label="Variant Expansion",
+        severity="warning",
+        status=status,
+        message=message,
+    )
+
+
 def expand_variant_rows(
     profile: TemplateProfile,
     fetch_listing: Callable[[str, str], ListingProducts],
@@ -227,10 +239,13 @@ def expand_variant_rows(
             result.groups.append(VariantGroup(seed.sku, status="blocked", message=message))
             continue
 
+        if listing.warning:
+            result.issues.append(_warning_issue(seed, "variant_associations_skipped", listing.warning))
+
         parent_sku = f"{listing.main_sku or seed.sku}-PARENT"
         result.rows.append(VariantRow(seed.row, output_row, parent_sku, "parent", variation_theme=theme, product=products[0]))
         for index, sku in enumerate(listing.requested_skus, start=1):
             result.rows.append(VariantRow(seed.row, output_row + index, sku, "child", parent_sku, theme, listing.products[sku]))
-        result.groups.append(VariantGroup(seed.sku, parent_sku, listing.requested_skus, theme))
+        result.groups.append(VariantGroup(seed.sku, parent_sku, listing.requested_skus, theme, message=listing.warning or ""))
         offset += len(listing.requested_skus)
     return result

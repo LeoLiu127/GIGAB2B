@@ -315,7 +315,10 @@ function renderVariantGroups(groups: VariantGroup[]) {
   }
   tbody.replaceChildren(...groups.map(group => {
     const row = document.createElement("tr");
-    for (const value of [group.seed_sku, group.parent_sku || "—", group.child_skus.join(" / ") || "—", group.variation_theme || "—", group.status === "expanded" ? "已展开" : `${group.status}：${group.message}`]) {
+    const groupStatus = group.status === "expanded"
+      ? group.message ? `已展开：${group.message}` : "已展开"
+      : `${group.status}：${group.message}`;
+    for (const value of [group.seed_sku, group.parent_sku || "—", group.child_skus.join(" / ") || "—", group.variation_theme || "—", groupStatus]) {
       const cell = document.createElement("td");
       cell.textContent = value;
       row.append(cell);
