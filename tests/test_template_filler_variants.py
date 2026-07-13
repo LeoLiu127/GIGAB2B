@@ -157,6 +157,57 @@ class VariantExpansionTests(unittest.TestCase):
         self.assertEqual([issue.status for issue in expansion.issues], ["variant_theme_unresolved"])
         self.assertEqual(expansion.summary["groups_blocked"], 1)
 
+    def test_infers_cabinet_color_size_theme_from_assembled_dimensions(self):
+        profile = _profile()
+        fields = tuple(
+            _field("variation_theme", field.column, ("COLOR/SIZE",))
+            if field.base_name == "variation_theme" else field
+            for field in profile.fields
+        ) + (_field("size", 7),)
+        profile = TemplateProfile(**{**profile.__dict__, "fields": fields})
+        products = {
+            "A": {
+                "sku": "A", "mainColor": "Brown+White",
+                "assembledLength": 140, "assembledWidth": 35, "assembledHeight": 95,
+                "assembledLengthUnit": "cm",
+            },
+            "B": {
+                "sku": "B", "mainColor": "White",
+                "assembledLength": 120, "assembledWidth": 40, "assembledHeight": 80,
+                "assembledLengthUnit": "cm",
+            },
+        }
+        listing = ListingProducts(
+            seed_sku="A", main_sku="A", requested_skus=("A", "B"), products=products,
+        )
+
+        expansion = expand_variant_rows(profile, lambda _sku, _market: listing)
+
+        self.assertEqual(expansion.summary["groups_expanded"], 1)
+        self.assertEqual(expansion.groups[0].variation_theme, "COLOR/SIZE")
+
+    def test_infers_chair_colour_theme_from_main_color(self):
+        profile = _profile()
+        fields = tuple(
+            _field("variation_theme", field.column, ("COLOUR",))
+            if field.base_name == "variation_theme" else field
+            for field in profile.fields
+        )
+        profile = TemplateProfile(**{**profile.__dict__, "fields": fields})
+        products = {
+            "A": {"sku": "A", "mainColor": "Black"},
+            "B": {"sku": "B", "mainColor": "Grey"},
+            "C": {"sku": "C", "mainColor": "White"},
+        }
+        listing = ListingProducts(
+            seed_sku="A", main_sku="A", requested_skus=("A", "B", "C"), products=products,
+        )
+
+        expansion = expand_variant_rows(profile, lambda _sku, _market: listing)
+
+        self.assertEqual(expansion.summary["groups_expanded"], 1)
+        self.assertEqual(expansion.groups[0].variation_theme, "COLOUR")
+
     def test_blocks_group_when_operator_theme_conflicts_with_inferred_theme(self):
         products = {
             "A": {"sku": "A", "mainColor": "Red", "mainMaterial": "Wood"},
@@ -346,7 +397,7 @@ class VariantExpansionTests(unittest.TestCase):
             self.skipTest("real Amazon template fixture is not available")
         products = {
             "W5807S00002": {"sku": "W5807S00002", "productName": "Red chair", "mainColor": "Red", "mainMaterial": "Acacia", "skuAvailable": True},
-            "W5807S00003": {"sku": "W5807S00003", "productName": "Blue chair", "mainColor": "Blue", "mainMaterial": "Alloy Steel", "skuAvailable": False},
+            "W5807S00003": {"sku": "W5807S00003", "productName": "Blue chair", "mainColor": "Blue", "mainMaterial": "Acacia", "skuAvailable": False},
         }
         listing = {
             "seed_sku": "W5807S00002", "main": products["W5807S00002"],

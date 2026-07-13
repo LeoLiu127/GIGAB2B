@@ -70,6 +70,7 @@ class VariantExpansion:
 
 _COMPONENT_ALIASES: dict[str, tuple[str, ...]] = {
     "COLOR": ("mainColor", "Main Color", "Color", "Colour"),
+    "COLOUR": ("mainColor", "Main Color", "Color", "Colour"),
     "MATERIAL": ("mainMaterial", "Main Material", "Material"),
     "FABRIC_TYPE": ("fabricType", "Fabric Type", "Fabric"),
     "FRAME_MATERIAL_TYPE": ("frameMaterialType", "Frame Material Type", "Frame Material"),
@@ -80,7 +81,7 @@ _COMPONENT_ALIASES: dict[str, tuple[str, ...]] = {
 
 
 def _component_field_matches(field, component: str) -> bool:
-    if component == "COLOR":
+    if component in {"COLOR", "COLOUR"}:
         return field.base_name == "color"
     if component == "MATERIAL":
         return field.base_name == "material"
@@ -121,6 +122,20 @@ def attribute_value(product: dict[str, Any], component: str) -> str:
         attribute = normalized_attributes.get(_normalized_key(alias))
         if attribute not in (None, ""):
             return str(attribute).strip()
+    if component == "SIZE":
+        dimensions = (
+            product.get("assembledLength"),
+            product.get("assembledWidth"),
+            product.get("assembledHeight"),
+        )
+        if all(value not in (None, "") for value in dimensions):
+            unit = str(
+                product.get("assembledLengthUnit")
+                or product.get("assembledWidthUnit")
+                or product.get("assembledHeightUnit")
+                or "cm"
+            ).strip()
+            return f"{' x '.join(str(value).strip() for value in dimensions)} {unit}".strip()
     return ""
 
 
