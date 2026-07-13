@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { filledSourceLabel, isSupportedTemplateFile, issueStatusLabel, policyStatusLabel, uploadReadinessLabel } from "./template-filler-model";
+import {
+  filledSourceLabel,
+  isSupportedTemplateFile,
+  issueStatusLabel,
+  normalizeVariantSummary,
+  policyStatusLabel,
+  uploadReadinessLabel,
+} from "./template-filler-model";
 
 
 describe("template filler report labels", () => {
@@ -35,5 +42,25 @@ describe("template filler report labels", () => {
     expect(isSupportedTemplateFile("CABINET-UK.xlsm")).toBe(true);
     expect(isSupportedTemplateFile("CHAIR-UK.XLSX")).toBe(true);
     expect(isSupportedTemplateFile("legacy.xls")).toBe(false);
+  });
+
+  it("treats a legacy fill response without variant statistics as zero", () => {
+    expect(normalizeVariantSummary(undefined)).toEqual({
+      seed_rows: 0,
+      groups_expanded: 0,
+      groups_blocked: 0,
+      parents_added: 0,
+      children_added: 0,
+    });
+  });
+
+  it("keeps returned variant statistics and defaults omitted counters", () => {
+    expect(normalizeVariantSummary({ children_added: 4, groups_blocked: 1 })).toEqual({
+      seed_rows: 0,
+      groups_expanded: 0,
+      groups_blocked: 1,
+      parents_added: 0,
+      children_added: 4,
+    });
   });
 });

@@ -1,5 +1,12 @@
 import "./template-filler.css";
-import { filledSourceLabel, isSupportedTemplateFile, issueStatusLabel, policyStatusLabel, uploadReadinessLabel } from "./template-filler-model";
+import {
+  filledSourceLabel,
+  isSupportedTemplateFile,
+  issueStatusLabel,
+  normalizeVariantSummary,
+  policyStatusLabel,
+  uploadReadinessLabel,
+} from "./template-filler-model";
 
 type TemplateField = {
   field_id: string;
@@ -46,6 +53,15 @@ type FilledField = {
   source: string;
 };
 
+type VariantGroup = {
+  seed_sku: string;
+  parent_sku: string;
+  child_skus: string[];
+  variation_theme: string;
+  status: string;
+  message: string;
+};
+
 type FillResponse = {
   output_file: string;
   report_file: string;
@@ -66,8 +82,8 @@ type FillResponse = {
   policy_status: string;
   policy_drift: PolicyDrift[];
   policy: Policy | null;
-  variant_summary: { seed_rows: number; groups_expanded: number; groups_blocked: number; parents_added: number; children_added: number };
-  variant_groups: Array<{ seed_sku: string; parent_sku: string; child_skus: string[]; variation_theme: string; status: string; message: string }>;
+  variant_summary?: { seed_rows: number; groups_expanded: number; groups_blocked: number; parents_added: number; children_added: number };
+  variant_groups?: VariantGroup[];
 };
 
 const fileInput = document.querySelector<HTMLInputElement>("#template-file")!;
@@ -286,7 +302,7 @@ function renderFilledFields(filledFields: FilledField[]) {
   }));
 }
 
-function renderVariantGroups(groups: FillResponse["variant_groups"]) {
+function renderVariantGroups(groups: VariantGroup[]) {
   const tbody = document.querySelector<HTMLTableSectionElement>("#variant-group-table")!;
   if (!groups.length) {
     const row = document.createElement("tr");
@@ -310,6 +326,8 @@ function renderVariantGroups(groups: FillResponse["variant_groups"]) {
 
 function renderResult(data: FillResponse) {
   issues = data.issues;
+  const variantSummary = normalizeVariantSummary(data.variant_summary);
+  const variantGroups = Array.isArray(data.variant_groups) ? data.variant_groups : [];
   const metrics = document.querySelector<HTMLElement>("#result-metrics")!;
   metrics.replaceChildren(
     metric(data.summary.fields_filled, "自动填写字段"),
@@ -317,8 +335,8 @@ function renderResult(data: FillResponse) {
     metric(data.summary.dropdown_required, "下拉待选择"),
     metric(data.summary.manual_attention, "人工待确认"),
     metric(data.summary.business_required, "运营必填待补充"),
-    metric(data.variant_summary.children_added, "新增子体行"),
-    metric(data.variant_summary.groups_blocked, "阻断变体组"),
+    metric(variantSummary.children_added, "新增子体行"),
+    metric(variantSummary.groups_blocked, "阻断变体组"),
   );
   const badge = document.querySelector<HTMLElement>("#ready-badge")!;
   badge.textContent = uploadReadinessLabel(data.summary.upload_ready);
@@ -330,7 +348,7 @@ function renderResult(data: FillResponse) {
   report.href = `/api/template-filler/reports/${encodeURIComponent(data.report_file)}`;
   report.download = data.report_file;
   renderFilledFields(data.filled_fields);
-  renderVariantGroups(data.variant_groups);
+  renderVariantGroups(variantGroups);
   issueFilter.value = "all";
   renderIssues("all");
   resultPanel.classList.remove("hidden");

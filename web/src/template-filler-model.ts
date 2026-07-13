@@ -33,3 +33,21 @@ export function uploadReadinessLabel(uploadReady: boolean): string {
 export function isSupportedTemplateFile(filename: string): boolean {
   return /\.(xlsx|xlsm)$/i.test(filename);
 }
+
+export type VariantSummary = {
+  seed_rows: number;
+  groups_expanded: number;
+  groups_blocked: number;
+  parents_added: number;
+  children_added: number;
+};
+
+export function normalizeVariantSummary(summary?: Partial<VariantSummary>): VariantSummary {
+  return {
+    seed_rows: summary?.seed_rows ?? 0,
+    groups_expanded: summary?.groups_expanded ?? 0,
+    groups_blocked: summary?.groups_blocked ?? 0,
+    parents_added: summary?.parents_added ?? 0,
+    children_added: summary?.children_added ?? 0,
+  };
+}
