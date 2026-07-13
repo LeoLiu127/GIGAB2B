@@ -144,7 +144,7 @@ def infer_variation_theme(profile: TemplateProfile, products: list[dict[str, Any
     if field is None or not field.allowed_values:
         return "", "模板没有可用的 Variation Theme 允许值"
 
-    candidates: list[str] = []
+    candidates: list[tuple[str, int]] = []
     for allowed in field.allowed_values:
         components = tuple(part.strip().upper() for part in str(allowed).split("/") if part.strip())
         if not components or any(component not in _COMPONENT_ALIASES for component in components):
@@ -163,13 +163,16 @@ def infer_variation_theme(profile: TemplateProfile, products: list[dict[str, Any
         if complete and all(len(value_set) > 1 for value_set in values) and all(
             _component_can_be_written(profile, component, products) for component in components
         ):
-            candidates.append(str(allowed))
+            canonical_components = {"COLOR" if component == "COLOUR" else component for component in components}
+            candidates.append((str(allowed), len(canonical_components)))
 
-    if len(candidates) == 1:
-        return candidates[0], ""
     if not candidates:
         return "", "无法从 GIGA 可验证属性推断出模板允许的唯一变体主题"
-    return "", f"存在多个可用变体主题: {' / '.join(candidates)}"
+    max_specificity = max(specificity for _, specificity in candidates)
+    most_specific = [name for name, specificity in candidates if specificity == max_specificity]
+    if len(most_specific) == 1:
+        return most_specific[0], ""
+    return "", f"存在多个可用变体主题: {' / '.join(most_specific)}"
 
 
 def _issue(seed: SkuRow, status: str, message: str) -> ValidationIssue:

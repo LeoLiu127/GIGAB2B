@@ -186,6 +186,33 @@ class VariantExpansionTests(unittest.TestCase):
         self.assertEqual(expansion.summary["groups_expanded"], 1)
         self.assertEqual(expansion.groups[0].variation_theme, "COLOR/SIZE")
 
+    def test_prefers_theme_covering_all_observed_variant_dimensions(self):
+        profile = _profile()
+        fields = tuple(
+            _field("variation_theme", field.column, ("COLOR/SIZE", "COLOUR", "SIZE"))
+            if field.base_name == "variation_theme" else field
+            for field in profile.fields
+        ) + (_field("size", 7),)
+        profile = TemplateProfile(**{**profile.__dict__, "fields": fields})
+        products = {
+            "A": {
+                "sku": "A", "mainColor": "Brown+White",
+                "assembledLength": 140, "assembledWidth": 35, "assembledHeight": 95,
+            },
+            "B": {
+                "sku": "B", "mainColor": "White",
+                "assembledLength": 120, "assembledWidth": 40, "assembledHeight": 80,
+            },
+        }
+        listing = ListingProducts(
+            seed_sku="A", main_sku="A", requested_skus=("A", "B"), products=products,
+        )
+
+        expansion = expand_variant_rows(profile, lambda _sku, _market: listing)
+
+        self.assertEqual(expansion.summary["groups_expanded"], 1)
+        self.assertEqual(expansion.groups[0].variation_theme, "COLOR/SIZE")
+
     def test_infers_chair_colour_theme_from_main_color(self):
         profile = _profile()
         fields = tuple(
