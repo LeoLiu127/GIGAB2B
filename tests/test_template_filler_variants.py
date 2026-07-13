@@ -55,21 +55,57 @@ def _profile() -> TemplateProfile:
 
 
 class VariantExpansionTests(unittest.TestCase):
-    def test_template_listing_fetch_returns_raw_products_and_reports_missing_skus(self):
+    def test_template_listing_fetch_reuses_main_collector_and_skips_unavailable_associations(self):
+        original_listing = app_module.giga_fetch_listing
+        calls = []
+        try:
+            def fake_listing(sku, market, include_variants=True):
+                calls.append((sku, market, include_variants))
+                return {
+                    "parent_sku": sku,
+                    "main": {"sku": "A", "productName": "A"},
+                    "variants": [],
+                    "raw_products": [
+                        {"sku": "A", "productName": "A"},
+                        {"sku": "B", "productName": "B"},
+                    ],
+                    "requested_skus": ["A", "B", "C", "D"],
+                    "skipped_skus": ["C", "D"],
+                    "truncated": False,
+                    "fetch_error": None,
+                    "warning": None,
+                }
+
+            app_module.giga_fetch_listing = fake_listing
+            listing = app_module.giga_fetch_listing_products("A", "UK")
+        finally:
+            app_module.giga_fetch_listing = original_listing
+
+        self.assertEqual(calls, [("A", "UK", True)])
+        self.assertEqual(listing["requested_skus"], ["A", "B"])
+        self.assertEqual([item["sku"] for item in listing["products"]], ["A", "B"])
+        self.assertEqual(listing["missing_skus"], [])
+        self.assertIn("C", listing["warning"])
+        self.assertIn("D", listing["warning"])
+
+    def test_main_listing_collector_exposes_raw_products_and_skipped_skus(self):
         original_product = app_module.giga_fetch_product
         original_bulk = app_module.giga_fetch_products_bulk
         try:
-            app_module.giga_fetch_product = lambda sku, market: {"sku": sku, "associateProductList": ["B", "C"]}
+            app_module.giga_fetch_product = lambda sku, market: {
+                "sku": "A", "productName": "A", "associateProductList": ["B", "C"]
+            }
             app_module.giga_fetch_products_bulk = lambda skus, market: [{"sku": "A", "productName": "A"}, {"sku": "B", "productName": "B"}]
-            listing = app_module.giga_fetch_listing_products("A", "UK")
+            listing = app_module.giga_fetch_listing("A", "UK")
         finally:
             app_module.giga_fetch_product = original_product
             app_module.giga_fetch_products_bulk = original_bulk
 
+        self.assertEqual([item["sku"] for item in listing["raw_products"]], ["A", "B"])
         self.assertEqual(listing["requested_skus"], ["A", "B", "C"])
-        self.assertEqual([item["sku"] for item in listing["products"]], ["A", "B"])
-        self.assertEqual(listing["missing_skus"], ["C"])
-        self.assertFalse(listing["over_limit"])
+        self.assertEqual(listing["skipped_skus"], ["C"])
+        self.assertFalse(listing["truncated"])
+        self.assertIsNone(listing["fetch_error"])
 
     def test_expands_a_complete_listing_into_parent_and_children_with_unique_allowed_theme(self):
         products = {

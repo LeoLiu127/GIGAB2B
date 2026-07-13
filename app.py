@@ -757,6 +757,11 @@ def giga_fetch_listing(parent_sku: str, market: str, include_variants: bool = Tr
             "combo_flag": bool(main_item.get("comboFlag", False)),
             "combo_info": main_item.get("comboInfo") or [],
             "warning": None,
+            "raw_products": [main_item],
+            "requested_skus": [parent_sku],
+            "skipped_skus": [],
+            "truncated": False,
+            "fetch_error": None,
         }
 
     # 2. 收集兄弟 SKU 来源
@@ -795,6 +800,11 @@ def giga_fetch_listing(parent_sku: str, market: str, include_variants: bool = Tr
             "combo_flag": bool(main_item.get("comboFlag", False)),
             "combo_info": main_item.get("comboInfo") or [],
             "warning": None,
+            "raw_products": [main_item],
+            "requested_skus": [parent_sku],
+            "skipped_skus": [],
+            "truncated": False,
+            "fetch_error": None,
         }
 
     # 4. 一次性批量取(1 + N) 个 SKU
@@ -812,6 +822,11 @@ def giga_fetch_listing(parent_sku: str, market: str, include_variants: bool = Tr
             "combo_flag": bool(main_item.get("comboFlag", False)),
             "combo_info": main_item.get("comboInfo") or [],
             "warning": warning,
+            "raw_products": [main_item],
+            "requested_skus": all_skus,
+            "skipped_skus": [],
+            "truncated": truncated,
+            "fetch_error": str(e),
         }
 
     by_sku = {it.get("sku"): it for it in items if it.get("sku")}
@@ -819,6 +834,7 @@ def giga_fetch_listing(parent_sku: str, market: str, include_variants: bool = Tr
     # 5. 装配 variants(只装 sibling,不含主 SKU)
     # 跳过 GIGA B20003 的 stub:productName 空 + 无图 + 无 attributes
     skipped = []
+    raw_products = [main_item]
     for sib in siblings:
         item = by_sku.get(sib)
         if not item:
@@ -832,6 +848,7 @@ def giga_fetch_listing(parent_sku: str, market: str, include_variants: bool = Tr
         if is_stub:
             skipped.append(sib)
             continue
+        raw_products.append(item)
         variants.append(_assemble_variant_view(item, is_main=False))
 
     if skipped:
@@ -849,68 +866,48 @@ def giga_fetch_listing(parent_sku: str, market: str, include_variants: bool = Tr
         "combo_flag": bool(main_item.get("comboFlag", False)),
         "combo_info": main_item.get("comboInfo") or [],
         "warning": warning,
+        "raw_products": raw_products,
+        "requested_skus": all_skus,
+        "skipped_skus": skipped,
+        "truncated": truncated,
+        "fetch_error": None,
     }
 
 
 def giga_fetch_listing_products(seed_sku: str, market: str) -> dict:
     """Return complete raw products for template variant expansion.
 
-    This is deliberately separate from ``giga_fetch_listing``: the existing
-    workbench consumes its compact variant views, while templates need every
-    raw product field and must reject partial groups rather than truncating.
+    Reuse ``giga_fetch_listing`` as the single discovery and filtering path.
+    The workbench keeps consuming compact variant views, while templates use
+    the additive raw-product metadata for complete Amazon field mapping.
     """
-    main = giga_fetch_product(seed_sku, market)
-    discovered: list[str] = []
-    for value in main.get("associateProductList") or []:
-        if isinstance(value, str) and value.strip():
-            discovered.append(value.strip())
-    if main.get("comboFlag"):
-        for item in main.get("comboInfo") or []:
-            sku = item.get("sku") if isinstance(item, dict) else None
-            if isinstance(sku, str) and sku.strip():
-                discovered.append(sku.strip())
-
-    requested_skus: list[str] = []
-    seen: set[str] = set()
-    for sku in [seed_sku, *discovered]:
-        clean = str(sku or "").strip()
-        if clean and clean not in seen:
-            seen.add(clean)
-            requested_skus.append(clean)
-
-    if len(requested_skus) > 200:
-        return {
-            "seed_sku": seed_sku,
-            "main": main,
-            "requested_skus": requested_skus,
-            "products": [],
-            "missing_skus": [],
-            "over_limit": True,
-            "warning": f"同一 Listing 发现 {len(requested_skus)} 个 SKU，超过 GIGA 单次详情查询上限 200",
-        }
-
-    items = giga_fetch_products_bulk(requested_skus, market)
-    by_sku = {str(item.get("sku")): item for item in items if isinstance(item, dict) and item.get("sku")}
-    # The seed was successfully fetched for discovery; use it only if bulk did
-    # not echo it back, while still requiring every discovered sibling.
-    if seed_sku not in by_sku and main.get("sku"):
-        by_sku[str(main["sku"])] = main
-
-    def usable(item: dict | None) -> bool:
-        if not item:
-            return False
-        return bool((item.get("productName") or "").strip() or item.get("imageUrls") or item.get("attributes"))
-
-    missing_skus = [sku for sku in requested_skus if not usable(by_sku.get(sku))]
-    products = [by_sku[sku] for sku in requested_skus if sku not in missing_skus]
+    listing = giga_fetch_listing(seed_sku, market, include_variants=True)
+    main = listing.get("main") or {}
+    products = [
+        item
+        for item in listing.get("raw_products") or []
+        if isinstance(item, dict) and item.get("sku")
+    ]
+    effective_skus = [str(item["sku"]).strip() for item in products]
+    skipped_skus = [
+        str(sku).strip()
+        for sku in listing.get("skipped_skus") or []
+        if str(sku).strip()
+    ]
+    fetch_error = str(listing.get("fetch_error") or "").strip()
+    warning = str(listing.get("warning") or "").strip() or None
+    if skipped_skus and not fetch_error and not listing.get("truncated"):
+        warning = f"已忽略 {len(skipped_skus)} 个 GIGA 不可访问关联 SKU: {', '.join(skipped_skus)}"
+    if fetch_error:
+        warning = f"GIGA 关联 SKU 批量请求失败: {fetch_error}"
     return {
         "seed_sku": seed_sku,
         "main": main,
-        "requested_skus": requested_skus,
+        "requested_skus": effective_skus or [seed_sku],
         "products": products,
-        "missing_skus": missing_skus,
-        "over_limit": False,
-        "warning": f"GIGA 未返回 {len(missing_skus)} 个关联 SKU" if missing_skus else None,
+        "missing_skus": [seed_sku] if fetch_error else [],
+        "over_limit": bool(listing.get("truncated")),
+        "warning": warning,
     }
 
 
