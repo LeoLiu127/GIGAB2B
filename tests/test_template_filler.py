@@ -118,6 +118,9 @@ class AmazonTemplateFillTests(unittest.TestCase):
             sum(issue.status == "dropdown_required" and issue.field_id.startswith("material[") for issue in plan.issues),
             1,
         )
+        browse_nodes = profile.field_by_base_name("recommended_browse_nodes")
+        self.assertIn(("manual_attention", browse_nodes.field_id), statuses)
+        self.assertNotIn(("missing_required", browse_nodes.field_id), statuses)
 
     def test_cabinet_plan_applies_approved_uk_defaults_and_tracks_their_provenance(self):
         source = FIXTURE_DIR / "CABINET-UK-1SKU.xlsm"
@@ -144,10 +147,12 @@ class AmazonTemplateFillTests(unittest.TestCase):
         self.assertEqual(planned("batteries_required"), "No")
         self.assertEqual(planned("batteries_included"), "No")
         self.assertEqual(planned("fulfillment_availability", ".quantity"), 5)
+        self.assertEqual(planned("supplier_declared_dg_hz_regulation"), "Not Applicable")
 
         defaults = {item.field_id: item for item in plan.filled_fields if item.source == "business_default"}
         self.assertEqual(defaults[profile.field_by_base_name("brand").field_id].value, "GENERIC")
         self.assertEqual(defaults[profile.field_by_base_name("amzn1.volt.ca.product_id_type").field_id].value, "GTIN Exempt")
+        self.assertEqual(defaults[profile.field_by_base_name("supplier_declared_dg_hz_regulation").field_id].value, "Not Applicable")
 
     def test_cabinet_plan_uses_zero_quantity_when_giga_marks_sku_unavailable(self):
         source = FIXTURE_DIR / "CABINET-UK-1SKU.xlsm"
@@ -296,7 +301,9 @@ class TemplateFillerApiTests(unittest.TestCase):
                 self.assertEqual(filled.status_code, 200, filled.get_data(as_text=True))
                 payload = filled.get_json()
                 self.assertGreater(payload["summary"]["fields_filled"], 0)
-                self.assertGreater(payload["summary"]["missing_required"], 0)
+                self.assertEqual(payload["summary"]["missing_required"], 0)
+                self.assertGreater(payload["summary"]["dropdown_required"], 0)
+                self.assertFalse(payload["summary"]["upload_ready"])
                 self.assertIn("filled_fields", payload)
                 self.assertTrue(payload["filled_fields"])
                 self.assertTrue((outputs / payload["output_file"]).is_file())

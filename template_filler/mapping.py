@@ -93,6 +93,8 @@ def _business_default(field: TemplateField, product: dict[str, Any]) -> tuple[bo
         return True, "New"
     if base in {"batteries_required", "batteries_included"}:
         return True, "No"
+    if base == "supplier_declared_dg_hz_regulation":
+        return True, "Not Applicable"
     if base == "fulfillment_availability" and field.field_id.endswith(".quantity"):
         available = product.get("skuAvailable")
         if available is True:
@@ -223,10 +225,10 @@ def build_fill_plan(
             for field in profile.fields:
                 if final_values.get(field.field_id) not in (None, ""):
                     continue
-                if field.requirement == "required":
-                    plan.issues.append(_issue(row, field, "error", "missing_required", "Amazon 必填字段无法从 GIGA 数据自动填写"))
-                elif field.base_name in MANUAL_ATTENTION_FIELDS and field.field_id.endswith("#1.value"):
+                if field.base_name in MANUAL_ATTENTION_FIELDS and field.field_id.endswith("#1.value"):
                     plan.issues.append(_issue(row, field, "warning", "manual_attention", "按运营规则保持空白，需要人工补充或确认"))
+                elif field.requirement == "required":
+                    plan.issues.append(_issue(row, field, "error", "missing_required", "Amazon 必填字段无法从 GIGA 数据自动填写"))
         return plan
     finally:
         workbook.close()

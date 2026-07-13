@@ -159,7 +159,10 @@ def fill_template():
                 "dropdown_required": counts["dropdown_required"],
                 "api_not_found": counts["api_not_found"],
                 "invalid_existing_value": counts["invalid_existing_value"],
-                "upload_ready": not any(issue.severity == "error" for issue in plan.issues),
+                "upload_ready": not any(
+                    issue.status in {"missing_required", "dropdown_required", "api_not_found", "invalid_existing_value"}
+                    for issue in plan.issues
+                ),
             },
             "filled_fields": [item.to_dict() for item in plan.filled_fields],
             "issues": [issue.to_dict() for issue in plan.issues],

@@ -100,7 +100,7 @@ Expected: failure because the current implementation emits every empty condition
 MANUAL_ATTENTION_FIELDS = {"recommended_browse_nodes", "manufacturer"}
 ```
 
-Emit the reminder only when the final target cell is empty. For repeated Recommended Browse Nodes slots, emit a single reminder for `#1.value`; keep strict required and dropdown validation unchanged.
+Emit the reminder only when the final target cell is empty. For repeated Recommended Browse Nodes slots, emit a single reminder for `#1.value`; these operator-designated reminders take precedence over a template's required marker and do not block the report as `missing_required`.
 
 - [ ] **Step 4: Run focused tests**
 
