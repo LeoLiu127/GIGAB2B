@@ -21,6 +21,18 @@
 - Brand Name 为空：填写 `GENERIC`。
 - 即使 API 返回其他品牌，现阶段也统一使用 `GENERIC`，除非运营已经在模板中填写品牌。
 
+## UK 运营默认值
+
+以下值是超哥明确指定的 Amazon UK 运营默认值；它们只写入模板空单元格，且必须通过该模板的下拉允许值校验：
+
+- `condition_type`：`New`。
+- `country_of_origin`：`China`。
+- `batteries_required`：`No`。
+- `batteries_included`：`No`。
+- `fulfillment_availability#1.quantity`：GIGA `skuAvailable=true` 时写入 `5`，否则写入 `0`。这是业务默认库存，不是 GIGA 的实时库存数量。
+
+Amazon 模板已有运营值仍优先保留。若模板下拉列表不包含上述默认值，保持空白并报告下拉不匹配，绝不绕开模板校验。
+
 ## GTIN 豁免规则
 
 - Product Id Type 已有模板值：保留模板值。
@@ -38,6 +50,12 @@
 - 不允许为了通过必填校验而生成、推断或复制不相关字段值。
 - API 返回了系统尚未建立 Amazon 字段映射的数据时，不自动猜测列；后续通过显式映射扩展支持。
 
+### 包装与库存边界
+
+当前 GIGA 商品详情接口针对 CABINET 样例仅返回已装配尺寸和重量（`assembledLength`、`assembledWidth`、`assembledHeight`、`assembledWeight`），不返回包装尺寸、包装重量、箱数、每箱数量或真实库存数量。已装配数据只可写入商品尺寸/重量字段，不可写入 `item_package_dimensions` 或 `item_package_weight`。
+
+若未来 API 返回经过确认的包装字段，再单独建立包装字段映射；在此之前，包装字段保持空白。`skuAvailable` 只驱动上述 Quantity (UK) 业务默认值。
+
 ## 报告规则
 
 填表后按最终单元格状态生成报告：
@@ -48,8 +66,11 @@
 4. `invalid_existing_value`：运营已有值不在模板允许选项中。
 5. `api_not_found`：GIGA API 未返回该 SKU。
 6. `preserved`：运营已有值被保留，API 或默认值未覆盖。
+7. `manual_attention`：运营明确要求保留空白、但需要后续处理的字段。
 
-当字段因 `GTIN Exempt` 明确豁免时，不生成 Product Id 的缺失报告。对完全不适用的可选空字段不生成缺失报告，避免数百条无行动价值的信息。
+结果中另输出 `filled_fields`：每一项包含 SKU、Excel 行、Amazon 字段 ID、字段名、写入值和来源（`giga_api` 或 `business_default`）。页面先展示已填字段，再展示待处理项。
+
+当字段因 `GTIN Exempt` 明确豁免时，不生成 Product Id 的缺失报告。对完全不适用的可选空字段不生成缺失报告，避免数百条无行动价值的信息。默认仅显示严格必填缺失、下拉不匹配、API 未找到 SKU，以及 `recommended_browse_nodes` 和 `manufacturer` 的人工提醒；其余条件必填字段不进入待处理列表。
 
 ## 填写流程
 
@@ -59,17 +80,24 @@
 4. 应用运营值优先原则。
 5. 对品牌和 Product Id Type 应用白名单固定值。
 6. 对其他空白字段应用 API 候选值。
-7. 按最终状态执行必填和下拉校验。
-8. 写入 XLSM 并输出 JSON 报告。
+7. 对空白 UK 默认字段应用运营默认值。
+8. 对 Recommended Browse Nodes 和 Manufacturer 生成留空提醒。
+9. 按最终状态执行必填和下拉校验。
+10. 写入 XLSM 并输出 JSON 报告和 filled_fields。
 
 ## 测试标准
 
 - 空白品牌填写 `GENERIC`，即使 API 返回了其他品牌。
 - 模板已有品牌时不覆盖。
 - 空白 Product Id Type 填写 `GTIN Exempt`，Product Id 保持为空且不报缺失。
+- 空白 Country of Origin、Item Condition、两项电池字段和 Quantity (UK) 写入运营指定默认值。
+- `skuAvailable=true` 写入 Quantity (UK) `5`，`false` 写入 `0`。
 - API 有可映射值时写入正确字段。
 - API 缺失的严格必填字段保持为空并报告。
 - API 候选值不在必填下拉选项中时保持为空并报告允许值。
+- Recommended Browse Nodes 与 Manufacturer 保持空白并生成 `manual_attention`；其他未标注的条件字段不生成噪声报告。
+- API 返回的已装配尺寸/重量不写入包装字段；包装字段缺失时保持空白。
+- UI 显示每个 SKU 的已填写字段和值，再显示待处理字段。
 - CABINET 和 CHAIR 两个真实模板均保持隐藏页、下拉校验及非目标 ZIP 部件不变。
 - 全部既有后端和前端测试继续通过。
 
