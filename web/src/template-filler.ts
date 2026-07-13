@@ -1,12 +1,29 @@
 import "./template-filler.css";
-import { filledSourceLabel, isSupportedTemplateFile, issueStatusLabel, uploadReadinessLabel } from "./template-filler-model";
+import { filledSourceLabel, isSupportedTemplateFile, issueStatusLabel, policyStatusLabel, uploadReadinessLabel } from "./template-filler-model";
+
+type TemplateField = {
+  field_id: string;
+  label: string;
+  requirement: string;
+  column: string;
+  is_dropdown: boolean;
+  allowed_values: string[];
+};
+
+type PolicyRule = { action: "required" | "reminder" | "default" | "ignore"; value?: string };
+type Policy = { version: number; rules: Record<string, PolicyRule> };
+type PolicyDrift = { kind: string; field_id: string };
 
 type AnalyzeResponse = {
   template_id: string;
   original_filename: string;
   template: { market: string; category: string; language_tag: string; field_count: number; data_row: number };
   sku_rows: Array<{ row: number; sku: string }>;
-  summary: { sku_count: number; required_fields: number; conditional_fields: number; dropdown_fields: number };
+  summary: { sku_count: number; required_fields: number; conditional_fields: number; dropdown_fields: number; policy_required: number };
+  fields: TemplateField[];
+  policy_status: string;
+  policy_drift: PolicyDrift[];
+  policy: Policy | null;
 };
 
 type Issue = {
@@ -39,11 +56,15 @@ type FillResponse = {
     conditional_attention: number;
     manual_attention: number;
     business_required: number;
+    policy_required: number;
     dropdown_required: number;
     upload_ready: boolean;
   };
   filled_fields: FilledField[];
   issues: Issue[];
+  policy_status: string;
+  policy_drift: PolicyDrift[];
+  policy: Policy | null;
 };
 
 const fileInput = document.querySelector<HTMLInputElement>("#template-file")!;
@@ -55,9 +76,13 @@ const dropzone = document.querySelector<HTMLElement>("#dropzone")!;
 const analysisPanel = document.querySelector<HTMLElement>("#analysis-panel")!;
 const resultPanel = document.querySelector<HTMLElement>("#result-panel")!;
 const issueFilter = document.querySelector<HTMLSelectElement>("#issue-filter")!;
+const savePolicyButton = document.querySelector<HTMLButtonElement>("#save-policy-button")!;
+const policyMessage = document.querySelector<HTMLElement>("#policy-message")!;
 
 let templateId = "";
 let issues: Issue[] = [];
+let policyFields: TemplateField[] = [];
+let currentPolicy: Policy | null = null;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/template-filler${path}`, init);
@@ -89,6 +114,7 @@ function renderAnalysis(data: AnalyzeResponse) {
     metric(data.summary.sku_count, "SKU 数量"),
     metric(data.summary.required_fields, "严格必填字段"),
     metric(data.summary.dropdown_fields, "下拉字段"),
+    metric(data.summary.policy_required, "策略运营必填"),
   );
   const skuList = document.querySelector<HTMLElement>("#sku-list")!;
   skuList.replaceChildren(...data.sku_rows.map(({ row, sku }) => {
@@ -97,9 +123,81 @@ function renderAnalysis(data: AnalyzeResponse) {
     chip.textContent = `${sku} · Row ${row}`;
     return chip;
   }));
+  policyFields = data.fields;
+  currentPolicy = data.policy;
+  renderPolicyEditor(data.policy_status, data.policy_drift);
   analysisPanel.classList.remove("hidden");
   resultPanel.classList.add("hidden");
   analysisPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderPolicyEditor(status: string, drift: PolicyDrift[]) {
+  const policyDescription = `${policyStatusLabel(status)}${currentPolicy ? ` · 版本 ${currentPolicy.version}` : ""}`;
+  policyMessage.textContent = drift.length
+    ? `${policyDescription}。检测到 ${drift.length} 项模板结构变化；已继续复用匹配规则，请核对。`
+    : status === "unconfigured"
+      ? `${policyDescription}。请为这个新类目设置规则；未保存前，填表报告将阻止上传。`
+      : `${policyDescription}。规则会自动复用于相同平台、站点和类目。`;
+  const tbody = document.querySelector<HTMLTableSectionElement>("#policy-rule-table")!;
+  tbody.replaceChildren(...policyFields.map(field => {
+    const row = document.createElement("tr");
+    row.dataset.fieldId = field.field_id;
+    const name = document.createElement("td");
+    const label = document.createElement("strong");
+    label.textContent = field.label || field.field_id;
+    const code = document.createElement("code");
+    code.textContent = field.field_id;
+    name.append(label, document.createElement("br"), code);
+    const actionCell = document.createElement("td");
+    const select = document.createElement("select");
+    select.className = "policy-select";
+    const rule = currentPolicy?.rules[field.field_id];
+    for (const [value, text] of [["ignore", "不处理"], ["required", "运营必填"], ["reminder", "仅提醒"], ["default", "默认填写"]]) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = text;
+      option.selected = (rule?.action ?? "ignore") === value;
+      select.append(option);
+    }
+    const valueCell = document.createElement("td");
+    const input = document.createElement("input");
+    input.className = "policy-value";
+    input.value = rule?.value ?? "";
+    input.placeholder = "仅默认填写时使用";
+    input.disabled = select.value !== "default";
+    select.addEventListener("change", () => { input.disabled = select.value !== "default"; });
+    actionCell.append(select);
+    valueCell.append(input);
+    const allowed = document.createElement("td");
+    allowed.textContent = field.allowed_values.length ? field.allowed_values.slice(0, 10).join(" / ") : "—";
+    row.append(name, actionCell, valueCell, allowed);
+    return row;
+  }));
+}
+
+async function savePolicy() {
+  if (!templateId) return;
+  const rules: Array<{ field_id: string; action: string; value?: string }> = [];
+  document.querySelectorAll<HTMLTableRowElement>("#policy-rule-table tr").forEach(row => {
+    const select = row.querySelector<HTMLSelectElement>(".policy-select")!;
+    const input = row.querySelector<HTMLInputElement>(".policy-value")!;
+    if (select.value !== "ignore") {
+      rules.push({ field_id: row.dataset.fieldId!, action: select.value, ...(select.value === "default" ? { value: input.value.trim() } : {}) });
+    }
+  });
+  setBusy(savePolicyButton, true, "正在保存策略…", "保存当前类目策略");
+  try {
+    const data = await api<{ policy: Policy; policy_status: string; policy_drift: PolicyDrift[] }>(`/policies/${templateId}`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rules }),
+    });
+    currentPolicy = data.policy;
+    renderPolicyEditor(data.policy_status, data.policy_drift);
+    message.textContent = "模板画像策略已保存；后续同类模板会自动复用。";
+  } catch (error) {
+    message.textContent = error instanceof Error ? error.message : "策略保存失败";
+  } finally {
+    setBusy(savePolicyButton, false, "正在保存策略…", "保存当前类目策略");
+  }
 }
 
 function renderIssues(filter: string) {
@@ -261,3 +359,4 @@ fillButton.addEventListener("click", async () => {
 });
 
 issueFilter.addEventListener("change", () => renderIssues(issueFilter.value));
+savePolicyButton.addEventListener("click", () => { void savePolicy(); });

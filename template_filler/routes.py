@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 
 from .mapping import build_fill_plan
 from .parser import parse_amazon_template
+from .policy import PolicyStore
 from .writer import write_filled_workbook
 
 
@@ -24,6 +25,29 @@ def _directories() -> tuple[Path, Path]:
     templates.mkdir(parents=True, exist_ok=True)
     outputs.mkdir(parents=True, exist_ok=True)
     return templates, outputs
+
+
+def _policy_store() -> PolicyStore:
+    return PolicyStore(current_app.config["TEMPLATE_FILLER_POLICY_DB"])
+
+
+def _policy_state(profile) -> tuple[object | None, str, list[dict]]:
+    store = _policy_store()
+    store.ensure_initial_policy(profile)
+    policy, drift = store.lookup(profile)
+    if policy is None:
+        return None, "unconfigured", []
+    return policy, "drift_detected" if drift else "active", drift
+
+
+def _policy_payload(profile) -> dict:
+    policy, status, drift = _policy_state(profile)
+    return {
+        "policy_status": status,
+        "policy_drift": drift,
+        "policy": policy.to_dict() if policy else None,
+        "policy_required": sum(rule.action == "required" for rule in policy.rules.values()) if policy else 0,
+    }
 
 
 def _field_payload(field) -> dict:
@@ -97,11 +121,8 @@ def analyze_template():
         return jsonify({"error": f"模板解析失败: {exc}"}), 400
 
     requirement_counts = Counter(field.requirement for field in profile.fields)
-    notable_fields = [
-        _field_payload(field)
-        for field in profile.fields
-        if field.requirement in {"required", "conditionally_required"} or field.is_dropdown
-    ]
+    policy_details = _policy_payload(profile)
+    template_fields = [_field_payload(field) for field in profile.fields]
     return jsonify(
         {
             "success": True,
@@ -114,10 +135,49 @@ def analyze_template():
                 "required_fields": requirement_counts["required"],
                 "conditional_fields": requirement_counts["conditionally_required"],
                 "dropdown_fields": sum(field.is_dropdown for field in profile.fields),
+                "policy_required": policy_details["policy_required"],
             },
-            "fields": notable_fields,
+            "fields": template_fields,
+            "policy_status": policy_details["policy_status"],
+            "policy_drift": policy_details["policy_drift"],
+            "policy": policy_details["policy"],
         }
     )
+
+
+@template_filler_bp.get("/policies/<template_id>")
+def get_template_policy(template_id: str):
+    templates, _ = _directories()
+    try:
+        source, _ = _resolve_template(template_id, templates)
+        profile = parse_amazon_template(source)
+        return jsonify({"success": True, **_policy_payload(profile), "fields": [_field_payload(field) for field in profile.fields]})
+    except Exception as exc:
+        return jsonify({"error": f"策略读取失败: {exc}"}), 400
+
+
+@template_filler_bp.post("/policies/<template_id>")
+def save_template_policy(template_id: str):
+    templates, _ = _directories()
+    body = request.get_json(silent=True) or {}
+    raw_rules = body.get("rules")
+    if not isinstance(raw_rules, list):
+        return jsonify({"error": "rules 必须是规则数组"}), 400
+    try:
+        source, _ = _resolve_template(template_id, templates)
+        profile = parse_amazon_template(source)
+        rules = {}
+        for item in raw_rules:
+            if not isinstance(item, dict) or not str(item.get("field_id") or "").strip():
+                raise ValueError("每条规则必须包含 field_id")
+            field_id = str(item["field_id"]).strip()
+            if field_id in rules:
+                raise ValueError(f"策略字段重复: {field_id}")
+            rules[field_id] = {"action": item.get("action"), "value": item.get("value")}
+        policy = _policy_store().save(profile, rules)
+        return jsonify({"success": True, "policy_status": "active", "policy_drift": [], "policy": policy.to_dict()})
+    except Exception as exc:
+        return jsonify({"error": f"策略保存失败: {exc}"}), 400
 
 
 @template_filler_bp.post("/fill")
@@ -127,6 +187,7 @@ def fill_template():
     try:
         source, metadata = _resolve_template(str(body.get("template_id") or ""), templates)
         profile = parse_amazon_template(source)
+        policy, policy_status, policy_drift = _policy_state(profile)
         fetch_products = current_app.config["TEMPLATE_FILLER_FETCH_PRODUCTS"]
         products = fetch_products([row.sku for row in profile.sku_rows], profile.market)
         products_by_sku = {
@@ -134,7 +195,7 @@ def fill_template():
             for item in products
             if isinstance(item, dict) and item.get("sku")
         }
-        plan = build_fill_plan(profile, source, products_by_sku)
+        plan = build_fill_plan(profile, source, products_by_sku, policy=policy, policy_configured=policy is not None)
 
         original = secure_filename(str(metadata.get("original_filename") or source.name)) or "amazon-template.xlsm"
         stem = Path(original).stem[:80] or "amazon-template"
@@ -157,16 +218,20 @@ def fill_template():
                 "conditional_attention": counts["conditional_attention"],
                 "manual_attention": counts["manual_attention"],
                 "business_required": counts["business_required"],
+                "policy_required": counts["business_required"],
                 "dropdown_required": counts["dropdown_required"],
                 "api_not_found": counts["api_not_found"],
                 "invalid_existing_value": counts["invalid_existing_value"],
                 "upload_ready": not any(
-                    issue.status in {"missing_required", "business_required", "dropdown_required", "api_not_found", "invalid_existing_value"}
+                    issue.status in {"missing_required", "business_required", "policy_unconfigured", "dropdown_required", "api_not_found", "invalid_existing_value"}
                     for issue in plan.issues
                 ),
             },
             "filled_fields": [item.to_dict() for item in plan.filled_fields],
             "issues": [issue.to_dict() for issue in plan.issues],
+            "policy_status": policy_status,
+            "policy_drift": policy_drift,
+            "policy": policy.to_dict() if policy else None,
         }
         temporary_report = report_path.with_suffix(".json.tmp")
         temporary_report.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -179,6 +244,9 @@ def fill_template():
                 "summary": report["summary"],
                 "filled_fields": report["filled_fields"],
                 "issues": report["issues"],
+                "policy_status": report["policy_status"],
+                "policy_drift": report["policy_drift"],
+                "policy": report["policy"],
             }
         )
     except Exception as exc:

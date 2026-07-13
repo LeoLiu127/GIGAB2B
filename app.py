@@ -570,6 +570,7 @@ from template_filler.routes import template_filler_bp
 
 app.config.setdefault("TEMPLATE_FILLER_TEMPLATE_DIR", os.path.join(TEMPLATE_UPLOAD_DIR, "template-filler"))
 app.config.setdefault("TEMPLATE_FILLER_OUTPUT_DIR", EXCEL_OUTPUT_DIR)
+app.config.setdefault("TEMPLATE_FILLER_POLICY_DB", os.path.join(RUNTIME_DIR, "template-filler-policies.sqlite3"))
 app.config.setdefault("TEMPLATE_FILLER_FETCH_PRODUCTS", giga_fetch_products_bulk)
 app.register_blueprint(template_filler_bp)
 

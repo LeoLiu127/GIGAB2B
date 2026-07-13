@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { filledSourceLabel, isSupportedTemplateFile, issueStatusLabel, uploadReadinessLabel } from "./template-filler-model";
+import { filledSourceLabel, isSupportedTemplateFile, issueStatusLabel, policyStatusLabel, uploadReadinessLabel } from "./template-filler-model";
 
 
 describe("template filler report labels", () => {
@@ -10,6 +10,13 @@ describe("template filler report labels", () => {
     expect(issueStatusLabel("conditional_attention")).toBe("条件必填待确认");
     expect(issueStatusLabel("manual_attention")).toBe("需要人工确认");
     expect(issueStatusLabel("business_required")).toBe("运营必填待补充");
+    expect(issueStatusLabel("policy_unconfigured")).toBe("需先配置类目策略");
+  });
+
+  it("labels template policy states for the rule editor", () => {
+    expect(policyStatusLabel("active")).toBe("策略已生效");
+    expect(policyStatusLabel("unconfigured")).toBe("尚未配置策略");
+    expect(policyStatusLabel("drift_detected")).toBe("模板结构已变化");
   });
 
   it("labels GIGA values and explicit business defaults", () => {

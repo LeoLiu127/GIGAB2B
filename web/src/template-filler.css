@@ -75,6 +75,13 @@ td code { font-size: 11px; color: #657068; }
 .issue-tag.warning { background: #faebcb; color: #8c5d11; }
 .issue-tag.info { background: #e3ece6; color: #356247; }
 .allowed { margin-top: 5px; color: #69736d; font-size: 11px; line-height: 1.5; }
+.policy-editor { margin-top: 26px; padding-top: 8px; }
+.policy-editor .report-toolbar { margin-bottom: 0; }
+.policy-table-wrap { max-height: 520px; }
+.policy-table-wrap table { min-width: 940px; }
+.policy-table-wrap thead { position: sticky; top: 0; z-index: 1; }
+.policy-select, .policy-value { width: 100%; min-width: 150px; padding: 8px; border: 1px solid #c8cec8; border-radius: 7px; background: #fff; }
+.policy-value:disabled { background: #f3f4f1; color: #89918b; }
 
 @media (max-width: 760px) {
   .topbar { padding: 0 20px; }

@@ -358,6 +358,52 @@ class TemplateFillerApiTests(unittest.TestCase):
                     else:
                         app_module.app.config[key] = value
 
+    def test_policy_endpoints_expose_seeded_chair_policy_and_save_editor_rules(self):
+        source = FIXTURE_DIR / "CHAIR-UK-1SKU.xlsm"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            uploads = Path(temp_dir) / "templates"
+            outputs = Path(temp_dir) / "excel"
+            uploads.mkdir()
+            outputs.mkdir()
+            original_config = {
+                key: app_module.app.config.get(key)
+                for key in ("TEMPLATE_FILLER_TEMPLATE_DIR", "TEMPLATE_FILLER_OUTPUT_DIR", "TEMPLATE_FILLER_POLICY_DB")
+            }
+            app_module.app.config.update(
+                TEMPLATE_FILLER_TEMPLATE_DIR=str(uploads),
+                TEMPLATE_FILLER_OUTPUT_DIR=str(outputs),
+                TEMPLATE_FILLER_POLICY_DB=str(Path(temp_dir) / "policies.sqlite3"),
+            )
+            client = app_module.app.test_client()
+            try:
+                with source.open("rb") as stream:
+                    analyzed = client.post(
+                        "/api/template-filler/analyze",
+                        data={"file": (io.BytesIO(stream.read()), source.name)},
+                        content_type="multipart/form-data",
+                    )
+                self.assertEqual(analyzed.status_code, 200, analyzed.get_data(as_text=True))
+                analysis = analyzed.get_json()
+                self.assertEqual(analysis["policy_status"], "active")
+                policy = client.get(f"/api/template-filler/policies/{analysis['template_id']}")
+                self.assertEqual(policy.status_code, 200, policy.get_data(as_text=True))
+                self.assertEqual(policy.get_json()["policy"]["version"], 1)
+
+                material = next(field for field in analysis["fields"] if field["field_id"].startswith("material["))
+                saved = client.post(
+                    f"/api/template-filler/policies/{analysis['template_id']}",
+                    json={"rules": [{"field_id": material["field_id"], "action": "reminder"}]},
+                )
+                self.assertEqual(saved.status_code, 200, saved.get_data(as_text=True))
+                self.assertEqual(saved.get_json()["policy"]["version"], 2)
+                self.assertEqual(saved.get_json()["policy"]["rules"][material["field_id"]]["action"], "reminder")
+            finally:
+                for key, value in original_config.items():
+                    if value is None:
+                        app_module.app.config.pop(key, None)
+                    else:
+                        app_module.app.config[key] = value
+
 
 if __name__ == "__main__":
     unittest.main()

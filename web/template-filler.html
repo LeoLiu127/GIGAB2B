@@ -55,6 +55,18 @@
           <span class="muted">待处理 SKU</span>
           <div class="sku-list" id="sku-list"></div>
         </div>
+        <div class="policy-editor" id="policy-editor">
+          <div class="report-toolbar">
+            <div><h3>模板画像策略</h3><p class="muted" id="policy-message">读取策略中…</p></div>
+            <button class="secondary-button" id="save-policy-button" type="button">保存当前类目策略</button>
+          </div>
+          <div class="table-wrap policy-table-wrap">
+            <table>
+              <thead><tr><th>字段</th><th>策略</th><th>默认值</th><th>模板允许值</th></tr></thead>
+              <tbody id="policy-rule-table"></tbody>
+            </table>
+          </div>
+        </div>
         <button class="primary-button" id="fill-button">抓取 GIGA 数据并填表</button>
       </section>
 
