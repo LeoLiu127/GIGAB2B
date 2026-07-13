@@ -6,6 +6,7 @@ import {
   normalizeVariantSummary,
   policyStatusLabel,
   uploadReadinessLabel,
+  variantGroupResultLabel,
 } from "./template-filler-model";
 
 type TemplateField = {
@@ -60,6 +61,10 @@ type VariantGroup = {
   variation_theme: string;
   status: string;
   message: string;
+  expected_children?: number;
+  actual_children?: number;
+  skipped_association_skus?: string[];
+  collection_status?: string;
 };
 
 type FillResponse = {
@@ -315,9 +320,7 @@ function renderVariantGroups(groups: VariantGroup[]) {
   }
   tbody.replaceChildren(...groups.map(group => {
     const row = document.createElement("tr");
-    const groupStatus = group.status === "expanded"
-      ? group.message ? `已展开：${group.message}` : "已展开"
-      : `${group.status}：${group.message}`;
+    const groupStatus = variantGroupResultLabel(group);
     for (const value of [group.seed_sku, group.parent_sku || "—", group.child_skus.join(" / ") || "—", group.variation_theme || "—", groupStatus]) {
       const cell = document.createElement("td");
       cell.textContent = value;

@@ -9,7 +9,7 @@ const STATUS_LABELS: Record<string, string> = {
   variant_group_too_large: "变体数量超过上限",
   variant_fetch_incomplete: "变体详情不完整",
   variant_manual_theme_conflict: "人工主题与变体不一致",
-  variant_associations_skipped: "已忽略无效关联 SKU",
+  variant_associations_skipped: "额外关联编号无法查询",
   invalid_existing_value: "现有值不符合下拉规则",
   api_not_found: "GIGA 未返回该 SKU",
   preserved: "已保留人工填写值",
@@ -51,4 +51,30 @@ export function normalizeVariantSummary(summary?: Partial<VariantSummary>): Vari
     parents_added: summary?.parents_added ?? 0,
     children_added: summary?.children_added ?? 0,
   };
+}
+
+export type VariantGroupResult = {
+  status: string;
+  message?: string;
+  expected_children?: number;
+  actual_children?: number;
+  skipped_association_skus?: string[];
+  collection_status?: string;
+};
+
+export function variantGroupResultLabel(group: VariantGroupResult): string {
+  if (typeof group.expected_children !== "number" || typeof group.actual_children !== "number") {
+    return group.status === "expanded"
+      ? group.message ? `已展开：${group.message}` : "已展开"
+      : `${group.status}：${group.message ?? ""}`;
+  }
+
+  const complete = group.actual_children === group.expected_children;
+  let text = `${complete ? "采集完整" : "采集不完整"}：预计 ${group.expected_children} 个有效子体，实际生成 ${group.actual_children} 个子体。`;
+  const skipped = group.skipped_association_skus ?? [];
+  if (skipped.length) {
+    text += `GIGA 另返回 ${skipped.length} 个无法查询商品详情的关联编号，未计入有效子体：${skipped.join("、")}。`;
+  }
+  if (!complete && group.message) text += `阻断原因：${group.message}`;
+  return text;
 }

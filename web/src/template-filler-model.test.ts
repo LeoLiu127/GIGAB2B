@@ -7,6 +7,7 @@ import {
   normalizeVariantSummary,
   policyStatusLabel,
   uploadReadinessLabel,
+  variantGroupResultLabel,
 } from "./template-filler-model";
 
 
@@ -20,7 +21,7 @@ describe("template filler report labels", () => {
     expect(issueStatusLabel("policy_unconfigured")).toBe("需先配置类目策略");
     expect(issueStatusLabel("variant_theme_unresolved")).toBe("变体主题无法确认");
     expect(issueStatusLabel("variant_fetch_incomplete")).toBe("变体详情不完整");
-    expect(issueStatusLabel("variant_associations_skipped")).toBe("已忽略无效关联 SKU");
+    expect(issueStatusLabel("variant_associations_skipped")).toBe("额外关联编号无法查询");
   });
 
   it("labels template policy states for the rule editor", () => {
@@ -63,5 +64,31 @@ describe("template filler report labels", () => {
       parents_added: 0,
       children_added: 4,
     });
+  });
+
+  it("reports complete effective children separately from inaccessible associations", () => {
+    expect(variantGroupResultLabel({
+      status: "expanded",
+      message: "legacy warning",
+      expected_children: 3,
+      actual_children: 3,
+      skipped_association_skus: ["P1", "P2"],
+      collection_status: "complete",
+    })).toBe("采集完整：预计 3 个有效子体，实际生成 3 个子体。GIGA 另返回 2 个无法查询商品详情的关联编号，未计入有效子体：P1、P2。");
+  });
+
+  it("reports expected versus actual counts when a group is blocked", () => {
+    expect(variantGroupResultLabel({
+      status: "blocked",
+      message: "变体主题无法确认",
+      expected_children: 3,
+      actual_children: 0,
+      collection_status: "incomplete",
+    })).toBe("采集不完整：预计 3 个有效子体，实际生成 0 个子体。阻断原因：变体主题无法确认");
+  });
+
+  it("keeps legacy variant group responses compatible", () => {
+    expect(variantGroupResultLabel({status: "expanded", message: "legacy warning"}))
+      .toBe("已展开：legacy warning");
   });
 });
