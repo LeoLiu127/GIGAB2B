@@ -239,6 +239,7 @@ def fill_template():
                     requested_skus=requested or (sku,),
                     products=products,
                     missing_skus=tuple(str(item).strip() for item in raw.get("missing_skus") or [] if str(item).strip()),
+                    skipped_skus=tuple(str(item).strip() for item in raw.get("skipped_skus") or [] if str(item).strip()),
                     over_limit=bool(raw.get("over_limit")),
                     warning=str(raw.get("warning") or "") or None,
                 )

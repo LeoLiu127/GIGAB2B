@@ -15,6 +15,7 @@ class ListingProducts:
     requested_skus: tuple[str, ...]
     products: dict[str, dict[str, Any]]
     missing_skus: tuple[str, ...] = ()
+    skipped_skus: tuple[str, ...] = ()
     over_limit: bool = False
     warning: str | None = None
 
@@ -38,9 +39,13 @@ class VariantGroup:
     variation_theme: str = ""
     status: str = "expanded"
     message: str = ""
+    expected_children: int | None = None
+    actual_children: int | None = None
+    skipped_association_skus: tuple[str, ...] = ()
+    collection_status: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "seed_sku": self.seed_sku,
             "parent_sku": self.parent_sku,
             "child_skus": list(self.child_skus),
@@ -48,6 +53,16 @@ class VariantGroup:
             "status": self.status,
             "message": self.message,
         }
+        if self.expected_children is not None and self.actual_children is not None:
+            result.update(
+                {
+                    "expected_children": self.expected_children,
+                    "actual_children": self.actual_children,
+                    "skipped_association_skus": list(self.skipped_association_skus),
+                    "collection_status": self.collection_status,
+                }
+            )
+        return result
 
 
 @dataclass
@@ -199,6 +214,49 @@ def _warning_issue(seed: SkuRow, status: str, message: str) -> ValidationIssue:
     )
 
 
+def skipped_association_message(skipped_skus: tuple[str, ...]) -> str:
+    if not skipped_skus:
+        return ""
+    return (
+        f"GIGA 另返回 {len(skipped_skus)} 个无法查询商品详情的关联编号，"
+        f"未计入有效子体：{'、'.join(skipped_skus)}。"
+    )
+
+
+def collection_result_message(expected: int, actual: int, skipped_skus: tuple[str, ...] = ()) -> str:
+    state = "采集完整" if actual == expected else "采集不完整"
+    return (
+        f"{state}：预计 {expected} 个有效子体，实际生成 {actual} 个子体。"
+        f"{skipped_association_message(skipped_skus)}"
+    )
+
+
+def _collection_group(
+    seed_sku: str,
+    listing: ListingProducts,
+    *,
+    status: str,
+    message: str,
+    actual_children: int = 0,
+    parent_sku: str = "",
+    child_skus: tuple[str, ...] = (),
+    variation_theme: str = "",
+) -> VariantGroup:
+    expected_children = len(listing.requested_skus)
+    return VariantGroup(
+        seed_sku=seed_sku,
+        parent_sku=parent_sku,
+        child_skus=child_skus,
+        variation_theme=variation_theme,
+        status=status,
+        message=message,
+        expected_children=expected_children,
+        actual_children=actual_children,
+        skipped_association_skus=listing.skipped_skus,
+        collection_status="complete" if actual_children == expected_children else "incomplete",
+    )
+
+
 def expand_variant_rows(
     profile: TemplateProfile,
     fetch_listing: Callable[[str, str], ListingProducts],
@@ -229,14 +287,14 @@ def expand_variant_rows(
             message = listing.warning or "同一 Listing 的 SKU 数量超过 200，不能安全展开"
             result.rows.append(VariantRow(seed.row, output_row, seed.sku, "seed", product=listing.products.get(seed.sku)))
             result.issues.append(_issue(seed, "variant_group_too_large", message))
-            result.groups.append(VariantGroup(seed.sku, status="blocked", message=message))
+            result.groups.append(_collection_group(seed.sku, listing, status="blocked", message=message))
             continue
         if listing.missing_skus or len(listing.products) != len(listing.requested_skus):
             missing = ", ".join(listing.missing_skus) or "关联 SKU"
             message = listing.warning or f"GIGA 未返回完整变体详情: {missing}"
             result.rows.append(VariantRow(seed.row, output_row, seed.sku, "seed", product=listing.products.get(seed.sku)))
             result.issues.append(_issue(seed, "variant_fetch_incomplete", message))
-            result.groups.append(VariantGroup(seed.sku, status="blocked", message=message))
+            result.groups.append(_collection_group(seed.sku, listing, status="blocked", message=message))
             continue
         if len(listing.requested_skus) == 1:
             result.rows.append(VariantRow(seed.row, output_row, seed.sku, "seed", product=listing.products.get(seed.sku)))
@@ -247,23 +305,36 @@ def expand_variant_rows(
         if not theme:
             result.rows.append(VariantRow(seed.row, output_row, seed.sku, "seed", product=listing.products.get(seed.sku)))
             result.issues.append(_issue(seed, "variant_theme_unresolved", reason))
-            result.groups.append(VariantGroup(seed.sku, status="blocked", message=reason))
+            result.groups.append(_collection_group(seed.sku, listing, status="blocked", message=reason))
             continue
         manual_theme = str((manual_themes or {}).get(seed.row) or "").strip()
         if manual_theme and manual_theme.casefold() != theme.casefold():
             message = f"运营已填写主题 {manual_theme!r}，与 GIGA 推断主题 {theme!r} 不一致"
             result.rows.append(VariantRow(seed.row, output_row, seed.sku, "seed", product=listing.products.get(seed.sku)))
             result.issues.append(_issue(seed, "variant_manual_theme_conflict", message))
-            result.groups.append(VariantGroup(seed.sku, status="blocked", message=message))
+            result.groups.append(_collection_group(seed.sku, listing, status="blocked", message=message))
             continue
 
-        if listing.warning:
-            result.issues.append(_warning_issue(seed, "variant_associations_skipped", listing.warning))
+        skipped_message = skipped_association_message(listing.skipped_skus)
+        if skipped_message:
+            result.issues.append(_warning_issue(seed, "variant_associations_skipped", skipped_message))
 
         parent_sku = f"{listing.main_sku or seed.sku}-PARENT"
         result.rows.append(VariantRow(seed.row, output_row, parent_sku, "parent", variation_theme=theme, product=products[0]))
         for index, sku in enumerate(listing.requested_skus, start=1):
             result.rows.append(VariantRow(seed.row, output_row + index, sku, "child", parent_sku, theme, listing.products[sku]))
-        result.groups.append(VariantGroup(seed.sku, parent_sku, listing.requested_skus, theme, message=listing.warning or ""))
+        child_count = len(listing.requested_skus)
+        result.groups.append(
+            _collection_group(
+                seed.sku,
+                listing,
+                status="expanded",
+                message=collection_result_message(child_count, child_count, listing.skipped_skus),
+                actual_children=child_count,
+                parent_sku=parent_sku,
+                child_skus=listing.requested_skus,
+                variation_theme=theme,
+            )
+        )
         offset += len(listing.requested_skus)
     return result

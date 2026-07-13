@@ -897,7 +897,10 @@ def giga_fetch_listing_products(seed_sku: str, market: str) -> dict:
     fetch_error = str(listing.get("fetch_error") or "").strip()
     warning = str(listing.get("warning") or "").strip() or None
     if skipped_skus and not fetch_error and not listing.get("truncated"):
-        warning = f"已忽略 {len(skipped_skus)} 个 GIGA 不可访问关联 SKU: {', '.join(skipped_skus)}"
+        warning = (
+            f"GIGA 另返回 {len(skipped_skus)} 个无法查询商品详情的关联编号，"
+            f"未计入有效子体：{'、'.join(skipped_skus)}。"
+        )
     if fetch_error:
         warning = f"GIGA 关联 SKU 批量请求失败: {fetch_error}"
     return {
@@ -906,6 +909,7 @@ def giga_fetch_listing_products(seed_sku: str, market: str) -> dict:
         "requested_skus": effective_skus or [seed_sku],
         "products": products,
         "missing_skus": [seed_sku] if fetch_error else [],
+        "skipped_skus": skipped_skus,
         "over_limit": bool(listing.get("truncated")),
         "warning": warning,
     }

@@ -85,6 +85,8 @@ class VariantExpansionTests(unittest.TestCase):
         self.assertEqual(listing["requested_skus"], ["A", "B"])
         self.assertEqual([item["sku"] for item in listing["products"]], ["A", "B"])
         self.assertEqual(listing["missing_skus"], [])
+        self.assertEqual(listing["skipped_skus"], ["C", "D"])
+        self.assertIn("未计入有效子体", listing["warning"])
         self.assertIn("C", listing["warning"])
         self.assertIn("D", listing["warning"])
 
@@ -133,7 +135,7 @@ class VariantExpansionTests(unittest.TestCase):
             main_sku="A",
             requested_skus=("A", "B"),
             products=products,
-            warning="已忽略 2 个 GIGA 不可访问关联 SKU: C, D",
+            skipped_skus=("C", "D"),
         )
 
         expansion = expand_variant_rows(_profile(), lambda _sku, _market: listing)
@@ -142,7 +144,29 @@ class VariantExpansionTests(unittest.TestCase):
         self.assertEqual(expansion.summary["groups_blocked"], 0)
         self.assertEqual([issue.status for issue in expansion.issues], ["variant_associations_skipped"])
         self.assertEqual(expansion.issues[0].severity, "warning")
-        self.assertIn("C, D", expansion.groups[0].message)
+        self.assertIn("未计入有效子体", expansion.issues[0].message)
+        group = expansion.groups[0].to_dict()
+        self.assertEqual(group["expected_children"], 2)
+        self.assertEqual(group["actual_children"], 2)
+        self.assertEqual(group["skipped_association_skus"], ["C", "D"])
+        self.assertEqual(group["collection_status"], "complete")
+        self.assertIn("预计 2 个有效子体，实际生成 2 个子体", group["message"])
+
+    def test_blocked_group_reports_expected_and_actual_child_counts(self):
+        products = {
+            "A": {"sku": "A", "mainColor": "Red", "mainMaterial": "Wood"},
+            "B": {"sku": "B", "mainColor": "Red", "mainMaterial": "Steel"},
+        }
+        listing = ListingProducts(
+            seed_sku="A", main_sku="A", requested_skus=("A", "B"), products=products,
+        )
+
+        expansion = expand_variant_rows(_profile(), lambda _sku, _market: listing)
+
+        group = expansion.groups[0].to_dict()
+        self.assertEqual(group["expected_children"], 2)
+        self.assertEqual(group["actual_children"], 0)
+        self.assertEqual(group["collection_status"], "incomplete")
 
     def test_keeps_seed_row_and_blocks_group_when_no_unique_theme_can_be_inferred(self):
         products = {
