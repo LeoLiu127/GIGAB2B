@@ -565,6 +565,15 @@ def giga_fetch_products_bulk(skus: list, market: str) -> list:
     return [it for it in items if it and isinstance(it, dict) and it.get("sku")]
 
 
+# 独立 Amazon 模板填表 MVP：复用现有 GIGA API、认证和下载目录，不耦合现有工作台。
+from template_filler.routes import template_filler_bp
+
+app.config.setdefault("TEMPLATE_FILLER_TEMPLATE_DIR", os.path.join(TEMPLATE_UPLOAD_DIR, "template-filler"))
+app.config.setdefault("TEMPLATE_FILLER_OUTPUT_DIR", EXCEL_OUTPUT_DIR)
+app.config.setdefault("TEMPLATE_FILLER_FETCH_PRODUCTS", giga_fetch_products_bulk)
+app.register_blueprint(template_filler_bp)
+
+
 MAIN_REFERENCE_IMAGE_LIMIT = 9
 DETAIL_REFERENCE_IMAGE_LIMIT = 6
 TOTAL_REFERENCE_IMAGE_LIMIT = MAIN_REFERENCE_IMAGE_LIMIT + DETAIL_REFERENCE_IMAGE_LIMIT

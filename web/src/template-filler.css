@@ -1,0 +1,87 @@
+:root {
+  color: #17221c;
+  background: #f4f2eb;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; background: radial-gradient(circle at 85% 5%, #e4eddf 0, transparent 30%), #f4f2eb; }
+button, input, select { font: inherit; }
+
+.topbar { height: 72px; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #d9d8cf; background: rgba(250, 249, 245, .88); backdrop-filter: blur(14px); }
+.brand { color: inherit; text-decoration: none; display: flex; gap: 12px; align-items: center; }
+.brand-mark { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 11px; color: white; background: #1f6b45; font-weight: 800; }
+.brand strong, .brand small { display: block; }
+.brand small { margin-top: 2px; color: #69736d; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.mvp-badge { padding: 7px 12px; border: 1px solid #aebcad; border-radius: 999px; color: #3f5b47; font-size: 12px; font-weight: 700; }
+
+.page-shell { width: min(1080px, calc(100% - 40px)); margin: 0 auto; padding: 62px 0 90px; }
+.hero { max-width: 760px; }
+.eyebrow, .section-kicker { margin: 0 0 10px; color: #1f6b45; font-size: 12px; font-weight: 800; letter-spacing: .15em; }
+.hero h1 { margin: 0; max-width: 720px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(40px, 6vw, 68px); line-height: .98; letter-spacing: -.04em; font-weight: 500; }
+.hero > p:last-child { max-width: 720px; margin: 24px 0 0; color: #5c665f; line-height: 1.75; }
+
+.steps { margin: 48px 0 30px; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); list-style: none; border-top: 1px solid #cfd2c9; }
+.steps li { padding: 16px 0 0; color: #899089; font-size: 13px; font-weight: 700; }
+.steps li span { width: 25px; height: 25px; margin-right: 8px; display: inline-grid; place-items: center; border: 1px solid #c1c7c0; border-radius: 50%; }
+.steps li.active { color: #1f6b45; border-top: 2px solid #1f6b45; margin-top: -1px; }
+.steps li.active span { background: #1f6b45; border-color: #1f6b45; color: white; }
+
+.panel { margin-top: 22px; padding: 32px; border: 1px solid #d7d7ce; border-radius: 20px; background: rgba(255,255,252,.9); box-shadow: 0 16px 50px rgba(44, 56, 47, .07); }
+.panel h2, .panel h3 { margin: 0; }
+.panel h2 { font-size: 24px; }
+.muted { color: #6d766f; line-height: 1.55; }
+.hidden { display: none !important; }
+
+.dropzone { margin: 24px 0 18px; min-height: 190px; padding: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1.5px dashed #9dad9e; border-radius: 16px; background: #f7faf5; cursor: pointer; transition: .2s ease; text-align: center; }
+.dropzone:hover, .dropzone.dragging { border-color: #1f6b45; background: #eef6ed; transform: translateY(-1px); }
+.dropzone input { position: absolute; opacity: 0; pointer-events: none; }
+.upload-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: #dcebdc; color: #1f6b45; font-size: 24px; }
+.dropzone small { color: #78817a; }
+
+.primary-button, .secondary-button { min-height: 44px; padding: 0 20px; border-radius: 10px; font-weight: 750; cursor: pointer; transition: .18s ease; }
+.primary-button { border: 1px solid #1f6b45; background: #1f6b45; color: white; }
+.primary-button:hover:not(:disabled) { background: #175537; transform: translateY(-1px); }
+.primary-button:disabled { opacity: .45; cursor: not-allowed; }
+.secondary-button { border: 1px solid #aeb8af; background: white; color: #294536; }
+.link-button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.message { min-height: 20px; margin: 14px 0 0; color: #a63d32; font-size: 14px; }
+
+.section-heading, .report-toolbar, .download-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0; }
+.metric { padding: 18px; border: 1px solid #e0e2dc; border-radius: 13px; background: #fafaf6; }
+.metric strong, .metric span { display: block; }
+.metric strong { font-size: 24px; margin-bottom: 4px; }
+.metric span { color: #6d766f; font-size: 12px; }
+.sku-block { margin: 0 0 24px; }
+.sku-list { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.sku-chip { padding: 7px 10px; border-radius: 8px; background: #eef1ec; color: #33483b; font-family: Consolas, monospace; font-size: 13px; }
+.status-pill { padding: 7px 11px; border-radius: 999px; background: #f6e4d8; color: #974c2f; font-size: 12px; font-weight: 800; }
+.status-pill.success { background: #deeee0; color: #236341; }
+.download-row { justify-content: flex-start; margin: 12px 0 32px; }
+
+.report-toolbar { padding-top: 24px; border-top: 1px solid #e2e3dd; }
+.report-toolbar h3 { margin-bottom: 5px; }
+.report-toolbar p { margin: 0; }
+.report-toolbar select { padding: 9px 34px 9px 11px; border: 1px solid #c8cec8; border-radius: 9px; background: white; }
+.table-wrap { margin-top: 18px; overflow-x: auto; border: 1px solid #e0e2dc; border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; min-width: 760px; background: white; }
+th, td { padding: 13px 15px; border-bottom: 1px solid #e8e9e4; text-align: left; vertical-align: top; font-size: 13px; }
+th { background: #f4f5f0; color: #536057; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+td code { font-size: 11px; color: #657068; }
+.issue-tag { display: inline-block; padding: 4px 7px; border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.issue-tag.error { background: #f9ded9; color: #a03a31; }
+.issue-tag.warning { background: #faebcb; color: #8c5d11; }
+.issue-tag.info { background: #e3ece6; color: #356247; }
+.allowed { margin-top: 5px; color: #69736d; font-size: 11px; line-height: 1.5; }
+
+@media (max-width: 760px) {
+  .topbar { padding: 0 20px; }
+  .page-shell { width: min(100% - 24px, 1080px); padding-top: 36px; }
+  .steps { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+  .panel { padding: 22px; }
+  .section-heading, .report-toolbar, .download-row { align-items: flex-start; flex-direction: column; }
+  .download-row a { width: 100%; }
+}

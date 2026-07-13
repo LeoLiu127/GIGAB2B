@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="GIGA B2B Amazon 模板自动填表 MVP" />
+    <title>Amazon 模板填表 · GIGA B2B</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="返回 GIGA B2B 工作台">
+        <span class="brand-mark">G</span>
+        <span><strong>GIGA B2B</strong><small>Amazon Template Filler</small></span>
+      </a>
+      <span class="mvp-badge">MVP · UK</span>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero">
+        <p class="eyebrow">SELLER CENTRAL WORKFLOW</p>
+        <h1>从 SKU 到可审核的 Amazon 模板</h1>
+        <p>上传已填写 GIGA Item code 的模板，系统读取 SKU、抓取商品资料、按 Amazon 字段 ID 填写，并列出所有无法自动完成的必填项和下拉项。</p>
+      </section>
+
+      <ol class="steps" aria-label="处理步骤">
+        <li class="active"><span>1</span>上传模板</li>
+        <li><span>2</span>识别结构</li>
+        <li><span>3</span>抓取并填表</li>
+        <li><span>4</span>下载审核</li>
+      </ol>
+
+      <section class="panel upload-panel">
+        <div>
+          <p class="section-kicker">01 / TEMPLATE</p>
+          <h2>上传 Seller Central 模板</h2>
+          <p class="muted">当前优先适配 UK CABINET 与 UK CHAIR。请先在模板 SKU 列填入 GIGA Item code。</p>
+        </div>
+        <label class="dropzone" id="dropzone">
+          <input id="template-file" type="file" accept=".xlsx,.xlsm" />
+          <span class="upload-icon">↑</span>
+          <strong id="file-label">选择或拖入 XLSX / XLSM</strong>
+          <small>文件不会覆盖原模板；每次最多处理 200 个 SKU</small>
+        </label>
+        <button class="primary-button" id="analyze-button" disabled>分析模板结构</button>
+        <p class="message" id="message" role="status"></p>
+      </section>
+
+      <section class="panel hidden" id="analysis-panel">
+        <div class="section-heading">
+          <div><p class="section-kicker">02 / ANALYZE</p><h2>模板识别结果</h2></div>
+          <span class="status-pill success">结构可识别</span>
+        </div>
+        <div class="metric-grid" id="analysis-metrics"></div>
+        <div class="sku-block">
+          <span class="muted">待处理 SKU</span>
+          <div class="sku-list" id="sku-list"></div>
+        </div>
+        <button class="primary-button" id="fill-button">抓取 GIGA 数据并填表</button>
+      </section>
+
+      <section class="panel hidden" id="result-panel">
+        <div class="section-heading">
+          <div><p class="section-kicker">03 / REPORT</p><h2>填表与校验结果</h2></div>
+          <span class="status-pill" id="ready-badge"></span>
+        </div>
+        <div class="metric-grid" id="result-metrics"></div>
+        <div class="download-row">
+          <a class="primary-button link-button" id="workbook-download">下载填写后的模板</a>
+          <a class="secondary-button link-button" id="report-download">下载 JSON 校验报告</a>
+        </div>
+        <div class="report-toolbar">
+          <div><h3>需要处理的字段</h3><p class="muted">严格必填错误优先；条件必填需要结合实际 Listing 判断。</p></div>
+          <select id="issue-filter" aria-label="筛选问题类型">
+            <option value="all">全部问题</option>
+            <option value="error">仅错误</option>
+            <option value="warning">仅警告</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>SKU</th><th>字段</th><th>状态</th><th>说明 / 允许值</th></tr></thead>
+            <tbody id="issue-table"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/template-filler.ts"></script>
+  </body>
+</html>

@@ -141,6 +141,20 @@ GIGAB2B/
 
 ---
 
+## 🧩 Amazon 模板填表 MVP
+
+独立页面：`http://localhost:5173/template-filler.html`
+
+1. 在 Seller Central 模板的 SKU 列填入 GIGA Item code；
+2. 上传 `.xlsx` / `.xlsm`；
+3. 页面识别站点、类目、数据行、严格必填、条件必填和下拉字段；
+4. 调用 GIGA 批量 API，只填写空白单元格；
+5. 下载填写后的模板和 JSON 缺失报告。
+
+当前优先验证 UK CABINET 与 UK CHAIR。MVP 不调用 AI、不自动新增变体、不覆盖人工值，也不会把 GIGA 时效图片 URL 写入 Amazon 模板。现有 PLANTER 流水线仍保持原行为。
+
+---
+
 ## 🌐 API 路由
 
 | 路由 | 方法 | 功能 |
@@ -150,6 +164,9 @@ GIGAB2B/
 | `/api/markets` | GET | 列出 5 个市场 |
 | `/api/detect-market` | POST | 从 SKU/模板自动检测市场 |
 | `/api/upload-template` | POST | 验证并隔离存储 Amazon 模板 |
+| `/api/template-filler/analyze` | POST | 解析 Amazon 模板、SKU、必填和下拉规则 |
+| `/api/template-filler/fill` | POST | 批量抓取 GIGA 数据并生成填写后的模板与报告 |
+| `/api/template-filler/reports/<file>` | GET | 登录后下载 JSON 校验报告 |
 | **`/api/run-pipeline`** | POST | **核心流水线**:GIGA → AI → Excel(SSE 流式) |
 | `/api/downloads/<file>` | GET | 登录后下载生成的 Excel |
 | `/api/generate-image` | POST | AI 生图 |
@@ -196,7 +213,7 @@ npm install
 
 ## 🐛 已知限制
 
-- 当前**只针对 PLANTER 品类优化**(包材尺寸硬编码)
+- 现有 `/api/run-pipeline` Excel 步骤仍只支持 PLANTER；新的独立模板填表页优先支持 UK CABINET / CHAIR
 - **5 个市场 × 3 种语言**(DE/EN/FR)的本地化处理
 - Excel comment 中的 `image_studio` 字样已过时,Excel 模板填写功能正常
 
