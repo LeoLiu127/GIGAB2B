@@ -737,3 +737,125 @@ _追加者:Claude Sonnet 4.5 (AI 文案生成慢+失败修复)_
 
 _追加时间:2026-07-05_
 _追加者:Claude Sonnet 4.5 (生成图片排序 + 跨产品保留)_
+
+---
+
+## 18. 服务器部署 — 2026-07-09(把 GitHub 更新到阿里云)
+
+### 18.1 背景
+
+服务器 `/opt/GIGAB2B` 的 git HEAD 停在 `44b1f86 feat(variants)`,落后 GitHub `origin/main` 1 个 commit(`61b67bd`)。同时之前的部署遗漏了 `40e4200`(Round 1 bug)和 `44b1f86` 自身新增的业务文件落地(templates_catalog.py、VariantsList.tsx 等),所以这次实际**拉了 3 个 commit**,构成一次完整业务更新部署。
+
+### 18.2 服务器信息
+
+| 项 | 值 |
+|---|---|
+| 服务器 | 阿里云轻量应用服务器 `39.108.63.108`(Alibaba Cloud Linux 3) |
+| 项目路径 | `/opt/GIGAB2B` |
+| PM2 实例 | root 用户托管(`/root/.pm2`) |
+| 进程 | `gigab2b-backend`(PID 启动前 41181 → 启动后 41798)+ `gigab2b-frontend`(PID 启动前 16410 → 启动后 41809) |
+| 端口 | 后端 5182 / 前端 5173(监听 0.0.0.0) |
+| 进程管理 | systemd → PM2 God Daemon → fork 两个 venv/python + node/vite |
+
+### 18.3 部署过程(8 步)
+
+#### Step 1:SSH 免密登录打通
+- 本机生成了 `id_ed25519` ed25519 密钥,但服务器 `~/.ssh/authorized_keys` 里**没有这个公钥** → 第一次 SSH 报 `Permission denied`
+- 用户在服务器跑 3 条命令加公钥 + 修权限:`mkdir -p ~/.ssh && chmod 700` + `echo 'ssh-ed25519 AAAA...' >> ~/.ssh/authorized_keys` + `chmod 600`
+- 配完后 `ssh admin@39.108.63.108` 免密登录 ✅
+- **沉淀**:部署前置任务,**公钥必须在服务器 authorized_keys 中**(已有 `.claude/DEPLOY_NOTES.md` 没强调这一点,可考虑补充)
+
+#### Step 2:部署前体检
+- root `pm2 list`:gigab2b-backend online(restart 25,刚跑 3 分钟)+ gigab2b-frontend online(3 天,restart 8)
+- 端口 5182 / 5173 都在 LISTEN
+- `.env` 权限 `-rw-r--r--`(已经是 644 ✅,免修)
+- git `dubious ownership` 拦截(`.git/` 是 root 拥有,admin 读不了) → `git config --global --add safe.directory /opt/GIGAB2B` 同时给 admin 和 root 都加
+
+#### Step 3:`git fetch` 发现落后
+- 服务端 HEAD:`44b1f86 feat(variants)`
+- `git fetch origin` 后 `git log HEAD..origin/main --oneline` 显示落后 **3 个 commit**:
+  - `40e4200` Round 1 bug 修复 + 累积保存 + 加副图 slot
+  - `44b1f86` 的"增量部分"(FETCH 后追加)
+  - `61b67bd` chore(security) gitignore 兜底
+- **实际原计划只说拉 1 个 commit 是误判**——之前服务器上的 `templates_catalog.py` 和 `VariantsList.tsx` 是 untracked 副本(没 add 过的),看似"已经部署"实则没跟 GitHub 同步
+
+#### Step 4:冲突文件处理
+- `git pull` 报错:`The following untracked working tree files would be overwritten by merge: templates_catalog.py / web/src/components/VariantsList.tsx`
+- 用户选择 **方案 A:备份后强拉**
+- 备份到 `/tmp/gigab2b-prepull-backup-20260709-140613/`
+  - `templates_catalog.py`(md5 `42aff7af...`,12839 bytes,Jul 6 11:32)
+  - `VariantsList.tsx`(md5 `ace335f6...`,2941 bytes,Jul 6 11:46)
+- `rm` 这俩文件 + `git pull origin main` 成功,共 13 个文件变更(+1044 / -351),包含新增 3 个 untracked 入库(.env.bak、flask.out、vite.out)被删,以及 web/vite.out 被 .gitignore 接管
+
+#### Step 5:装依赖 + 前端 build
+- `source venv/bin/activate && pip install -q -r requirements.txt` — 幂等,无新依赖
+- `cd web && npm install --silent && npm run build` — vite v6.4.3,39 modules,1.89s,产物 `dist/assets/index-CHPzC3dX.js` 247 kB
+
+#### Step 6:PM2 双服务 restart
+- `sudo pm2 restart gigab2b-backend` → PID 41181 → 41798(restart 25 → 26)
+- `sudo pm2 restart gigab2b-frontend` → PID 16410 → 41809(restart 8 → 9)
+- 启动后 backend 短暂 CPU 100%(46 MB mem → 108 MB),44s 后平稳到 0%
+
+#### Step 7:健康检查
+- `curl http://127.0.0.1:5182/api/health` → **HTTP 200(1.4ms)**
+  ```json
+  {"has_giga_creds":true,"laozhang":{"configured":true,"model":"gemini-3.1-flash-image-preview"},"port":5182,"status":"ok"}
+  ```
+- `curl http://127.0.0.1:5173/` → **HTTP 200(3.7ms)**
+- `pm2 logs gigab2b-backend --nostream --err` 取最近 30 行:**全部 HTTP 200,无任何 ERROR**
+- `templates_catalog.py` 命中 `amazon/ebay/variant` 关键词 8 处 → 新业务代码**真的加载**了 ✅
+
+#### Step 8:备份保留
+- 备份目录未删除:`/tmp/gigab2b-prepull-backup-20260709-140613/`(留作万一 GitHub 版本不对的回滚用)
+- 工作区现在的 untracked:**只剩业务脏数据**,不再有冲突文件:
+  - `202607051.xlsx` / `202607071.xlsx` / `-W3454--260627_-_.xlsx`(用户上传的业务文件)
+  - `.logs/` 一堆 AI response 日志(正常运行时生成)
+  - `outputs/` 一堆 W3454P*/W2678P*/W3372P*/产品目录 + jpg(用户跑流水线的产物)
+
+### 18.4 经验沉淀 / 流程补丁
+
+#### 补丁 1:`git status` 在服务器要加 `--ignore-submodules=untracked`?
+**❌ 不需要**。问题在于 root 创建的 .git 目录 admin 写不进。
+
+#### 补丁 2:部署前置要 ssh-copy-id?
+**✅ 是**。`.claude/DEPLOY_NOTES.md` 第 180 行只写了 `scp project.tar.gz admin@...`,**没强调首次部署要把本机公钥加进去**。建议在第 0 步"准备工作"里加一句:
+```bash
+# 首次部署:把本机公钥加进服务器(否则 ssh 会 Permission denied)
+PUBKEY=$(cat ~/.ssh/id_ed25519.pub)
+ssh admin@$SERVER "mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '$PUBKEY' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+```
+
+#### 补丁 3:`git config --add safe.directory` 要双重配置
+**⚠️ 不是 double,是 `sudo` 包运行时用哪个用户**
+- admin 操作 git:`git config --global --add safe.directory /opt/GIGAB2B`(写到 `/home/admin/.gitconfig`)
+- sudo bash 包起来用 root 操作时:`sudo git config --global --add safe.directory /opt/GIGAB2B`(写到 `/root/.gitconfig`)
+- 二者都要,否则一报 `dubious ownership` 一次
+
+#### 补丁 4:`.env.bak` / `flask.out` / `web/vite.out` 是历史包袱
+- 这些之前**已经被误 add + commit**(看 commit `61b67bd` 的 `delete mode 100644` 行),今天的 `git pull` 才把它们从 git 历史里真正"删掉"
+- 也就是说,这个 commit 真正落地了"untrack + gitignore 兜底"——**之前 commit 过,实际没起作用**。今天清理完成。
+
+#### 补丁 5:服务不要看着 restart 计数高就立刻重启
+- 这次 gigab2b-backend restart=25 让一开始误判"服务在抖动"
+- 实际看了健康检查 + 错误日志,全是 HTTP 200,无错
+- **真实重启信号是 curl 失败 / 日志 ERROR / 进程消失**,不是单纯的 restart 计数
+
+### 18.5 验证矩阵
+
+| 项 | 期望 | 实际 |
+|---|---|---|
+| `/api/health` | 200 OK | ✅ 200,1.4ms |
+| `/` 前端 | 200 OK | ✅ 200,3.7ms |
+| backend PID | 变更(41181 → 41798) | ✅ 变更 |
+| frontend PID | 变更(16410 → 41809) | ✅ 变更 |
+| backend 错误日志 | 无 ERROR | ✅ 无 |
+| backend uptime | > 30s | ✅ 44s |
+| backend CPU | 平稳 | ✅ 0%(44s 后) |
+| backend memory | 正常(<200MB) | ✅ 108 MB |
+| frontend memory | 正常(<200MB) | ✅ 59 MB |
+| `templates_catalog.py` 加载 | 含 amazon/ebay/variant | ✅ 8 处命中 |
+| 工作区冲突 | 解决 | ✅ 解决 |
+| 备份保留 | 在 /tmp/ | ✅ `/tmp/gigab2b-prepull-backup-20260709-140613/` |
+
+_追加时间:2026-07-09 14:15_
+_追加者:Claude Sonnet 4.5(2026-07-09 服务器部署记录)_

@@ -26,7 +26,8 @@
       "Bash(pm2 logs *)",
       "Bash(echo \"=== 1. 看桌面暂存目录是否还空 ===\" *)",
       "Read(//c/Users/Admin/Desktop/**)",
-      "Read(//c/Users/Admin/Desktop//**)"
+      "Read(//c/Users/Admin/Desktop//**)",
+      "Bash(git commit -m 'fix\\(ui\\): 删除 Header 系统状态里的凭证路径泄露 *)"
     ]
   }
 }

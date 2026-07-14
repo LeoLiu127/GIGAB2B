@@ -9,7 +9,7 @@
 | 工具 | 版本 | 下载 | 安装要点 |
 |---|---|---|---|
 | Python | 3.11+ | https://python.org | 安装时**勾选 "Add python.exe to PATH"** |
-| Node.js | 18.18+ LTS | https://nodejs.org | 装 LTS 版,所有勾保持默认 |
+| Node.js | 20+ LTS | https://nodejs.org | 装 LTS 版,所有勾保持默认 |
 | Git for Windows | 任意 | https://git-scm.com/download/win | 一路 Next,所有勾保持默认 |
 
 装好后在 **新开的 PowerShell 窗口**里验证(装完必须关掉旧窗口,新开一个,否则 PATH 不生效):
