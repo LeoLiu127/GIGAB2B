@@ -8,7 +8,7 @@ import { CenterPanel } from "./components/CenterPanel";
 import { ReferenceImages } from "./components/ReferenceImages";
 import { PromptForm, type ImageType } from "./components/PromptForm";
 import { GeneratedGallery, type GeneratedImage } from "./components/GeneratedGallery";
-import { readStoredTheme, THEME_TOKENS, writeStoredTheme, type ThemeId } from "./theme";
+import { applyThemeToDocument, readStoredTheme, type ThemeId } from "./theme";
 
 const S = {
   root: { minHeight: "100vh", background: "var(--theme-page-bg)", color: "var(--theme-text-primary)" } as React.CSSProperties,
@@ -100,10 +100,7 @@ export default function App() {
   const mountedRef = useRef(true);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.dataset.theme = theme;
-    Object.entries(THEME_TOKENS[theme]).forEach(([name, value]) => root.style.setProperty(name, value));
-    writeStoredTheme(theme);
+    applyThemeToDocument(theme);
   }, [theme]);
 
   useEffect(() => {

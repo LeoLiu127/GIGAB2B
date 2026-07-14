@@ -18,6 +18,11 @@ export const THEME_OPTIONS: ThemeOption[] = [
 
 type ThemeTokens = Record<string, string>;
 
+export type ThemeRoot = {
+  dataset: Record<string, string | undefined>;
+  style: { setProperty(name: string, value: string): void };
+};
+
 const LIGHT_TOKENS: ThemeTokens = {
   "--theme-page-bg": "#ffffff",
   "--theme-surface": "#ffffff",
@@ -142,4 +147,16 @@ export function writeStoredTheme(theme: ThemeId, storage?: Pick<Storage, "setIte
   } catch {
     // Private browsing or disabled storage should not block theme switching.
   }
+}
+
+export function applyThemeToDocument(
+  theme: ThemeId,
+  root: ThemeRoot = document.documentElement,
+  storage?: Pick<Storage, "setItem">,
+): void {
+  root.dataset.theme = theme;
+  Object.entries(THEME_TOKENS[theme]).forEach(([name, value]) => {
+    root.style.setProperty(name, value);
+  });
+  writeStoredTheme(theme, storage);
 }

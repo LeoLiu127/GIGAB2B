@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyThemeToDocument,
   DEFAULT_THEME,
   THEME_OPTIONS,
   THEME_PICKER_OPTIONS,
@@ -52,5 +53,28 @@ describe("theme preferences", () => {
     expect(readStoredTheme(storage)).toBe("saddle");
     expect(THEME_TOKENS.midnight["--theme-action-bg"]).toBe("#2563eb");
     expect(THEME_TOKENS.saddle["--theme-action-bg"]).toBe("#b88a52");
+  });
+
+  it("applies tokens and persists a selected theme", () => {
+    const tokens: Record<string, string> = {};
+    const root = {
+      dataset: {} as Record<string, string>,
+      style: {
+        setProperty: (name: string, value: string) => {
+          tokens[name] = value;
+        },
+      },
+    };
+    const stored: Record<string, string> = {};
+
+    applyThemeToDocument("midnight", root, {
+      setItem: (key: string, value: string) => {
+        stored[key] = value;
+      },
+    });
+
+    expect(root.dataset.theme).toBe("midnight");
+    expect(tokens["--theme-action-bg"]).toBe("#2563eb");
+    expect(stored[THEME_STORAGE_KEY]).toBe("midnight");
   });
 });

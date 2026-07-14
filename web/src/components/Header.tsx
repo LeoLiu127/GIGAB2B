@@ -22,6 +22,9 @@ export function Header({ status, theme, onThemeChange }: HeaderProps) {
   return (
     <>
       <div className="app-header-tools" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <a className="module-link" href="/template-filler.html">
+          Amazon 模板填表
+        </a>
         <div className="theme-control" role="group" aria-label="Theme">
           {THEME_PICKER_OPTIONS.map(option => (
             <button
