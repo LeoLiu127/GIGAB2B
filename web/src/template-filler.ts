@@ -5,9 +5,13 @@ import {
   issueStatusLabel,
   normalizeVariantSummary,
   policyStatusLabel,
+  serverStatusLabels,
+  templateProgressState,
+  type TemplateProgress,
   uploadReadinessLabel,
   variantGroupResultLabel,
 } from "./template-filler-model";
+import { applyThemeToDocument, normalizeTheme, readStoredTheme, type ThemeId } from "./theme";
 
 type TemplateField = {
   field_id: string;
@@ -103,11 +107,55 @@ const issueFilter = document.querySelector<HTMLSelectElement>("#issue-filter")!;
 const savePolicyButton = document.querySelector<HTMLButtonElement>("#save-policy-button")!;
 const policyMessage = document.querySelector<HTMLElement>("#policy-message")!;
 const expandVariants = document.querySelector<HTMLInputElement>("#expand-variants")!;
+const analysisEmpty = document.querySelector<HTMLElement>("#analysis-empty")!;
+const resultEmpty = document.querySelector<HTMLElement>("#result-empty")!;
+const systemStatus = document.querySelector<HTMLElement>("#system-status")!;
+const progressItems = Array.from(document.querySelectorAll<HTMLElement>("[data-progress-step]"));
+const themeButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("#theme-control [data-theme]"));
 
 let templateId = "";
 let issues: Issue[] = [];
 let policyFields: TemplateField[] = [];
 let currentPolicy: Policy | null = null;
+
+function renderTheme(theme: ThemeId) {
+  applyThemeToDocument(theme);
+  themeButtons.forEach(button => {
+    const active = button.dataset.theme === theme;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function renderProgress(progress: TemplateProgress) {
+  const states = templateProgressState(progress);
+  progressItems.forEach((item, index) => {
+    item.classList.toggle("active", states[index] === "active");
+    item.classList.toggle("complete", states[index] === "complete");
+  });
+}
+
+function renderServerStatus(payload: unknown) {
+  systemStatus.replaceChildren(...serverStatusLabels(payload).map(item => {
+    const badge = document.createElement("span");
+    badge.className = `badge ${item.ok ? "badge-ok" : "badge-warn"}`;
+    badge.textContent = `${item.label} ${item.ok ? "OK" : "未配置"}`;
+    return badge;
+  }));
+}
+
+async function loadServerStatus() {
+  try {
+    const response = await fetch("/api/server-status");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    renderServerStatus(await response.json());
+  } catch {
+    const badge = document.createElement("span");
+    badge.className = "badge badge-warn";
+    badge.textContent = "系统状态暂不可用";
+    systemStatus.replaceChildren(badge);
+  }
+}
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/template-filler${path}`, init);
@@ -151,8 +199,12 @@ function renderAnalysis(data: AnalyzeResponse) {
   policyFields = data.fields;
   currentPolicy = data.policy;
   renderPolicyEditor(data.policy_status, data.policy_drift);
+  analysisEmpty.classList.add("hidden");
   analysisPanel.classList.remove("hidden");
+  resultEmpty.classList.remove("hidden");
   resultPanel.classList.add("hidden");
+  fillButton.disabled = false;
+  renderProgress("analyzed");
   analysisPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -357,13 +409,22 @@ function renderResult(data: FillResponse) {
   renderVariantGroups(variantGroups);
   issueFilter.value = "all";
   renderIssues("all");
+  resultEmpty.classList.add("hidden");
   resultPanel.classList.remove("hidden");
+  renderProgress("filled");
   resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function selectFile(file?: File) {
   fileLabel.textContent = file?.name || "选择或拖入 XLSX / XLSM";
   analyzeButton.disabled = !file || !isSupportedTemplateFile(file.name);
+  fillButton.disabled = true;
+  templateId = "";
+  analysisEmpty.classList.remove("hidden");
+  analysisPanel.classList.add("hidden");
+  resultEmpty.classList.remove("hidden");
+  resultPanel.classList.add("hidden");
+  renderProgress("idle");
   message.textContent = file && !isSupportedTemplateFile(file.name) ? "请选择 .xlsx 或 .xlsm 模板" : "";
 }
 
@@ -391,6 +452,8 @@ analyzeButton.addEventListener("click", async () => {
   const file = fileInput.files?.[0];
   if (!file) return;
   setBusy(analyzeButton, true, "正在解析模板…", "分析模板结构");
+  fillButton.disabled = true;
+  renderProgress("analyzing");
   message.textContent = "";
   const form = new FormData();
   form.append("file", file);
@@ -400,6 +463,7 @@ analyzeButton.addEventListener("click", async () => {
     renderAnalysis(data);
   } catch (error) {
     message.textContent = error instanceof Error ? error.message : "模板解析失败";
+    renderProgress("idle");
   } finally {
     setBusy(analyzeButton, false, "正在解析模板…", "重新分析模板");
   }
@@ -408,6 +472,7 @@ analyzeButton.addEventListener("click", async () => {
 fillButton.addEventListener("click", async () => {
   if (!templateId) return;
   setBusy(fillButton, true, "正在抓取 GIGA 数据并填表…", "抓取 GIGA 数据并填表");
+  renderProgress("filling");
   message.textContent = "";
   try {
     const data = await api<FillResponse>("/fill", {
@@ -418,6 +483,7 @@ fillButton.addEventListener("click", async () => {
     renderResult(data);
   } catch (error) {
     message.textContent = error instanceof Error ? error.message : "模板填表失败";
+    renderProgress("analyzed");
   } finally {
     setBusy(fillButton, false, "正在抓取 GIGA 数据并填表…", "重新抓取并填表");
   }
@@ -425,3 +491,10 @@ fillButton.addEventListener("click", async () => {
 
 issueFilter.addEventListener("change", () => renderIssues(issueFilter.value));
 savePolicyButton.addEventListener("click", () => { void savePolicy(); });
+
+themeButtons.forEach(button => {
+  button.addEventListener("click", () => renderTheme(normalizeTheme(button.dataset.theme)));
+});
+renderTheme(readStoredTheme());
+renderProgress("idle");
+void loadServerStatus();

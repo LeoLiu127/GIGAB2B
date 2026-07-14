@@ -78,3 +78,34 @@ export function variantGroupResultLabel(group: VariantGroupResult): string {
   if (!complete && group.message) text += `阻断原因：${group.message}`;
   return text;
 }
+
+export type TemplateProgress = "idle" | "analyzing" | "analyzed" | "filling" | "filled";
+export type ProgressStepState = "pending" | "active" | "complete";
+
+export function templateProgressState(progress: TemplateProgress): ProgressStepState[] {
+  if (progress === "idle") return ["active", "pending", "pending", "pending"];
+  if (progress === "analyzing") return ["complete", "active", "pending", "pending"];
+  if (progress === "analyzed") return ["complete", "complete", "active", "pending"];
+  if (progress === "filling") return ["complete", "complete", "active", "pending"];
+  return ["complete", "complete", "complete", "active"];
+}
+
+export type ServerStatusLabel = { label: string; ok: boolean };
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+export function serverStatusLabels(status: unknown): ServerStatusLabel[] {
+  const root = recordValue(status);
+  const imageStudio = recordValue(root.image_studio);
+  const providers = recordValue(imageStudio.providers);
+  const gigaMarkets = recordValue(root.giga_markets);
+  return [
+    { label: "文案优化大模型", ok: providers.minimax === "configured" },
+    { label: "生图大模型", ok: providers.laozhang === "configured" },
+    { label: "GIGAB2B API", ok: Object.values(gigaMarkets).some(Boolean) },
+  ];
+}

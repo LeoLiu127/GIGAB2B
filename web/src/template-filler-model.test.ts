@@ -6,6 +6,8 @@ import {
   issueStatusLabel,
   normalizeVariantSummary,
   policyStatusLabel,
+  serverStatusLabels,
+  templateProgressState,
   uploadReadinessLabel,
   variantGroupResultLabel,
 } from "./template-filler-model";
@@ -90,5 +92,34 @@ describe("template filler report labels", () => {
   it("keeps legacy variant group responses compatible", () => {
     expect(variantGroupResultLabel({status: "expanded", message: "legacy warning"}))
       .toBe("已展开：legacy warning");
+  });
+
+  it("maps workflow progress to four deterministic visual steps", () => {
+    expect(templateProgressState("idle")).toEqual(["active", "pending", "pending", "pending"]);
+    expect(templateProgressState("analyzing")).toEqual(["complete", "active", "pending", "pending"]);
+    expect(templateProgressState("analyzed")).toEqual(["complete", "complete", "active", "pending"]);
+    expect(templateProgressState("filling")).toEqual(["complete", "complete", "active", "pending"]);
+    expect(templateProgressState("filled")).toEqual(["complete", "complete", "complete", "active"]);
+  });
+
+  it("formats optional server status without blocking the template workflow", () => {
+    expect(serverStatusLabels(null)).toEqual([
+      { label: "文案优化大模型", ok: false },
+      { label: "生图大模型", ok: false },
+      { label: "GIGAB2B API", ok: false },
+    ]);
+    expect(serverStatusLabels({
+      image_studio: {
+        providers: {
+          minimax: "configured",
+          laozhang: "missing",
+        },
+      },
+      giga_markets: { UK: true },
+    })).toEqual([
+      { label: "文案优化大模型", ok: true },
+      { label: "生图大模型", ok: false },
+      { label: "GIGAB2B API", ok: true },
+    ]);
   });
 });
