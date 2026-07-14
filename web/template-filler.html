@@ -1,119 +1,191 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-page="template-filler">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="GIGA B2B Amazon 模板自动填表 MVP" />
+    <meta name="description" content="GIGA B2B Amazon 模板自动填表" />
     <title>Amazon 模板填表 · GIGA B2B</title>
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/" aria-label="返回 GIGA B2B 工作台">
-        <span class="brand-mark">G</span>
-        <span><strong>GIGA B2B</strong><small>Amazon Template Filler</small></span>
+      <a class="brand" href="/" aria-label="返回文案与图片优化工作台">
+        <span>Listing Creator &amp; Optimizer</span>
+        <small>for GIGAB2B</small>
       </a>
-      <span class="mvp-badge">MVP · UK</span>
+      <div class="header-tools">
+        <nav class="module-nav" aria-label="功能模块">
+          <a href="/">文案/图片优化</a>
+          <a class="active" href="/template-filler.html" aria-current="page">Amazon 模板填表</a>
+        </nav>
+        <div class="theme-control" id="theme-control" role="group" aria-label="界面主题">
+          <button type="button" data-theme="saddle" aria-label="Switch to saddle leather theme" title="牛皮色">
+            <span class="theme-picker-dot" aria-hidden="true"></span>
+          </button>
+          <button type="button" data-theme="light" aria-label="Switch to default light theme" title="白色">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"></path>
+            </svg>
+          </button>
+          <button type="button" data-theme="midnight" aria-label="Switch to midnight theme" title="暗色">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20.2 14.4A7.8 7.8 0 0 1 9.6 3.8a8.2 8.2 0 1 0 10.6 10.6Z"></path>
+            </svg>
+          </button>
+        </div>
+        <span class="system-label">系统状态：</span>
+        <div class="system-status" id="system-status" aria-live="polite">
+          <span class="badge badge-warn">状态读取中</span>
+        </div>
+      </div>
     </header>
 
-    <main class="page-shell">
-      <section class="hero">
-        <p class="eyebrow">SELLER CENTRAL WORKFLOW</p>
-        <h1>从 SKU 到可审核的 Amazon 模板</h1>
-        <p>上传已填写 GIGA Item code 的模板，系统读取 SKU、抓取商品资料、按 Amazon 字段 ID 填写，并列出所有无法自动完成的必填项和下拉项。</p>
-      </section>
-
-      <ol class="steps" aria-label="处理步骤">
-        <li class="active"><span>1</span>上传模板</li>
-        <li><span>2</span>识别结构</li>
-        <li><span>3</span>抓取并填表</li>
-        <li><span>4</span>下载审核</li>
-      </ol>
-
-      <section class="panel upload-panel">
-        <div>
-          <p class="section-kicker">01 / TEMPLATE</p>
-          <h2>上传 Seller Central 模板</h2>
-          <p class="muted">当前优先适配 UK CABINET 与 UK CHAIR。请先在模板 SKU 列填入 GIGA Item code。</p>
-        </div>
-        <label class="dropzone" id="dropzone">
-          <input id="template-file" type="file" accept=".xlsx,.xlsm" />
-          <span class="upload-icon">↑</span>
-          <strong id="file-label">选择或拖入 XLSX / XLSM</strong>
-          <small>文件不会覆盖原模板；每次最多处理 200 个 SKU</small>
-        </label>
-        <button class="primary-button" id="analyze-button" disabled>分析模板结构</button>
-        <p class="message" id="message" role="status"></p>
-      </section>
-
-      <section class="panel hidden" id="analysis-panel">
-        <div class="section-heading">
-          <div><p class="section-kicker">02 / ANALYZE</p><h2>模板识别结果</h2></div>
-          <span class="status-pill success">结构可识别</span>
-        </div>
-        <div class="metric-grid" id="analysis-metrics"></div>
-        <div class="sku-block">
-          <span class="muted">待处理 SKU</span>
-          <div class="sku-list" id="sku-list"></div>
-        </div>
-        <div class="policy-editor" id="policy-editor">
-          <div class="report-toolbar">
-            <div><h3>模板画像策略</h3><p class="muted" id="policy-message">读取策略中…</p></div>
-            <button class="secondary-button" id="save-policy-button" type="button">保存当前类目策略</button>
-          </div>
-          <div class="table-wrap policy-table-wrap">
-            <table>
-              <thead><tr><th>字段</th><th>策略</th><th>适用对象</th><th>默认值</th><th>模板允许值</th></tr></thead>
-              <tbody id="policy-rule-table"></tbody>
-            </table>
-          </div>
-        </div>
-        <label class="variant-toggle"><input id="expand-variants" type="checkbox" checked /> 展开同 Listing 全部变体 <small>自动生成 Parent/Child 行；无法确认主题时保留种子 SKU 并阻止上传。</small></label>
-        <button class="primary-button" id="fill-button">抓取 GIGA 数据并填表</button>
-      </section>
-
-      <section class="panel hidden" id="result-panel">
-        <div class="section-heading">
-          <div><p class="section-kicker">03 / REPORT</p><h2>填表与校验结果</h2></div>
-          <span class="status-pill" id="ready-badge"></span>
-        </div>
-        <div class="metric-grid" id="result-metrics"></div>
-        <div class="download-row">
-          <a class="primary-button link-button" id="workbook-download">下载填写后的模板</a>
-          <a class="secondary-button link-button" id="report-download">下载 JSON 校验报告</a>
-        </div>
-        <div class="report-toolbar" id="variant-report-toolbar">
-          <div><h3>变体展开结果</h3><p class="muted">显示每个种子 SKU 的 Parent、子体数量、变体主题或阻断原因。</p></div>
-        </div>
-        <div class="table-wrap" id="variant-report-table">
-          <table>
-            <thead><tr><th>种子 SKU</th><th>Parent SKU</th><th>子 SKU</th><th>变体主题</th><th>结果</th></tr></thead>
-            <tbody id="variant-group-table"></tbody>
-          </table>
-        </div>
-        <div class="report-toolbar">
-          <div><h3>本次已填写内容</h3><p class="muted">列出每个写入字段、值和数据来源；运营已有值不会出现在此清单。</p></div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>SKU</th><th>字段</th><th>写入值</th><th>来源</th></tr></thead>
-            <tbody id="filled-table"></tbody>
-          </table>
-        </div>
-        <div class="report-toolbar">
-          <div><h3>需要处理的字段</h3><p class="muted">仅显示严格必填、下拉不匹配、SKU 查询失败和运营指定的人工作业。</p></div>
-          <select id="issue-filter" aria-label="筛选问题类型">
-            <option value="all">全部问题</option>
-            <option value="error">仅错误</option>
-            <option value="warning">仅警告</option>
+    <main class="template-workbench">
+      <aside class="template-sidebar">
+        <section class="sidebar-section">
+          <label class="field-label" for="market-display">目标市场</label>
+          <select class="input" id="market-display" disabled>
+            <option>Amazon.co.uk（英国）</option>
           </select>
+          <p class="field-help">当前选中: Amazon.co.uk（英国）· 凭证 UK</p>
+        </section>
+
+        <section class="sidebar-section">
+          <p class="field-label">上传 Seller Central 模板</p>
+          <label class="dropzone" id="dropzone">
+            <input id="template-file" type="file" accept=".xlsx,.xlsm" />
+            <span class="file-icon" aria-hidden="true">XLSM</span>
+            <strong id="file-label">选择或拖入 XLSX / XLSM</strong>
+            <small>保留宏、隐藏页、控制行和下拉校验</small>
+          </label>
+        </section>
+
+        <label class="variant-toggle">
+          <input id="expand-variants" type="checkbox" checked />
+          <span>展开同 Listing 全部变体</span>
+          <small>自动生成 Parent/Child 行；主题不明确时阻止上传。</small>
+        </label>
+
+        <section class="sidebar-actions">
+          <button class="secondary-button" id="analyze-button" disabled>分析模板结构</button>
+          <button class="primary-button" id="fill-button" disabled>抓取 GIGA 数据并填表</button>
+          <p class="message" id="message" role="status"></p>
+        </section>
+
+        <section class="progress-block" aria-label="处理进度">
+          <h2>处理进度</h2>
+          <ol class="progress-list" id="progress-list">
+            <li class="active" data-progress-step="0"><span>1</span><div><strong>上传模板</strong><small>等待选择 Seller Central 文件</small></div></li>
+            <li data-progress-step="1"><span>2</span><div><strong>识别结构</strong><small>读取工作表、字段 ID 和规则</small></div></li>
+            <li data-progress-step="2"><span>3</span><div><strong>抓取并填表</strong><small>获取 GIGA 商品和变体资料</small></div></li>
+            <li data-progress-step="3"><span>4</span><div><strong>下载审核</strong><small>检查必填项和下拉值</small></div></li>
+          </ol>
+        </section>
+      </aside>
+
+      <section class="template-center">
+        <div class="workspace-heading">
+          <div>
+            <p class="section-kicker">AMAZON SELLER CENTRAL</p>
+            <h1>Amazon 模板填表</h1>
+          </div>
+          <p>根据模板字段 ID 和类目策略抓取商品资料，自动填写后交由运营审核。</p>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>SKU</th><th>字段</th><th>状态</th><th>说明 / 允许值</th></tr></thead>
-            <tbody id="issue-table"></tbody>
-          </table>
+
+        <div class="empty-state" id="analysis-empty">
+          <strong>请先上传并分析 Amazon 模板</strong>
+          <span>系统会识别 Template / Vorlage、SKU 行、必填字段和允许值。</span>
         </div>
+
+        <section class="workspace-section hidden" id="analysis-panel">
+          <div class="section-heading">
+            <div><p class="section-kicker">TEMPLATE PROFILE</p><h2>模板分析结果</h2></div>
+            <span class="status-pill success">结构可识别</span>
+          </div>
+          <div class="metric-grid" id="analysis-metrics"></div>
+          <div class="sku-block">
+            <span class="muted">模板中的 GIGA Item code</span>
+            <div class="sku-list" id="sku-list"></div>
+          </div>
+
+          <div class="policy-editor" id="policy-editor">
+            <div class="report-toolbar">
+              <div><h3>字段规则与模板画像</h3><p class="muted" id="policy-message">读取策略中…</p></div>
+              <button class="secondary-button compact-button" id="save-policy-button" type="button">保存当前类目策略</button>
+            </div>
+            <div class="table-wrap policy-table-wrap">
+              <table>
+                <thead><tr><th>字段</th><th>策略</th><th>适用对象</th><th>默认值</th><th>模板允许值</th></tr></thead>
+                <tbody id="policy-rule-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </section>
+
+      <aside class="template-results">
+        <div class="results-heading">
+          <div>
+            <p class="section-kicker">REVIEW &amp; DOWNLOAD</p>
+            <h2>填表与校验结果</h2>
+          </div>
+          <span class="status-pill" id="ready-badge">等待填表</span>
+        </div>
+
+        <div class="empty-state compact" id="result-empty">
+          <strong>尚无校验结果</strong>
+          <span>完成抓取与填表后，变体、已填写字段和待处理问题会显示在这里。</span>
+        </div>
+
+        <section class="hidden" id="result-panel">
+          <div class="metric-grid result-metrics" id="result-metrics"></div>
+
+          <div class="report-block">
+            <div class="report-toolbar" id="variant-report-toolbar">
+              <div><h3>变体展开</h3><p class="muted">核对预期子体数、实际生成数和变体主题。</p></div>
+            </div>
+            <div class="table-wrap compact-table" id="variant-report-table">
+              <table>
+                <thead><tr><th>种子 SKU</th><th>Parent SKU</th><th>子 SKU</th><th>主题</th><th>结果</th></tr></thead>
+                <tbody id="variant-group-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="report-block">
+            <div class="report-toolbar">
+              <div><h3>需要处理的字段</h3><p class="muted">只列出错误、下拉不匹配和运营指定事项。</p></div>
+              <select id="issue-filter" aria-label="筛选问题类型">
+                <option value="all">全部问题</option>
+                <option value="error">仅错误</option>
+                <option value="warning">仅警告</option>
+              </select>
+            </div>
+            <div class="table-wrap compact-table">
+              <table>
+                <thead><tr><th>SKU</th><th>字段</th><th>状态</th><th>说明 / 允许值</th></tr></thead>
+                <tbody id="issue-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <details class="filled-details">
+            <summary>查看本次已填写内容</summary>
+            <p class="muted">运营已有值不会出现在自动填写清单中。</p>
+            <div class="table-wrap compact-table">
+              <table>
+                <thead><tr><th>SKU</th><th>字段</th><th>写入值</th><th>来源</th></tr></thead>
+                <tbody id="filled-table"></tbody>
+              </table>
+            </div>
+          </details>
+
+          <div class="download-row">
+            <a class="primary-button link-button" id="workbook-download">下载填写后的模板</a>
+            <a class="secondary-button link-button" id="report-download">下载 JSON 校验报告</a>
+          </div>
+        </section>
+      </aside>
     </main>
 
     <script type="module" src="/src/template-filler.ts"></script>
