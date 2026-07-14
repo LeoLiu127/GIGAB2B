@@ -330,7 +330,7 @@ class TemplateFillerApiTests(unittest.TestCase):
 
                 filled = client.post(
                     "/api/template-filler/fill",
-                    json={"template_id": analysis["template_id"]},
+                    json={"template_id": analysis["template_id"], "expand_variants": False},
                 )
                 self.assertEqual(filled.status_code, 200, filled.get_data(as_text=True))
                 payload = filled.get_json()
